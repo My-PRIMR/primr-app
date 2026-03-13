@@ -1,66 +1,53 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { auth } from '@/auth'
+import styles from './page.module.css'
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth()
+  if (session) redirect('/dashboard')
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className={styles.main}>
+      <nav className={styles.nav}>
+        <span className={styles.wordmark}>Primr</span>
+        <div className={styles.navLinks}>
+          <Link href="/dashboard/new" className={styles.navCta}>Start creating →</Link>
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </nav>
+
+      <section className={styles.hero}>
+        <div className={styles.heroBadge}>Now in beta</div>
+        <h1 className={styles.heroTitle}>
+          The platform for<br />interactive learning.
+        </h1>
+        <p className={styles.heroSub}>
+          Describe what you want to teach. Primr's AI builds a rich,
+          interactive lesson — walkthroughs, quizzes, flip cards — in seconds.
+          No design skills required.
+        </p>
+        <div className={styles.heroCtas}>
+          <Link href="/dashboard/new" className={styles.ctaPrimary}>
+            Create a lesson
+          </Link>
+          <Link href="/gus/how-to-create-a-primr-lesson" className={styles.ctaSecondary}>
+            See an example →
+          </Link>
         </div>
-      </main>
-    </div>
-  );
+      </section>
+
+      <section className={styles.features}>
+        {[
+          { icon: '✦', title: 'AI-powered', body: 'Describe your lesson in plain English. The AI selects components, writes content, and lays it out.' },
+          { icon: '◈', title: 'Interactive by default', body: 'Every lesson is a sequence of walkthroughs, quizzes, and flip cards — not a wall of text.' },
+          { icon: '⟐', title: 'Yours to own', body: 'Export any lesson as a .primr.md file. Host it anywhere. No lock-in.' },
+        ].map(f => (
+          <div key={f.title} className={styles.featureCard}>
+            <div className={styles.featureIcon}>{f.icon}</div>
+            <h3 className={styles.featureTitle}>{f.title}</h3>
+            <p className={styles.featureBody}>{f.body}</p>
+          </div>
+        ))}
+      </section>
+    </main>
+  )
 }

@@ -1,11 +1,12 @@
 import { db } from '@/db'
-import { lessons, lessonInvitations } from '@/db/schema'
+import { lessons, lessonInvitations, chapterLessons, courseChapters, courseSections, courseEnrollments } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 
 /**
  * Check if a user can access a lesson:
  * - They created it, OR
- * - They have an invitation (by email)
+ * - They have an invitation (by email), OR
+ * - They are enrolled in a course that contains the lesson
  */
 export async function canAccessLesson(lessonId: string, userId: string, userEmail: string): Promise<boolean> {
   const lesson = await db.query.lessons.findFirst({
@@ -16,13 +17,46 @@ export async function canAccessLesson(lessonId: string, userId: string, userEmai
   // Creator always has access
   if (lesson.createdBy === userId) return true
 
-  // Check invitation by email
+  // Check direct invitation by email
   const invitation = await db.query.lessonInvitations.findFirst({
     where: and(
       eq(lessonInvitations.lessonId, lessonId),
       eq(lessonInvitations.email, userEmail.toLowerCase()),
     ),
   })
+  if (invitation) return true
 
-  return !!invitation
+  // Check course enrollment: if the lesson belongs to a course the user is enrolled in
+  const chapterLesson = await db.query.chapterLessons.findFirst({
+    where: eq(chapterLessons.lessonId, lessonId),
+  })
+
+  if (chapterLesson) {
+    const chapter = await db.query.courseChapters.findFirst({
+      where: eq(courseChapters.id, chapterLesson.chapterId),
+    })
+    if (chapter) {
+      const section = await db.query.courseSections.findFirst({
+        where: eq(courseSections.id, chapter.sectionId),
+      })
+      if (section) {
+        const enrollment = await db.query.courseEnrollments.findFirst({
+          where: and(
+            eq(courseEnrollments.courseId, section.courseId),
+            eq(courseEnrollments.email, userEmail.toLowerCase()),
+          ),
+        })
+        if (enrollment) return true
+
+        // Course creator also has access
+        const { courses } = await import('@/db/schema')
+        const course = await db.query.courses.findFirst({
+          where: eq(courses.id, section.courseId),
+        })
+        if (course?.createdBy === userId) return true
+      }
+    }
+  }
+
+  return false
 }

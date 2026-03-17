@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
+import { auth } from '@/auth'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline } from '@/types/outline'
 
@@ -96,9 +97,13 @@ function slugify(text: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  const userId = session?.user?.id ?? null
+
   const body = await req.json()
   const outline: LessonOutline | undefined = body.outline
   const topic: string | undefined = body.topic
+  const documentText: string | undefined = body.documentText
 
   if (!outline && !topic?.trim()) {
     return NextResponse.json({ error: 'outline or topic is required' }, { status: 400 })
@@ -107,14 +112,18 @@ export async function POST(req: NextRequest) {
   const isOutlineBased = !!outline
   const systemPrompt = isOutlineBased ? OUTLINE_SYSTEM_PROMPT : LEGACY_SYSTEM_PROMPT
   const userMessage = isOutlineBased
-    ? `Generate a Primr lesson from this outline:\n\n${JSON.stringify(outline, null, 2)}`
+    ? [
+        topic?.trim() ? `Creator's intent: ${topic}\n` : '',
+        `Generate a Primr lesson from this outline:\n\n${JSON.stringify(outline, null, 2)}`,
+        documentText?.trim() ? `\n\nSource document (use this as the primary source for all content, facts, and questions — do not invent material not present in this document):\n"""\n${documentText}\n"""` : '',
+      ].join('')
     : `Create a Primr lesson about: ${topic}`
 
   console.log(`[generate] mode: ${isOutlineBased ? 'outline' : 'legacy'}`)
   const t0 = Date.now()
 
   const message = await client.messages.create({
-    model: 'claude-opus-4-6',
+    model: 'claude-sonnet-4-6',
     max_tokens: 16384,
     system: systemPrompt,
     messages: [{ role: 'user', content: userMessage }],
@@ -143,6 +152,7 @@ export async function POST(req: NextRequest) {
     slug,
     title: manifest.title,
     manifest,
+    createdBy: userId,
   }).returning()
   console.log(`[generate] saved to DB in ${Date.now() - t1}ms, id=${lesson.id}`)
 

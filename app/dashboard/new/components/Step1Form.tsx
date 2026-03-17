@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import type { WizardState } from '@/types/outline'
 import styles from './Step1Form.module.css'
 
@@ -14,7 +15,44 @@ const EXAMPLES = [
 ]
 
 export default function Step1Form({ state, onField, onSubmit }: Props) {
-  const canSubmit = state.title.trim() && state.topic.trim()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [extracting, setExtracting] = useState(false)
+  const [extractError, setExtractError] = useState('')
+
+  const canSubmit = state.title.trim() && (state.topic.trim() || state.documentText)
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setExtracting(true)
+    setExtractError('')
+    onField('documentText', '')
+    onField('documentName', '')
+
+    const form = new FormData()
+    form.append('file', file)
+
+    const res = await fetch('/api/lessons/extract', { method: 'POST', body: form })
+    const data = await res.json()
+
+    setExtracting(false)
+
+    if (!res.ok) {
+      setExtractError(data.error || 'Failed to read file.')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
+    onField('documentText', data.text)
+    onField('documentName', file.name)
+  }
+
+  function clearDocument() {
+    onField('documentText', '')
+    onField('documentName', '')
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   return (
     <div className={styles.form}>
@@ -33,15 +71,41 @@ export default function Step1Form({ state, onField, onSubmit }: Props) {
       </label>
 
       <label className={styles.label}>
-        What should this lesson teach?
+        What should this lesson teach? {state.documentName && <span className={styles.optional}>(optional with document)</span>}
         <textarea
           className={styles.textarea}
-          placeholder="Describe the topic, key concepts to cover, and any specific examples you'd like to include..."
+          placeholder={state.documentName ? 'Additional context or focus areas (optional)…' : "Describe the topic, key concepts to cover, and any specific examples you'd like to include..."}
           value={state.topic}
           onChange={e => onField('topic', e.target.value)}
           rows={4}
         />
       </label>
+
+      <div className={styles.uploadSection}>
+        <span className={styles.uploadLabel}>Source document <span className={styles.optional}>(optional)</span></span>
+        <p className={styles.uploadHint}>Upload a PDF, DOCX, TXT, or MD file — the lesson will be grounded in its content.</p>
+
+        {state.documentName ? (
+          <div className={styles.uploadedFile}>
+            <span className={styles.uploadedName}>{state.documentName}</span>
+            <button type="button" className={styles.clearFile} onClick={clearDocument}>Remove</button>
+          </div>
+        ) : (
+          <label className={styles.uploadBtn}>
+            {extracting ? 'Reading file…' : 'Choose file'}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.docx,.txt,.md"
+              className={styles.fileInput}
+              onChange={handleFile}
+              disabled={extracting}
+            />
+          </label>
+        )}
+
+        {extractError && <p className={styles.error}>{extractError}</p>}
+      </div>
 
       <div className={styles.row}>
         <label className={styles.label}>

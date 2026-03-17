@@ -102,6 +102,87 @@
   color: var(--accent);
 }
 
+.uploadSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.uploadLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.optional {
+  font-weight: 400;
+  color: var(--ink-muted);
+}
+
+.uploadHint {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.uploadBtn {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  background: var(--surface-alt);
+  border: 1.5px dashed var(--border-mid);
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: border-color 150ms, color 150ms;
+}
+
+.uploadBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.fileInput {
+  display: none;
+}
+
+.uploadedFile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--surface-alt);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  align-self: flex-start;
+}
+
+.uploadedName {
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.clearFile {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12px;
+  color: var(--ink-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.clearFile:hover {
+  color: #d94f4f;
+}
+
 .error {
   font-size: 13.5px;
   color: #d94f4f;

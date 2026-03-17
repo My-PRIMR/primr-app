@@ -23,28 +23,35 @@ Return this exact structure:
 
 Rules:
 - Always start with a 'hero' block (summary = tagline for the lesson)
-- Include 4–7 blocks total
-- Mix block types for engagement: use at least 2 different interactive types (quiz, flashcard, fill-in-the-blank, step-navigator)
+- Include 8–12 blocks total
+- Each interactive block (quiz, flashcard, fill-in-the-blank) must be preceded by a narrative or step-navigator block that teaches the material it will test — never place an interactive block without a teaching block immediately before it
+- Use step-navigator for multi-part concepts or processes; use narrative for explanations and context
+- Mix interactive types for engagement: use at least 2 different interactive types (quiz, flashcard, fill-in-the-blank)
 - Summaries should be specific to the content, not generic (e.g. "Explains how TCP's three-way handshake establishes a connection" not "Explains the concept")
+- If a source document is provided, ALL block summaries must describe content drawn directly from that document. Do not introduce topics not covered in the document.
 - Return ONLY valid JSON. No markdown fences, no explanation.`
 
 export async function POST(req: NextRequest) {
-  const { title, topic, audience, level } = await req.json()
+  const { title, topic, audience, level, documentText } = await req.json()
 
-  if (!title?.trim() || !topic?.trim()) {
-    return NextResponse.json({ error: 'title and topic are required' }, { status: 400 })
+  if (!title?.trim() || (!topic?.trim() && !documentText?.trim())) {
+    return NextResponse.json({ error: 'title and either topic or a document are required' }, { status: 400 })
   }
 
-  console.log(`[outline] title: "${title}", audience: "${audience}", level: "${level}"`)
+  console.log(`[outline] title: "${title}", audience: "${audience}", level: "${level}", hasDoc: ${!!documentText}`)
   const t0 = Date.now()
+
+  const userContent = documentText?.trim()
+    ? `Title: ${title}\nAudience: ${audience || 'General'}\nLevel: ${level || 'beginner'}${topic?.trim() ? `\nAdditional context: ${topic}` : ''}\n\nSource document:\n"""\n${documentText}\n"""`
+    : `Title: ${title}\nTopic: ${topic}\nAudience: ${audience || 'General'}\nLevel: ${level || 'beginner'}`
 
   const message = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
-    max_tokens: 1024,
+    max_tokens: 2048,
     system: SYSTEM_PROMPT,
     messages: [{
       role: 'user',
-      content: `Title: ${title}\nTopic: ${topic}\nAudience: ${audience || 'General'}\nLevel: ${level || 'beginner'}`,
+      content: userContent,
     }],
   })
 

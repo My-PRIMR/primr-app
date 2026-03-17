@@ -14,10 +14,13 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
     "@primr/components": "file:../primr-components",
+    "assemblyai": "^4.27.0",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.1",
+    "mammoth": "^1.12.0",
     "next": "16.1.6",
     "next-auth": "^5.0.0-beta.30",
+    "pdf-parse": "^2.4.5",
     "postgres": "^3.4.8",
     "react": "19.2.3",
     "react-dom": "19.2.3"

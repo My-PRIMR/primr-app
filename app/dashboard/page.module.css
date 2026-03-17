@@ -39,6 +39,12 @@
   color: var(--ink);
 }
 
+.navActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .newBtn {
   font-size: 13.5px;
   font-weight: 500;
@@ -49,6 +55,17 @@
   transition: opacity 150ms;
 }
 .newBtn:hover { opacity: 0.88; }
+
+.newCourseBtn {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 8px 18px;
+  border-radius: 7px;
+  transition: opacity 150ms;
+}
+.newCourseBtn:hover { opacity: 0.85; }
 
 .content {
   max-width: 720px;

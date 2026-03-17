@@ -41,6 +41,39 @@
   color: var(--ink);
 }
 
+/* ── Tab bar ─────────────────────────────────────────────────────────────── */
+.tabBar {
+  display: flex;
+  gap: 2px;
+  padding: 0.5rem 2.5rem;
+  border-bottom: 0.5px solid var(--border);
+  background: var(--surface-alt);
+}
+
+.tab {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: background 150ms, color 150ms;
+}
+
+.tab:hover {
+  background: var(--surface);
+  color: var(--ink-soft);
+}
+
+.tabActive {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: 0 0 0 1px var(--border-mid);
+}
+
 /* ── Step bar ────────────────────────────────────────────────────────────── */
 .stepBar {
   display: flex;

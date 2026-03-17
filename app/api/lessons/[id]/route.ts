@@ -3,6 +3,22 @@ import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const [lesson] = await db.select().from(lessons).where(eq(lessons.id, id)).limit(1)
+  if (!lesson) return NextResponse.json({ error: 'lesson not found' }, { status: 404 })
+  return NextResponse.json({
+    id: lesson.id,
+    title: lesson.title,
+    slug: lesson.slug,
+    manifest: lesson.manifest,
+    generationStatus: lesson.generationStatus,
+    sourceVideoUrl: lesson.sourceVideoUrl,
+    createdAt: lesson.createdAt,
+    updatedAt: lesson.updatedAt,
+  })
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { manifest } = await req.json()

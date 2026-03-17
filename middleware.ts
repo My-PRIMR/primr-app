@@ -26,7 +26,12 @@ export async function middleware(req: NextRequest) {
 function redirectToLogin(req: NextRequest) {
   const authUrl = process.env.PRIMR_AUTH_URL ?? 'http://localhost:3001'
   const loginUrl = new URL(`${authUrl}/login`)
-  loginUrl.searchParams.set('callbackUrl', req.url)
+  // Behind NGINX, req.url has the internal host (localhost:3000).
+  // Reconstruct the public URL from forwarded headers instead.
+  const proto = req.headers.get('x-forwarded-proto') ?? req.nextUrl.protocol.replace(':', '')
+  const host = req.headers.get('host') ?? req.nextUrl.host
+  const callbackUrl = `${proto}://${host}${req.nextUrl.pathname}${req.nextUrl.search}`
+  loginUrl.searchParams.set('callbackUrl', callbackUrl)
   return NextResponse.redirect(loginUrl)
 }
 

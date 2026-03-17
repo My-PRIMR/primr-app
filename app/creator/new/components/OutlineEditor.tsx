@@ -9,6 +9,7 @@ const BLOCK_ICONS: Record<BlockType, string> = {
   quiz: '?',
   flashcard: '⟳',
   'fill-in-the-blank': '⎵',
+  media: '▶',
 }
 
 const BLOCK_LABELS: Record<BlockType, string> = {
@@ -18,6 +19,7 @@ const BLOCK_LABELS: Record<BlockType, string> = {
   quiz: 'Quiz',
   flashcard: 'Flashcards',
   'fill-in-the-blank': 'Fill in the Blank',
+  media: 'Media',
 }
 
 interface Props {

@@ -225,7 +225,7 @@ export default function NewLesson() {
                 {state.status === 'loading' ? 'Saving…' : 'Save lesson'}
               </button>
               {state.lessonId && (
-                <Link href={`/dashboard/preview/${state.lessonId}`} className={styles.viewLink}>
+                <Link href={`/creator/preview/${state.lessonId}`} className={styles.viewLink}>
                   View published →
                 </Link>
               )}

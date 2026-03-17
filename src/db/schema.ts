@@ -171,3 +171,15 @@ export const courseEnrollments = pgTable('course_enrollments', {
 
 export type CourseEnrollment = typeof courseEnrollments.$inferSelect
 export type NewCourseEnrollment = typeof courseEnrollments.$inferInsert
+
+// ── Course Invite Links ───────────────────────────────────────────────────────
+export const courseInviteLinks = pgTable('course_invite_links', {
+  id:        uuid('id').primaryKey().defaultRandom(),
+  courseId:  uuid('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }).unique(),
+  token:     text('token').notNull().unique(),
+  createdBy: uuid('created_by').notNull().references(() => users.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+export type CourseInviteLink = typeof courseInviteLinks.$inferSelect
+export type NewCourseInviteLink = typeof courseInviteLinks.$inferInsert

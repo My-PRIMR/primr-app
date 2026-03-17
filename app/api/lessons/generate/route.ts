@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
-import { auth } from '@/auth'
+import { getSession } from '@/session'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline } from '@/types/outline'
 
@@ -97,7 +97,7 @@ function slugify(text: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
+  const session = await getSession()
   const userId = session?.user?.id ?? null
 
   const body = await req.json()

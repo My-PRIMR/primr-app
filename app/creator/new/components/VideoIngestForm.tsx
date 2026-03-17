@@ -61,7 +61,7 @@ export default function VideoIngestForm() {
       return
     }
 
-    router.push(`/dashboard/video-status/${data.id}`)
+    router.push(`/creator/video-status/${data.id}`)
   }
 
   return (

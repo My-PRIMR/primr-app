@@ -244,7 +244,7 @@ export default function EditClient({ lessonId, manifest: initial }: { lessonId: 
           {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save'}
         </button>
         <div className={styles.navRight}>
-          <Link href={`/dashboard/preview/${lessonId}`} className={styles.navLink}>Preview →</Link>
+          <Link href={`/creator/preview/${lessonId}`} className={styles.navLink}>Preview →</Link>
           <Link href={`/learn/${lessonId}`} className={styles.navLink}>Take lesson →</Link>
         </div>
       </nav>

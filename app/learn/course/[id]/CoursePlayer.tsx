@@ -207,7 +207,7 @@ export default function CoursePlayer({ courseId, courseTitle, userId, tree, init
         <div className={styles.sidebarHeader}>
           <div className={styles.sidebarTop}>
             <span className={styles.wordmark}>Primr</span>
-            <Link href="/dashboard" className={styles.exitBtn} title="Back to dashboard">
+            <Link href="/creator" className={styles.exitBtn} title="Back to dashboard">
               ← Exit
             </Link>
           </div>
@@ -275,7 +275,7 @@ export default function CoursePlayer({ courseId, courseTitle, userId, tree, init
             <span className={styles.completionIcon}>🎓</span>
             <h1 className={styles.completionTitle}>Course complete!</h1>
             <p className={styles.completionSub}>You've completed all {totalCount} lessons.</p>
-            <Link href="/dashboard" className={styles.completionBtn}>Back to dashboard</Link>
+            <Link href="/creator" className={styles.completionBtn}>Back to dashboard</Link>
           </div>
         ) : currentLesson?.manifest ? (
           <div className={styles.lessonWrap}>

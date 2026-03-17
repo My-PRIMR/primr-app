@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
 import { courses, chapterLessons, courseChapters, courseSections } from '@/db/schema'
 import { eq, desc, sql, and } from 'drizzle-orm'
-import { auth } from '@/auth'
+import { getSession } from '@/session'
 
 function slugify(text: string): string {
   return text
@@ -15,7 +15,7 @@ function slugify(text: string): string {
 
 // GET /api/courses — list creator's courses with lesson counts
 export async function GET() {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const rows = await db
@@ -44,7 +44,7 @@ export async function GET() {
 
 // POST /api/courses — create empty course record
 export async function POST(req: NextRequest) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { title, description, isPublic } = await req.json()

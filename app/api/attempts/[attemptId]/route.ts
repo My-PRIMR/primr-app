@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/auth'
+import { getSession } from '@/session'
 import { db } from '@/db'
 import { lessonAttempts } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 
 // PATCH — complete an attempt with results
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ attemptId: string }> }) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

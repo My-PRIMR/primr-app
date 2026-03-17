@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
 import { courses, courseSections, courseChapters, chapterLessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { auth } from '@/auth'
+import { getSession } from '@/session'
 import { runCourseGeneration, type LessonGenInput } from '@/lib/course-gen'
 import type { CourseTree } from '@/types/course'
 
@@ -15,7 +15,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id: courseId } = await params

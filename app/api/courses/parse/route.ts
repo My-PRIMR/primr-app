@@ -5,7 +5,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { auth } from '@/auth'
+import { getSession } from '@/session'
 import type { ParsedCourseTree, CourseTree } from '@/types/course'
 
 const client = new Anthropic()
@@ -88,7 +88,7 @@ function sliceTextByMarkers(fullText: string, markers: string[]): string[] {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {

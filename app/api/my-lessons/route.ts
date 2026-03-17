@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/auth'
+import { getSession } from '@/session'
 import { db } from '@/db'
 import { lessonInvitations, lessons, lessonAttempts } from '@/db/schema'
-import { eq, and, desc, sql } from 'drizzle-orm'
+import { eq, and, desc, sql, inArray } from 'drizzle-orm'
 
 // GET — lessons the current user is invited to, with attempt stats
 export async function GET() {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.id || !session.user.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -40,7 +40,7 @@ export async function GET() {
     .from(lessonAttempts)
     .where(and(
       eq(lessonAttempts.userId, session.user.id),
-      sql`${lessonAttempts.lessonId} = ANY(${lessonIds})`,
+      inArray(lessonAttempts.lessonId, lessonIds),
     ))
     .groupBy(lessonAttempts.lessonId)
 

@@ -1,17 +1,18 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { auth } from '@/auth'
+import { getSession } from '@/session'
 import styles from './page.module.css'
 
 export default async function Home() {
-  const session = await auth()
-  if (session) redirect('/dashboard')
+  const session = await getSession()
+  if (session) redirect('/creator')
+  redirect(process.env.PRIMR_AUTH_URL ?? 'http://localhost:3001')
   return (
     <main className={styles.main}>
       <nav className={styles.nav}>
         <span className={styles.wordmark}>Primr</span>
         <div className={styles.navLinks}>
-          <Link href="/dashboard/new" className={styles.navCta}>Start creating →</Link>
+          <Link href="/creator/new" className={styles.navCta}>Start creating →</Link>
         </div>
       </nav>
 
@@ -26,7 +27,7 @@ export default async function Home() {
           No design skills required.
         </p>
         <div className={styles.heroCtas}>
-          <Link href="/dashboard/new" className={styles.ctaPrimary}>
+          <Link href="/creator/new" className={styles.ctaPrimary}>
             Create a lesson
           </Link>
           <Link href="/gus/how-to-create-a-primr-lesson" className={styles.ctaSecondary}>

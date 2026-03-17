@@ -18,7 +18,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
   return (
     <main className={styles.main}>
       <nav className={styles.nav}>
-        <Link href="/dashboard" className={styles.wordmark}>Primr</Link>
+        <Link href="/creator" className={styles.wordmark}>Primr</Link>
       </nav>
       <div className={styles.content}>
         <LessonView manifest={lesson.manifest} />

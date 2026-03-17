@@ -1,9 +1,10 @@
-import { auth } from '@/auth'
+import { getSession } from '@/session'
 import { redirect, notFound } from 'next/navigation'
 import { db } from '@/db'
 import { courses, courseSections, courseChapters, chapterLessons, courseEnrollments, lessons } from '@/db/schema'
 import { eq, asc, and } from 'drizzle-orm'
 import CoursePlayer from './CoursePlayer'
+import LearnHeader from '../../LearnHeader'
 import type { LessonManifest } from '@primr/components'
 
 export const dynamic = 'force-dynamic'
@@ -15,7 +16,7 @@ export default async function CourseLearnPage({
   params: Promise<{ id: string }>
   searchParams: Promise<{ lesson?: string }>
 }) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.id || !session.user.email) redirect('/login')
 
   const { id: courseId } = await params
@@ -36,7 +37,7 @@ export default async function CourseLearnPage({
         eq(courseEnrollments.email, userEmail),
       ),
     })
-    if (!enrollment) redirect('/dashboard')
+    if (!enrollment) redirect('/creator')
   }
 
   // Load full course tree
@@ -113,12 +114,15 @@ export default async function CourseLearnPage({
   }
 
   return (
-    <CoursePlayer
-      courseId={courseId}
-      courseTitle={course.title}
-      userId={userId}
-      tree={tree}
-      initialChapterLessonId={currentChapterLessonId || null}
-    />
+    <>
+      <LearnHeader userName={session.user.name} userEmail={session.user.email} role={session.user.role} />
+      <CoursePlayer
+        courseId={courseId}
+        courseTitle={course.title}
+        userId={userId}
+        tree={tree}
+        initialChapterLessonId={currentChapterLessonId || null}
+      />
+    </>
   )
 }

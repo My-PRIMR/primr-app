@@ -46,7 +46,7 @@ export default function VideoStatusPage() {
 
       if (data.generationStatus === 'done') {
         stopPolling()
-        router.push(`/dashboard/edit/${id}`)
+        router.push(`/creator/edit/${id}`)
       } else if (data.generationStatus === 'failed') {
         stopPolling()
       }
@@ -70,7 +70,7 @@ export default function VideoStatusPage() {
   return (
     <main className={styles.main}>
       <nav className={styles.nav}>
-        <Link href="/dashboard/new" className={styles.wordmark}>Primr</Link>
+        <Link href="/creator/new" className={styles.wordmark}>Primr</Link>
       </nav>
 
       <div className={styles.content}>
@@ -134,7 +134,7 @@ export default function VideoStatusPage() {
               <p className={styles.failedHint}>
                 Something went wrong during transcription or lesson generation.
               </p>
-              <Link href="/dashboard/new?tab=video" className={styles.retryLink}>
+              <Link href="/creator/new?tab=video" className={styles.retryLink}>
                 ← Try again
               </Link>
             </div>

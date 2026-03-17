@@ -2,9 +2,10 @@ import { notFound } from 'next/navigation'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { auth } from '@/auth'
+import { getSession } from '@/session'
 import { canAccessLesson } from '@/lib/lesson-access'
 import LessonPlayer from './LessonPlayer'
+import LearnHeader from '../LearnHeader'
 
 export default async function LearnPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -15,7 +16,7 @@ export default async function LearnPage({ params }: { params: Promise<{ id: stri
 
   if (!lesson) notFound()
 
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.id || !session.user.email) notFound()
 
   const hasAccess = await canAccessLesson(id, session.user.id, session.user.email)
@@ -28,5 +29,10 @@ export default async function LearnPage({ params }: { params: Promise<{ id: stri
     )
   }
 
-  return <LessonPlayer lessonId={lesson.id} manifest={lesson.manifest} />
+  return (
+    <>
+      <LearnHeader userName={session.user.name} userEmail={session.user.email} role={session.user.role} />
+      <LessonPlayer lessonId={lesson.id} manifest={lesson.manifest} />
+    </>
+  )
 }

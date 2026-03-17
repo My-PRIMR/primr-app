@@ -327,7 +327,7 @@ export default function CourseWizard() {
   return (
     <div className={styles.wrapper}>
       <nav className={styles.nav}>
-        <Link href="/dashboard" className={styles.wordmark}>Primr</Link>
+        <Link href="/creator" className={styles.wordmark}>Primr</Link>
         <span className={styles.navTitle}>New Course</span>
       </nav>
 
@@ -586,7 +586,7 @@ export default function CourseWizard() {
               <Link href={`/learn/course/${state.courseId}`} className={styles.primaryBtn}>
                 Preview course
               </Link>
-              <Link href="/dashboard" className={styles.secondaryBtn}>
+              <Link href="/creator" className={styles.secondaryBtn}>
                 Go to dashboard
               </Link>
             </div>

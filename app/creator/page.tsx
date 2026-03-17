@@ -1,21 +1,23 @@
 import Link from 'next/link'
+import { InvitePanel } from './InvitePanel'
+import { UserMenu } from '../components/UserMenu'
 import { db } from '@/db'
 import {
   lessons, lessonInvitations, lessonAttempts,
   courses, courseSections, courseChapters, chapterLessons, courseEnrollments,
 } from '@/db/schema'
-import { desc, eq, and, sql, inArray } from 'drizzle-orm'
-import { auth } from '@/auth'
+import { desc, eq, and, sql, inArray, max } from 'drizzle-orm'
+import { getSession } from '@/session'
 import { redirect } from 'next/navigation'
 import styles from './page.module.css'
 
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.id || !session.user.email) redirect('/login')
 
-  const role = (session.user as { role?: string }).role ?? 'learner'
+  const role = session.user.role ?? 'learner'
   const isCreator = role === 'creator' || role === 'administrator'
   const email = session.user.email.toLowerCase()
   const userId = session.user.id
@@ -120,7 +122,7 @@ export default async function DashboardPage() {
       .from(lessonAttempts)
       .where(and(
         eq(lessonAttempts.userId, userId),
-        sql`${lessonAttempts.lessonId} = ANY(${lessonIds})`,
+        inArray(lessonAttempts.lessonId, lessonIds),
       ))
       .groupBy(lessonAttempts.lessonId)
     statsMap = new Map(stats.map(s => [s.lessonId, s]))
@@ -140,18 +142,36 @@ export default async function DashboardPage() {
     return `${doneCount} lessons · ${completedCount} done`
   }
 
-  const hasAnything = isCreator || enrolledCourses.length > 0 || invitedLessons.length > 0
+  // ── Lesson history: all lessons the user has attempted ──────────────────────
+  const lessonHistory = await db
+    .select({
+      id: lessons.id,
+      title: lessons.title,
+      attemptCount: sql<number>`count(${lessonAttempts.id})::int`,
+      bestScore: sql<number | null>`max(${lessonAttempts.score})`,
+      lastAttempt: sql<string | null>`max(${lessonAttempts.startedAt})::text`,
+    })
+    .from(lessonAttempts)
+    .innerJoin(lessons, eq(lessons.id, lessonAttempts.lessonId))
+    .where(eq(lessonAttempts.userId, userId))
+    .groupBy(lessons.id, lessons.title)
+    .orderBy(desc(max(lessonAttempts.startedAt)))
+
+  const hasAnything = isCreator || enrolledCourses.length > 0 || invitedLessons.length > 0 || lessonHistory.length > 0
 
   return (
     <main className={styles.main}>
       <nav className={styles.nav}>
         <Link href="/" className={styles.wordmark}>Primr</Link>
-        {isCreator && (
-          <div className={styles.navActions}>
-            <Link href="/dashboard/courses/new" className={styles.newCourseBtn}>+ New course</Link>
-            <Link href="/dashboard/new" className={styles.newBtn}>+ New lesson</Link>
-          </div>
-        )}
+        <div className={styles.navActions}>
+          {isCreator && (
+            <>
+              <Link href="/creator/courses/new" className={styles.newCourseBtn}>+ New course</Link>
+              <Link href="/creator/new" className={styles.newBtn}>+ New lesson</Link>
+            </>
+          )}
+          <UserMenu userName={session.user.name} userEmail={session.user.email} role={session.user.role} />
+        </div>
       </nav>
 
       <div className={styles.content}>
@@ -162,7 +182,7 @@ export default async function DashboardPage() {
             <h1 className={styles.heading}>Your courses</h1>
             {createdCourses.length === 0 ? (
               <p className={styles.empty}>
-                No courses yet. <Link href="/dashboard/courses/new" className={styles.link}>Create your first course →</Link>
+                No courses yet. <Link href="/creator/courses/new" className={styles.link}>Create your first course →</Link>
               </p>
             ) : (
               <div className={styles.list}>
@@ -180,6 +200,7 @@ export default async function DashboardPage() {
                       <Link href={`/learn/course/${course.id}`} className={styles.previewLink}>
                         Preview as learner
                       </Link>
+                      <InvitePanel type="course" id={course.id} />
                     </div>
                   </div>
                 ))}
@@ -196,7 +217,7 @@ export default async function DashboardPage() {
             </h1>
             {createdLessons.length === 0 ? (
               <p className={styles.empty}>
-                No lessons yet. <Link href="/dashboard/new" className={styles.link}>Create your first one →</Link>
+                No lessons yet. <Link href="/creator/new" className={styles.link}>Create your first one →</Link>
               </p>
             ) : (
               <div className={styles.list}>
@@ -209,9 +230,10 @@ export default async function DashboardPage() {
                       </p>
                     </div>
                     <div className={styles.cardActions}>
-                      <Link href={`/dashboard/edit/${lesson.id}`} className={styles.editLink}>Edit</Link>
-                      <Link href={`/dashboard/preview/${lesson.id}`} className={styles.previewLink}>Preview</Link>
+                      <Link href={`/creator/edit/${lesson.id}`} className={styles.editLink}>Edit</Link>
+                      <Link href={`/creator/preview/${lesson.id}`} className={styles.previewLink}>Preview</Link>
                       <Link href={`/learn/${lesson.id}`} className={styles.previewLink}>Take lesson</Link>
+                      <InvitePanel type="lesson" id={lesson.id} />
                     </div>
                   </div>
                 ))}
@@ -273,6 +295,32 @@ export default async function DashboardPage() {
                   </div>
                 )
               })}
+            </div>
+          </>
+        )}
+
+        {/* ── Lesson history ── */}
+        {lessonHistory.length > 0 && (
+          <>
+            <h1 className={styles.heading} style={{ marginTop: '2.5rem' }}>
+              Lessons taken
+            </h1>
+            <div className={styles.list}>
+              {lessonHistory.map(lesson => (
+                <div key={lesson.id} className={styles.card}>
+                  <div className={styles.cardBody}>
+                    <h2 className={styles.cardTitle}>{lesson.title}</h2>
+                    <p className={styles.cardMeta}>
+                      {lesson.attemptCount} attempt{lesson.attemptCount !== 1 ? 's' : ''}
+                      {lesson.bestScore != null ? ` · Best: ${Math.round(lesson.bestScore * 100)}%` : ''}
+                      {lesson.lastAttempt ? ` · Last: ${new Date(lesson.lastAttempt).toLocaleDateString()}` : ''}
+                    </p>
+                  </div>
+                  <div className={styles.cardActions}>
+                    <Link href={`/learn/${lesson.id}`} className={styles.previewLink}>Retake</Link>
+                  </div>
+                </div>
+              ))}
             </div>
           </>
         )}

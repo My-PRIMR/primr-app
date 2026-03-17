@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
-import { auth } from '@/auth'
+import { getSession } from '@/session'
 import { runVideoIngestion } from '@/lib/video-ingest'
 import type { LessonManifest } from '@primr/components'
 
@@ -28,7 +28,7 @@ function slugify(text: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
+  const session = await getSession()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

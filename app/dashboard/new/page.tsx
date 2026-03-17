@@ -2,9 +2,10 @@
 
 import { useReducer, useState } from 'react'
 import Link from 'next/link'
+import VideoIngestForm from './components/VideoIngestForm'
 import '@primr/components/dist/style.css'
 import {
-  HeroCard, NarrativeBlock, StepNavigator, Quiz, FlipCardDeck, FillInTheBlank,
+  HeroCard, NarrativeBlock, StepNavigator, Quiz, FlipCardDeck, FillInTheBlank, MediaBlock,
 } from '@primr/components'
 import type { WizardState, WizardAction, LessonOutline, BlockConfig } from '@/types/outline'
 
@@ -16,6 +17,7 @@ const BLOCK_COMPONENTS: Record<string, React.ComponentType<any>> = {
   quiz: Quiz,
   flashcard: FlipCardDeck,
   'fill-in-the-blank': FillInTheBlank,
+  media: MediaBlock,
 }
 import StepIndicator from './components/StepIndicator'
 import Step1Form from './components/Step1Form'
@@ -29,6 +31,8 @@ const initialState: WizardState = {
   topic: '',
   audience: '',
   level: 'beginner',
+  documentText: '',
+  documentName: '',
   outline: null,
   lessonId: null,
   manifest: null,
@@ -61,9 +65,17 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
   }
 }
 
+type Mode = 'topic' | 'video'
+
 export default function NewLesson() {
+  const [mode, setMode] = useState<Mode>('topic')
   const [state, dispatch] = useReducer(reducer, initialState)
   const [editingBlock, setEditingBlock] = useState<number | null>(null)
+
+  function switchMode(next: Mode) {
+    setMode(next)
+    dispatch({ type: 'SET_STEP', step: 1 })
+  }
 
   async function generateOutline() {
     dispatch({ type: 'SET_STATUS', status: 'loading' })
@@ -77,6 +89,7 @@ export default function NewLesson() {
         topic: state.topic,
         audience: state.audience,
         level: state.level,
+        documentText: state.documentText,
       }),
     })
 
@@ -99,7 +112,7 @@ export default function NewLesson() {
     const res = await fetch('/api/lessons/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ outline: state.outline }),
+      body: JSON.stringify({ outline: state.outline, documentText: state.documentText, topic: state.topic }),
     })
 
     if (!res.ok) {
@@ -141,13 +154,33 @@ export default function NewLesson() {
         <Link href="/" className={styles.wordmark}>Primr</Link>
       </nav>
 
-      <div className={styles.stepBar}>
-        <StepIndicator current={state.step} />
+      <div className={styles.tabBar}>
+        <button
+          className={[styles.tab, mode === 'topic' ? styles.tabActive : ''].join(' ')}
+          onClick={() => switchMode('topic')}
+        >
+          Topic / Document
+        </button>
+        <button
+          className={[styles.tab, mode === 'video' ? styles.tabActive : ''].join(' ')}
+          onClick={() => switchMode('video')}
+        >
+          Video
+        </button>
       </div>
 
+      {mode === 'topic' && (
+        <div className={styles.stepBar}>
+          <StepIndicator current={state.step} />
+        </div>
+      )}
+
       <div className={styles.content}>
+        {/* Video ingestion mode */}
+        {mode === 'video' && <VideoIngestForm />}
+
         {/* Step 1: Details form */}
-        {state.step === 1 && (
+        {mode === 'topic' && state.step === 1 && (
           <Step1Form
             state={state}
             onField={(field, value) => dispatch({ type: 'SET_FIELD', field: field as keyof WizardState, value })}
@@ -156,7 +189,7 @@ export default function NewLesson() {
         )}
 
         {/* Step 2: Loading outline */}
-        {state.step === 2 && (
+        {mode === 'topic' && state.step === 2 && (
           <div className={styles.loading}>
             <div className={styles.spinner} />
             <p className={styles.loadingText}>Generating outline…</p>
@@ -165,7 +198,7 @@ export default function NewLesson() {
         )}
 
         {/* Step 3: Outline editor */}
-        {state.step === 3 && state.outline && (
+        {mode === 'topic' && state.step === 3 && state.outline && (
           <OutlineEditor
             outline={state.outline}
             onUpdateBlocks={blocks => dispatch({ type: 'UPDATE_OUTLINE_BLOCKS', blocks })}
@@ -176,7 +209,7 @@ export default function NewLesson() {
         )}
 
         {/* Step 4: Loading full generation */}
-        {state.step === 4 && (
+        {mode === 'topic' && state.step === 4 && (
           <div className={styles.loading}>
             <div className={styles.spinner} />
             <p className={styles.loadingText}>Building your lesson…</p>
@@ -185,7 +218,7 @@ export default function NewLesson() {
         )}
 
         {/* Step 5: Preview + edit */}
-        {state.step === 5 && state.manifest && (
+        {mode === 'topic' && state.step === 5 && state.manifest && (
           <div className={styles.preview}>
             <div className={styles.previewActions}>
               <button className={styles.saveBtn} onClick={saveLesson} disabled={state.status === 'loading'}>

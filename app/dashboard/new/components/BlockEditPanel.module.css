@@ -39,6 +39,12 @@
   border-radius: 4px;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .closeBtn {
   font-size: 20px;
   color: var(--ink-muted);

@@ -1,6 +1,6 @@
 import type { LessonManifest, BlockConfig } from '@primr/components'
 
-export type BlockType = 'hero' | 'narrative' | 'step-navigator' | 'quiz' | 'flashcard' | 'fill-in-the-blank'
+export type BlockType = 'hero' | 'narrative' | 'step-navigator' | 'quiz' | 'flashcard' | 'fill-in-the-blank' | 'media'
 
 export interface OutlineBlock {
   id: string
@@ -26,6 +26,8 @@ export interface WizardState {
   topic: string
   audience: string
   level: 'beginner' | 'intermediate' | 'advanced'
+  documentText: string
+  documentName: string
   // Step 2-3 outline
   outline: LessonOutline | null
   // Step 4-5 result

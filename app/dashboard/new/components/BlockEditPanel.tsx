@@ -10,6 +10,7 @@ interface Props {
   lessonTitle: string
   onUpdate: (index: number, block: BlockConfig) => void
   onClose: () => void
+  headerAction?: React.ReactNode
 }
 
 /** Render labeled form fields for a block's props based on its type */
@@ -200,7 +201,7 @@ function formatLabel(key: string): string {
     .trim()
 }
 
-export default function BlockEditPanel({ block, blockIndex, onUpdate, onClose }: Props) {
+export default function BlockEditPanel({ block, blockIndex, onUpdate, onClose, headerAction }: Props) {
   const [localProps, setLocalProps] = useState<Record<string, unknown>>(block.props as Record<string, unknown>)
   const [jsonOpen, setJsonOpen] = useState(false)
 
@@ -216,7 +217,10 @@ export default function BlockEditPanel({ block, blockIndex, onUpdate, onClose }:
         <h3 className={styles.title}>
           Edit: <span className={styles.blockType}>{block.type}</span>
         </h3>
-        <button className={styles.closeBtn} onClick={onClose}>×</button>
+        <div className={styles.headerActions}>
+          {headerAction}
+          <button className={styles.closeBtn} onClick={onClose}>×</button>
+        </div>
       </div>
 
       <div className={styles.scrollArea}>

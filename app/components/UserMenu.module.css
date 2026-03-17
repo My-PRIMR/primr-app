@@ -1,0 +1,151 @@
+.wrapper {
+  position: relative;
+  --ink:         #0F1117;
+  --ink-soft:    #4A4D5E;
+  --ink-muted:   #8A8FA8;
+  --surface:     #FFFFFF;
+  --surface-alt: #F7F6F3;
+  --border:      rgba(15,17,23,0.10);
+  --border-mid:  rgba(15,17,23,0.18);
+  --accent:      #6B5CE7;
+  --accent-soft: #EAE7FB;
+}
+
+@media (prefers-color-scheme: dark) {
+  .wrapper {
+    --ink:         #EDEEF5;
+    --ink-soft:    #B0B3C8;
+    --ink-muted:   #6B6E85;
+    --surface:     #1A1C28;
+    --surface-alt: #141520;
+    --border:      rgba(255,255,255,0.08);
+    --border-mid:  rgba(255,255,255,0.14);
+    --accent-soft: rgba(107,92,231,0.18);
+  }
+}
+
+/* ── Avatar button ── */
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity 150ms;
+  letter-spacing: 0;
+}
+.avatar:hover { opacity: 0.88; }
+
+/* ── Dropdown panel ── */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 200;
+  min-width: 220px;
+  background: var(--surface);
+  border: 1.5px solid var(--border-mid);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+/* ── Identity section ── */
+.identity {
+  padding: 14px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.roleBadge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+  width: fit-content;
+}
+
+/* ── Divider ── */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0;
+}
+
+/* ── Become a creator ── */
+.upgradeItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 120ms;
+  background: var(--accent-soft);
+  border: none;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+}
+.upgradeItem:hover { background: color-mix(in srgb, var(--accent-soft) 80%, var(--accent) 20%); }
+
+.upgradeIcon {
+  font-size: 16px;
+  color: var(--accent);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.upgradeTitle {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.upgradeSub {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  margin-top: 1px;
+}
+
+/* ── Log out ── */
+.logoutItem {
+  display: block;
+  padding: 11px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+}
+.logoutItem:hover {
+  background: var(--surface-alt);
+  color: var(--ink);
+}

@@ -117,14 +117,17 @@ export async function POST(req: NextRequest) {
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
       system: PARSE_SYSTEM_PROMPT,
-      messages: [{
-        role: 'user',
-        content: `Document excerpt:\n"""\n${excerpt}\n"""\n\nAudience: ${audience}\nLevel: ${level}`,
-      }],
+      messages: [
+        {
+          role: 'user',
+          content: `Document excerpt:\n"""\n${excerpt}\n"""\n\nAudience: ${audience}\nLevel: ${level}`,
+        },
+        { role: 'assistant', content: '{' },
+      ],
     })
     console.log(`[courses/parse] Claude responded in ${Date.now() - t0}ms`)
 
-    const raw = message.content[0].type === 'text' ? message.content[0].text : ''
+    const raw = message.content[0].type === 'text' ? '{' + message.content[0].text : ''
     const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
 
     let parsed: ParsedCourseTree

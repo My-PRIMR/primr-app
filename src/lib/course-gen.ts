@@ -55,10 +55,13 @@ async function generateOutline(params: {
     model: 'claude-sonnet-4-6',
     max_tokens: 2048,
     system: OUTLINE_SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: userContent }],
+    messages: [
+      { role: 'user', content: userContent },
+      { role: 'assistant', content: '{' },
+    ],
   })
 
-  const raw = message.content[0].type === 'text' ? message.content[0].text : ''
+  const raw = message.content[0].type === 'text' ? '{' + message.content[0].text : ''
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
   return JSON.parse(cleaned) as LessonOutline
 }
@@ -149,10 +152,13 @@ async function generateLesson(params: {
     model: 'claude-sonnet-4-6',
     max_tokens: 16384,
     system: OUTLINE_LESSON_SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: userMessage }],
+    messages: [
+      { role: 'user', content: userMessage },
+      { role: 'assistant', content: '{' },
+    ],
   })
 
-  const raw = message.content[0].type === 'text' ? message.content[0].text : ''
+  const raw = message.content[0].type === 'text' ? '{' + message.content[0].text : ''
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
   const manifest: LessonManifest = JSON.parse(cleaned)
 

@@ -274,9 +274,12 @@ export async function runVideoIngestion(params: {
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
       system: OUTLINE_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: outlineUserContent }],
+      messages: [
+        { role: 'user', content: outlineUserContent },
+        { role: 'assistant', content: '{' },
+      ],
     })
-    const outlineRaw = outlineMsg.content[0].type === 'text' ? outlineMsg.content[0].text : ''
+    const outlineRaw = outlineMsg.content[0].type === 'text' ? '{' + outlineMsg.content[0].text : ''
     const outline = JSON.parse(outlineRaw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim())
     console.log(`[video-ingest] Outline: ${outline.blocks.length} blocks`)
 
@@ -310,9 +313,12 @@ export async function runVideoIngestion(params: {
       model: 'claude-sonnet-4-6',
       max_tokens: 16384,
       system: LESSON_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: lessonUserContent }],
+      messages: [
+        { role: 'user', content: lessonUserContent },
+        { role: 'assistant', content: '{' },
+      ],
     })
-    const lessonRaw = lessonMsg.content[0].type === 'text' ? lessonMsg.content[0].text : ''
+    const lessonRaw = lessonMsg.content[0].type === 'text' ? '{' + lessonMsg.content[0].text : ''
     const manifest: LessonManifest = JSON.parse(
       lessonRaw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
     )

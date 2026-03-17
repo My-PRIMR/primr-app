@@ -126,12 +126,15 @@ export async function POST(req: NextRequest) {
     model: 'claude-sonnet-4-6',
     max_tokens: 16384,
     system: systemPrompt,
-    messages: [{ role: 'user', content: userMessage }],
+    messages: [
+      { role: 'user', content: userMessage },
+      { role: 'assistant', content: '{' },
+    ],
   })
 
   console.log(`[generate] responded in ${Date.now() - t0}ms, usage: ${JSON.stringify(message.usage)}`)
 
-  const raw = message.content[0].type === 'text' ? message.content[0].text : ''
+  const raw = message.content[0].type === 'text' ? '{' + message.content[0].text : ''
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
 
   let manifest: LessonManifest

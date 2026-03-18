@@ -40,12 +40,14 @@ export async function issueSession(payload: {
     .setExpirationTime(`${EXPIRES_IN}s`)
     .sign(getSecret())
   const cookieStore = await cookies()
+  const domain = process.env.COOKIE_DOMAIN
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: 'lax',
     path: '/',
     maxAge: EXPIRES_IN,
     secure: process.env.NODE_ENV === 'production',
+    ...(domain ? { domain } : {}),
   })
 }
 

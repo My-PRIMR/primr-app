@@ -9,7 +9,7 @@ interface LearnHeaderProps {
 }
 
 export default function LearnHeader({ userName, userEmail, role }: LearnHeaderProps) {
-  const dashboardHref = role === 'creator' || role === 'administrator' ? '/creator' : '/my-primr'
+  const dashboardHref = role === 'creator' || role === 'lnd_manager' || role === 'org_admin' ? '/creator' : '/my-primr'
 
   return (
     <header className={styles.header}>

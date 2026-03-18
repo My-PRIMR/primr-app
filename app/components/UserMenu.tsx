@@ -12,10 +12,11 @@ interface UserMenuProps {
 
 function roleLabel(role: string) {
   switch (role) {
-    case 'creator':       return 'Creator'
-    case 'administrator': return 'Administrator'
-    case 'learner':       return 'Learner'
-    default:              return role
+    case 'creator':     return 'Creator'
+    case 'lnd_manager': return 'L&D Manager'
+    case 'org_admin':   return 'Org Admin'
+    case 'learner':     return 'Learner'
+    default:            return role
   }
 }
 

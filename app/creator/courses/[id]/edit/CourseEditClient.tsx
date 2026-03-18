@@ -29,6 +29,19 @@ function statusIcon(status: string): StatusIcon {
 }
 
 export default function CourseEditClient({ course }: { course: FullCourseTree }) {
+  // ── Course title editing ───────────────────────────────────────────────────
+  const [courseTitle, setCourseTitle] = useState(course.title)
+
+  async function saveCourseTitle(title: string) {
+    const trimmed = title.trim()
+    if (!trimmed || trimmed === course.title) return
+    await fetch(`/api/courses/${course.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: trimmed }),
+    })
+  }
+
   // ── Sidebar state ──────────────────────────────────────────────────────────
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
   const [collapsedChapters, setCollapsedChapters] = useState<Set<string>>(new Set())
@@ -163,7 +176,14 @@ export default function CourseEditClient({ course }: { course: FullCourseTree })
       <nav className={styles.nav}>
         <Link href="/creator" className={styles.wordmark}>Primr</Link>
         <span className={styles.navSep} />
-        <Link href="/creator" className={styles.navCrumb}>{course.title}</Link>
+        <input
+          className={styles.navTitleInput}
+          value={courseTitle}
+          onChange={e => setCourseTitle(e.target.value)}
+          onBlur={e => saveCourseTitle(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && e.currentTarget.blur()}
+          aria-label="Course title"
+        />
         {selectedLessonTitle && (
           <>
             <span className={styles.navCrumbSep}>›</span>

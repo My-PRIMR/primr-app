@@ -175,6 +175,16 @@ export default function LessonBlockEditor({
       {/* ── Flex content: block area + optional docked panel ── */}
       <div className={styles.editorWrap}>
         <div className={styles.blockArea}>
+          <div className={styles.blockContent}>
+            {/* Lesson title */}
+            <input
+              className={styles.lessonTitleInput}
+              value={manifest.title}
+              onChange={e => { setManifest({ ...manifest, title: e.target.value }); setSaved(false) }}
+              placeholder="Lesson title"
+              aria-label="Lesson title"
+            />
+          </div>
           {block && (
             <div className={styles.blockContent}>
               {/* Block toolbar */}

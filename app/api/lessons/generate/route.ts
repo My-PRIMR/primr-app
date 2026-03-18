@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { extractJSON } from '@/lib/extract-json'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { getSession } from '@/session'
@@ -132,11 +133,10 @@ export async function POST(req: NextRequest) {
   console.log(`[generate] responded in ${Date.now() - t0}ms, usage: ${JSON.stringify(message.usage)}`)
 
   const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
 
   let manifest: LessonManifest
   try {
-    manifest = JSON.parse(cleaned)
+    manifest = JSON.parse(extractJSON(raw))
     console.log(`[generate] parsed manifest: id=${manifest.id}, blocks=${manifest.blocks.length}`)
   } catch (err) {
     console.error(`[generate] JSON parse failed:`, err)

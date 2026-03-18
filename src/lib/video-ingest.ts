@@ -5,6 +5,7 @@
  * quizzes consolidated at the end.
  */
 import Anthropic from '@anthropic-ai/sdk'
+import { extractJSON } from './extract-json'
 import { AssemblyAI } from 'assemblyai'
 import { exec } from 'child_process'
 import { promisify } from 'util'
@@ -277,7 +278,7 @@ export async function runVideoIngestion(params: {
       messages: [{ role: 'user', content: outlineUserContent + '\n\nRespond with JSON only.' }],
     })
     const outlineRaw = outlineMsg.content[0].type === 'text' ? outlineMsg.content[0].text : ''
-    const outline = JSON.parse(outlineRaw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim())
+    const outline = JSON.parse(extractJSON(outlineRaw))
     console.log(`[video-ingest] Outline: ${outline.blocks.length} blocks`)
 
     // ── Step 4: Inject chapter timestamps into media blocks ───────────────────
@@ -313,9 +314,7 @@ export async function runVideoIngestion(params: {
       messages: [{ role: 'user', content: lessonUserContent + '\n\nRespond with JSON only.' }],
     })
     const lessonRaw = lessonMsg.content[0].type === 'text' ? lessonMsg.content[0].text : ''
-    const manifest: LessonManifest = JSON.parse(
-      lessonRaw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
-    )
+    const manifest: LessonManifest = JSON.parse(extractJSON(lessonRaw))
 
     const slug = `${slugify(manifest.slug || manifest.title)}-${Math.random().toString(36).slice(2, 7)}`
     manifest.slug = slug

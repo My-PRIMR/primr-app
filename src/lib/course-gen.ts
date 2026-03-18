@@ -3,6 +3,7 @@
  * Runs sequentially through all chapter_lessons, generating outline + lesson for each.
  */
 import Anthropic from '@anthropic-ai/sdk'
+import { extractJSON } from './extract-json'
 import { db } from '@/db'
 import { courses, chapterLessons, lessons } from '@/db/schema'
 import { eq, and, sql } from 'drizzle-orm'
@@ -61,8 +62,7 @@ async function generateOutline(params: {
   })
 
   const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
-  return JSON.parse(cleaned) as LessonOutline
+  return JSON.parse(extractJSON(raw)) as LessonOutline
 }
 
 // ── Lesson generation ─────────────────────────────────────────────────────────
@@ -158,8 +158,7 @@ async function generateLesson(params: {
   })
 
   const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
-  const manifest: LessonManifest = JSON.parse(cleaned)
+  const manifest: LessonManifest = JSON.parse(extractJSON(raw))
 
   const slug = `${slugify(manifest.slug || manifest.title)}-${Math.random().toString(36).slice(2, 7)}`
   manifest.slug = slug

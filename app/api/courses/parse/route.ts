@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { getSession } from '@/session'
 import type { ParsedCourseTree, CourseTree } from '@/types/course'
+import { extractJSON } from '@/lib/extract-json'
 
 const client = new Anthropic()
 
@@ -128,7 +129,7 @@ export async function POST(req: NextRequest) {
     console.log(`[courses/parse] Claude responded in ${Date.now() - t0}ms`)
 
     const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
+    const cleaned = extractJSON(raw)
 
     let parsed: ParsedCourseTree
     try {

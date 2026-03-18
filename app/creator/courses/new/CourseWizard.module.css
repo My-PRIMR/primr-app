@@ -206,6 +206,11 @@
   background: var(--accent-soft);
 }
 
+.uploadBoxStaged {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .uploadIcon {
   font-size: 2rem;
   display: block;

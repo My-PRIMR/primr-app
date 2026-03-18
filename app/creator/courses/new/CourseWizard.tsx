@@ -18,6 +18,8 @@ interface WizardState {
   audience: string
   level: 'beginner' | 'intermediate' | 'advanced'
   focus: string
+  // Staged file (selected but not yet uploaded)
+  stagedFile: File | null
   // Step 3: tree + exclusions
   courseTree: CourseTree | null
   excludedLessons: Set<string>  // localIds of lessons the creator wants to skip
@@ -36,6 +38,7 @@ const initialState: WizardState = {
   audience: 'General',
   level: 'beginner',
   focus: '',
+  stagedFile: null,
   courseTree: null,
   excludedLessons: new Set(),
   courseId: null,
@@ -89,14 +92,20 @@ export default function CourseWizard() {
 
   // ── Step 1: Upload or manual ──────────────────────────────────────────────
 
-  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
+  function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null
+    set({ stagedFile: file, errorMessage: '' })
+    // Reset input so the same file can be re-selected after clearing
+    e.target.value = ''
+  }
+
+  async function handleAnalyzeDocument() {
+    if (!state.stagedFile) return
 
     set({ status: 'loading', step: 2, errorMessage: '' })
 
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append('file', state.stagedFile)
     formData.append('audience', state.audience)
     formData.append('level', state.level)
     if (state.focus.trim()) formData.append('focus', state.focus.trim())
@@ -115,7 +124,7 @@ export default function CourseWizard() {
       if (state.title.trim()) tree.title = state.title.trim()
       if (state.description.trim()) tree.description = state.description.trim()
 
-      set({ status: 'idle', step: 3, courseTree: tree })
+      set({ status: 'idle', step: 3, courseTree: tree, stagedFile: null })
     } catch {
       set({ status: 'error', step: 1, errorMessage: 'Network error. Please try again.' })
     }
@@ -433,27 +442,45 @@ export default function CourseWizard() {
                   type="file"
                   accept=".pdf,.docx,.txt,.md"
                   className={styles.fileInput}
-                  onChange={handleFileUpload}
+                  onChange={handleFilePick}
                 />
-                <div className={styles.uploadBox}>
-                  <span className={styles.uploadIcon}>📄</span>
-                  <span className={styles.uploadText}>Upload document to auto-generate structure</span>
-                  <span className={styles.uploadHint}>PDF, DOCX, TXT, or MD</span>
+                <div className={`${styles.uploadBox} ${state.stagedFile ? styles.uploadBoxStaged : ''}`}>
+                  <span className={styles.uploadIcon}>{state.stagedFile ? '📎' : '📄'}</span>
+                  <span className={styles.uploadText}>
+                    {state.stagedFile ? state.stagedFile.name : 'Upload document to auto-generate structure'}
+                  </span>
+                  <span className={styles.uploadHint}>
+                    {state.stagedFile ? 'Click to choose a different file' : 'PDF, DOCX, TXT, or MD'}
+                  </span>
                 </div>
               </label>
             </div>
 
-            <div className={styles.divider}>
-              <span>or</span>
-            </div>
-
-            <button
-              className={styles.secondaryBtn}
-              onClick={handleManualContinue}
-              disabled={!state.title.trim()}
-            >
-              Continue without document →
-            </button>
+            {state.stagedFile ? (
+              <div className={styles.actions}>
+                <button className={styles.secondaryBtn} onClick={() => set({ stagedFile: null })}>
+                  Clear file
+                </button>
+                <button
+                  className={styles.primaryBtn}
+                  onClick={handleAnalyzeDocument}
+                  disabled={state.status === 'loading'}
+                >
+                  Analyze document →
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className={styles.divider}><span>or</span></div>
+                <button
+                  className={styles.secondaryBtn}
+                  onClick={handleManualContinue}
+                  disabled={!state.title.trim()}
+                >
+                  Continue without document →
+                </button>
+              </>
+            )}
           </div>
         )}
 

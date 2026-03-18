@@ -1,20 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500&display=swap');
+@import '@primr/tokens/tokens.css';
 
 *, *::before, *::after { box-sizing: border-box; }
 
 body {
   margin: 0;
   font-family: 'DM Sans', system-ui, sans-serif;
-  background: #FFFFFF;
-  color: #0F1117;
+  background: var(--surface);
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
-}
-
-@media (prefers-color-scheme: dark) {
-  body {
-    background: #0E0F1A;
-    color: #EDEEF5;
-  }
 }
 
 a { color: inherit; text-decoration: none; }

@@ -115,7 +115,7 @@ Rules:
 - Never put quizzes, flashcards, or fill-in-the-blank blocks inside chapter sections
 - All quizzes must appear after the last chapter's content blocks
 - All content must be grounded in the transcript — do not invent material
-- Return ONLY valid JSON. No markdown fences, no explanation.`
+- Return ONLY valid JSON. No markdown fences, no explanation, no preamble. Start your response with { and end with }.`
 
 // Lesson prompt — uses enriched outline that already has startTime/endTime injected
 const LESSON_SYSTEM_PROMPT = `You are an expert instructional designer. Generate a complete Primr lesson as JSON from the provided outline and chapter transcripts.
@@ -137,7 +137,7 @@ Rules:
 - Body/prompt fields support markdown: **bold**, *italic*, \`code\`
 - Keep content concise: narrative body max ~150 words, step body max ~80 words, quiz explanation max ~25 words
 - Flashcard decks: max 6 cards. Quiz: max 5 questions. Step-navigator: max 5 steps.
-- Return ONLY valid JSON. No explanation, no markdown fences, no extra text.`
+- Return ONLY valid JSON. No explanation, no markdown fences, no extra text, no preamble. Start your response with { and end with }.`
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -271,15 +271,12 @@ export async function runVideoIngestion(params: {
     ].filter(Boolean).join('\n')
 
     const outlineMsg = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 4096,
       system: OUTLINE_SYSTEM_PROMPT,
-      messages: [
-        { role: 'user', content: outlineUserContent },
-        { role: 'assistant', content: '{' },
-      ],
+      messages: [{ role: 'user', content: outlineUserContent + '\n\nRespond with JSON only.' }],
     })
-    const outlineRaw = outlineMsg.content[0].type === 'text' ? '{' + outlineMsg.content[0].text : ''
+    const outlineRaw = outlineMsg.content[0].type === 'text' ? outlineMsg.content[0].text : ''
     const outline = JSON.parse(outlineRaw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim())
     console.log(`[video-ingest] Outline: ${outline.blocks.length} blocks`)
 
@@ -310,15 +307,12 @@ export async function runVideoIngestion(params: {
     ].join('\n\n')
 
     const lessonMsg = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 16384,
       system: LESSON_SYSTEM_PROMPT,
-      messages: [
-        { role: 'user', content: lessonUserContent },
-        { role: 'assistant', content: '{' },
-      ],
+      messages: [{ role: 'user', content: lessonUserContent + '\n\nRespond with JSON only.' }],
     })
-    const lessonRaw = lessonMsg.content[0].type === 'text' ? '{' + lessonMsg.content[0].text : ''
+    const lessonRaw = lessonMsg.content[0].type === 'text' ? lessonMsg.content[0].text : ''
     const manifest: LessonManifest = JSON.parse(
       lessonRaw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
     )

@@ -70,6 +70,7 @@ export async function POST(
           sourceText: lesson.sourceText,
           audience: lesson.audience,
           level: lesson.level,
+          focus: lesson.focus,
         })
         globalPosition++
       }

@@ -63,7 +63,7 @@ Rules:
 - Body/prompt fields support markdown: **bold**, *italic*, __underline__, \`code\`, and links
 - Keep content concise: narrative body max ~150 words, quiz explanations max ~30 words, step body max ~100 words
 - Flashcard decks: max 6 cards. Quiz: max 5 questions. Step-navigator: max 5 steps.
-- Return ONLY valid JSON. No explanation, no markdown fences, no extra text.`
+- Return ONLY valid JSON. No explanation, no markdown fences, no extra text, no preamble. Start your response with { and end with }.`
 
 const OUTLINE_SYSTEM_PROMPT = `You are an expert instructional designer. Generate a complete Primr lesson as JSON from the provided outline. Each block in the outline specifies a type, summary of what it should cover, and optionally an item count.
 
@@ -85,7 +85,7 @@ Rules:
 - Body/prompt fields support markdown: **bold**, *italic*, __underline__, \`code\`, and links
 - Keep content concise: narrative body max ~150 words, quiz explanations max ~30 words, step body max ~100 words
 - Flashcard decks: max 6 cards. Quiz: max 5 questions. Step-navigator: max 5 steps.
-- Return ONLY valid JSON. No explanation, no markdown fences, no extra text.`
+- Return ONLY valid JSON. No explanation, no markdown fences, no extra text, no preamble. Start your response with { and end with }.`
 
 function slugify(text: string): string {
   return text
@@ -123,18 +123,15 @@ export async function POST(req: NextRequest) {
   const t0 = Date.now()
 
   const message = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 16384,
     system: systemPrompt,
-    messages: [
-      { role: 'user', content: userMessage },
-      { role: 'assistant', content: '{' },
-    ],
+    messages: [{ role: 'user', content: userMessage + '\n\nRespond with JSON only.' }],
   })
 
   console.log(`[generate] responded in ${Date.now() - t0}ms, usage: ${JSON.stringify(message.usage)}`)
 
-  const raw = message.content[0].type === 'text' ? '{' + message.content[0].text : ''
+  const raw = message.content[0].type === 'text' ? message.content[0].text : ''
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
 
   let manifest: LessonManifest

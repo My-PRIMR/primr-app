@@ -39,29 +39,28 @@ Rules:
 - Mix interactive types for engagement: use at least 2 different interactive types (quiz, flashcard, fill-in-the-blank)
 - Summaries should be specific to the content, not generic
 - If a source document is provided, ALL block summaries must describe content drawn directly from that document. Do not introduce topics not covered in the document.
-- Return ONLY valid JSON. No markdown fences, no explanation.`
+- Return ONLY valid JSON. No markdown fences, no explanation, no preamble. Start your response with { and end with }.`
 
 async function generateOutline(params: {
   title: string
   audience: string
   level: string
   documentText?: string
+  focus?: string
 }): Promise<LessonOutline> {
+  const focusLine = params.focus?.trim() ? `Focus/Scope: ${params.focus.trim()}\n` : ''
   const userContent = params.documentText?.trim()
-    ? `Title: ${params.title}\nAudience: ${params.audience}\nLevel: ${params.level}\n\nSource document:\n"""\n${params.documentText}\n"""`
-    : `Title: ${params.title}\nTopic: ${params.title}\nAudience: ${params.audience}\nLevel: ${params.level}`
+    ? `Title: ${params.title}\nAudience: ${params.audience}\nLevel: ${params.level}\n${focusLine}\nSource document:\n"""\n${params.documentText}\n"""\n\nRespond with JSON only.`
+    : `Title: ${params.title}\nTopic: ${params.title}\nAudience: ${params.audience}\nLevel: ${params.level}\n${focusLine}\nRespond with JSON only.`
 
   const message = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 2048,
     system: OUTLINE_SYSTEM_PROMPT,
-    messages: [
-      { role: 'user', content: userContent },
-      { role: 'assistant', content: '{' },
-    ],
+    messages: [{ role: 'user', content: userContent }],
   })
 
-  const raw = message.content[0].type === 'text' ? '{' + message.content[0].text : ''
+  const raw = message.content[0].type === 'text' ? message.content[0].text : ''
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
   return JSON.parse(cleaned) as LessonOutline
 }
@@ -125,7 +124,7 @@ Rules:
 - Body/prompt fields support markdown: **bold**, *italic*, __underline__, \`code\`, and links
 - Keep content concise: narrative body max ~150 words, quiz explanations max ~30 words, step body max ~100 words
 - Flashcard decks: max 6 cards. Quiz: max 5 questions. Step-navigator: max 5 steps.
-- Return ONLY valid JSON. No explanation, no markdown fences, no extra text.`
+- Return ONLY valid JSON. No explanation, no markdown fences, no extra text, no preamble. Start your response with { and end with }.`
 
 function slugify(text: string): string {
   return text
@@ -140,25 +139,25 @@ async function generateLesson(params: {
   outline: LessonOutline
   documentText?: string
   userId: string | null
+  focus?: string
 }): Promise<string> {  // returns lessonId
+  const focusLine = params.focus?.trim() ? `\n\nFocus/Scope: ${params.focus.trim()} — only include content relevant to this focus.` : ''
   const userMessage = [
     `Generate a Primr lesson from this outline:\n\n${JSON.stringify(params.outline, null, 2)}`,
+    focusLine,
     params.documentText?.trim()
       ? `\n\nSource document (use this as the primary source for all content — do not invent material not present in this document):\n"""\n${params.documentText}\n"""`
       : '',
   ].join('')
 
   const message = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 16384,
     system: OUTLINE_LESSON_SYSTEM_PROMPT,
-    messages: [
-      { role: 'user', content: userMessage },
-      { role: 'assistant', content: '{' },
-    ],
+    messages: [{ role: 'user', content: userMessage + '\n\nRespond with JSON only.' }],
   })
 
-  const raw = message.content[0].type === 'text' ? '{' + message.content[0].text : ''
+  const raw = message.content[0].type === 'text' ? message.content[0].text : ''
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
   const manifest: LessonManifest = JSON.parse(cleaned)
 
@@ -183,6 +182,7 @@ export interface LessonGenInput {
   sourceText?: string
   audience?: string
   level?: string
+  focus?: string
 }
 
 export async function runCourseGeneration(
@@ -209,12 +209,14 @@ export async function runCourseGeneration(
         audience: input.audience || 'General',
         level: input.level || 'beginner',
         documentText: input.sourceText,
+        focus: input.focus,
       })
 
       const lessonId = await generateLesson({
         outline,
         documentText: input.sourceText,
         userId,
+        focus: input.focus,
       })
 
       await db.update(chapterLessons)

@@ -6,7 +6,7 @@ import {
   lessons, lessonInvitations, lessonAttempts,
   courses, courseSections, courseChapters, chapterLessons, courseEnrollments,
 } from '@/db/schema'
-import { desc, eq, and, sql, inArray, max } from 'drizzle-orm'
+import { desc, eq, and, sql, inArray, max, isNull } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { redirect } from 'next/navigation'
 import styles from './page.module.css'
@@ -42,7 +42,7 @@ export default async function DashboardPage() {
         .orderBy(desc(courses.createdAt))
     : []
 
-  // ── Creator: standalone lessons ─────────────────────────────────────────────
+  // ── Creator: standalone lessons (not attached to any course) ────────────────
   const createdLessons = isCreator
     ? await db.select({
         id: lessons.id,
@@ -50,7 +50,11 @@ export default async function DashboardPage() {
         slug: lessons.slug,
         createdAt: lessons.createdAt,
         updatedAt: lessons.updatedAt,
-      }).from(lessons).where(eq(lessons.createdBy, userId)).orderBy(desc(lessons.updatedAt))
+      })
+        .from(lessons)
+        .leftJoin(chapterLessons, eq(chapterLessons.lessonId, lessons.id))
+        .where(and(eq(lessons.createdBy, userId), isNull(chapterLessons.id)))
+        .orderBy(desc(lessons.updatedAt))
     : []
 
   // ── Learner: enrolled courses with progress ─────────────────────────────────
@@ -197,10 +201,19 @@ export default async function DashboardPage() {
                       </p>
                     </div>
                     <div className={styles.cardActions}>
-                      <Link href={`/learn/course/${course.id}`} className={styles.previewLink}>
-                        Preview as learner
-                      </Link>
-                      <InvitePanel type="course" id={course.id} />
+                      {course.status === 'generating' ? (
+                        <Link href={`/creator/courses/${course.id}/edit`} className={styles.editLink}>
+                          View progress →
+                        </Link>
+                      ) : (
+                        <>
+                          <Link href={`/creator/courses/${course.id}/edit`} className={styles.editLink}>Edit</Link>
+                          <Link href={`/learn/course/${course.id}`} className={styles.previewLink}>
+                            Preview as learner
+                          </Link>
+                          <InvitePanel type="course" id={course.id} />
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}

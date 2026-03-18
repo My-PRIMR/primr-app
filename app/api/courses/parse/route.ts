@@ -39,7 +39,7 @@ Rules:
 - If the document only has 2-3 levels, synthesize the missing levels. For example, if there are only chapters (no sections), create one section called "General" or another appropriate name and set "inferred": true on it.
 - headingMarker must be an exact substring from the document text that marks the beginning of that lesson's content (typically a heading like "1.2 Introduction" or "Chapter 3: ...").
 - Each lesson should cover a coherent sub-topic (not too granular, not too broad). Aim for 10-30 lessons total for a full document.
-- Return ONLY valid JSON. No markdown fences, no explanation.`
+- Return ONLY valid JSON. No markdown fences, no explanation, no preamble. Start your response with { and end with }.`
 
 async function extractText(file: File): Promise<string> {
   const name = file.name.toLowerCase()
@@ -96,6 +96,7 @@ export async function POST(req: NextRequest) {
     const file = formData.get('file') as File | null
     const audience = (formData.get('audience') as string | null) || 'General'
     const level = (formData.get('level') as string | null) || 'beginner'
+    const focus = (formData.get('focus') as string | null) || ''
 
     if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
 
@@ -114,20 +115,19 @@ export async function POST(req: NextRequest) {
 
     const t0 = Date.now()
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 4096,
       system: PARSE_SYSTEM_PROMPT,
       messages: [
         {
           role: 'user',
-          content: `Document excerpt:\n"""\n${excerpt}\n"""\n\nAudience: ${audience}\nLevel: ${level}`,
+          content: `Document excerpt:\n"""\n${excerpt}\n"""\n\nAudience: ${audience}\nLevel: ${level}${focus ? `\nFocus/Scope: ${focus} — only include sections, chapters, and lessons relevant to this focus. Omit anything outside this scope.` : ''}\n\nRespond with JSON only.`,
         },
-        { role: 'assistant', content: '{' },
       ],
     })
     console.log(`[courses/parse] Claude responded in ${Date.now() - t0}ms`)
 
-    const raw = message.content[0].type === 'text' ? '{' + message.content[0].text : ''
+    const raw = message.content[0].type === 'text' ? message.content[0].text : ''
     const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
 
     let parsed: ParsedCourseTree
@@ -171,6 +171,7 @@ export async function POST(req: NextRequest) {
               sourceText,
               audience,
               level,
+              focus: focus || undefined,
             }
           }),
         })),

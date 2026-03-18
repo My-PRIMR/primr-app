@@ -1,0 +1,292 @@
+'use client'
+
+import { useState, useEffect, useRef, useMemo } from 'react'
+import '@primr/components/dist/style.css'
+import {
+  HeroCard, NarrativeBlock, StepNavigator, Quiz, FlipCardDeck, FillInTheBlank, MediaBlock,
+} from '@primr/components'
+import type { LessonManifest, BlockConfig, BlockType } from '@/types/outline'
+import BlockEditPanel from '../new/components/BlockEditPanel'
+import styles from './LessonBlockEditor.module.css'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const BLOCK_COMPONENTS: Record<string, React.ComponentType<any>> = {
+  hero: HeroCard,
+  narrative: NarrativeBlock,
+  'step-navigator': StepNavigator,
+  quiz: Quiz,
+  flashcard: FlipCardDeck,
+  'fill-in-the-blank': FillInTheBlank,
+  media: MediaBlock,
+}
+
+export const INSERTABLE_TYPES: { type: BlockType; label: string; icon: string }[] = [
+  { type: 'narrative', label: 'Narrative', icon: '¶' },
+  { type: 'step-navigator', label: 'Step Walkthrough', icon: '→' },
+  { type: 'quiz', label: 'Quiz', icon: '?' },
+  { type: 'flashcard', label: 'Flashcards', icon: '⟳' },
+  { type: 'fill-in-the-blank', label: 'Fill in the Blank', icon: '⎵' },
+  { type: 'media', label: 'Video', icon: '▶' },
+]
+
+export const EMPTY_PROPS: Record<BlockType, Record<string, unknown>> = {
+  hero: { title: '', tagline: '' },
+  narrative: { body: '', title: '', eyebrow: '' },
+  'step-navigator': { steps: [{ title: '', body: '' }], badge: '', title: '' },
+  quiz: { questions: [{ prompt: '', options: ['', '', '', ''], correctIndex: 0 }], badge: '', title: '' },
+  flashcard: { cards: [{ front: '', back: '' }], badge: '', title: '' },
+  'fill-in-the-blank': { prompt: '', answers: [''], badge: '', title: '' },
+  media: { url: '', title: '', badge: 'Video', caption: '', requireWatch: true },
+}
+
+const BLOCK_LABEL: Record<string, string> = {
+  hero: 'Hero', narrative: 'Narrative', 'step-navigator': 'Steps',
+  quiz: 'Quiz', flashcard: 'Cards', 'fill-in-the-blank': 'Fill', media: 'Video',
+}
+
+function getBlockTitle(block: BlockConfig, index: number): string {
+  const props = block.props as Record<string, unknown>
+  const title = (props.title as string | undefined)?.trim()
+  if (title) return title
+  return `${index + 1}. ${BLOCK_LABEL[block.type] ?? block.type}`
+}
+
+interface LessonBlockEditorProps {
+  lessonId: string
+  initialManifest: LessonManifest
+  /**
+   * 'float' (default) — panel appears as a floating overlay with a dock/undock toggle.
+   * 'dock'            — panel is always a fixed right column.
+   */
+  panelMode?: 'float' | 'dock'
+  /** Extra content rendered below the BlockEditPanel (e.g. share section). */
+  rightPanelExtra?: React.ReactNode
+  /** Left px offset for the fixed paginator bar (use sidebar width when a sidebar is present). */
+  paginatorLeft?: number
+}
+
+export default function LessonBlockEditor({
+  lessonId,
+  initialManifest,
+  panelMode = 'float',
+  rightPanelExtra,
+  paginatorLeft = 0,
+}: LessonBlockEditorProps) {
+  const [manifest, setManifest] = useState(initialManifest)
+  const [currentBlock, setCurrentBlock] = useState(0)
+  const [panelOpen, setPanelOpen] = useState(false)
+  const [panelAnchored, setPanelAnchored] = useState(false)
+  const [disabledIds, setDisabledIds] = useState<Set<string>>(new Set())
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const dotsRef = useRef<HTMLDivElement>(null)
+
+  const blocks = manifest.blocks
+  const block = blocks[currentBlock]
+  const isDisabled = block ? disabledIds.has(block.id) : false
+  const useDotPaginator = blocks.length <= 10
+
+  const blockTitles = useMemo(() => blocks.map(getBlockTitle), [blocks])
+
+  useEffect(() => {
+    if (!useDotPaginator) return
+    const dot = dotsRef.current?.children[currentBlock] as HTMLElement | undefined
+    dot?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [currentBlock, useDotPaginator])
+
+  function goTo(idx: number) {
+    setCurrentBlock(Math.max(0, Math.min(blocks.length - 1, idx)))
+  }
+
+  function toggleBlock(id: string) {
+    setDisabledIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+    setSaved(false)
+  }
+
+  function handleBlockUpdate(index: number, updated: BlockConfig) {
+    const next = [...blocks]
+    next[index] = updated
+    setManifest({ ...manifest, blocks: next })
+    setSaved(false)
+  }
+
+  function insertBlock(type: BlockType) {
+    const id = `block-${Date.now().toString(36)}`
+    const newBlock: BlockConfig = { id, type, props: { ...EMPTY_PROPS[type] } }
+    const next = [...blocks]
+    next.splice(currentBlock + 1, 0, newBlock)
+    setManifest({ ...manifest, blocks: next })
+    setCurrentBlock(currentBlock + 1)
+    setPanelOpen(true)
+    setSaved(false)
+  }
+
+  async function saveLesson() {
+    setSaving(true)
+    const filtered = { ...manifest, blocks: blocks.filter(b => !disabledIds.has(b.id)) }
+    const res = await fetch(`/api/lessons/${lessonId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ manifest: filtered }),
+    })
+    setSaving(false)
+    if (res.ok) setSaved(true)
+  }
+
+  const Component = block ? BLOCK_COMPONENTS[block.type] : null
+
+  const dockToggle = panelMode === 'float' ? (
+    <button
+      className={`${styles.panelDockBtn} ${panelAnchored ? styles.panelDockBtnActive : ''}`}
+      onClick={() => setPanelAnchored(v => !v)}
+      title={panelAnchored ? 'Switch to floating panel' : 'Anchor panel to right'}
+    >
+      {panelAnchored ? '⊟ Docked' : '⊞ Dock'}
+    </button>
+  ) : null
+
+  const editPanel = block ? (
+    <BlockEditPanel
+      key={currentBlock}
+      block={block}
+      blockIndex={currentBlock}
+      lessonTitle={manifest.title}
+      onUpdate={handleBlockUpdate}
+      onClose={() => setPanelOpen(false)}
+      headerAction={dockToggle}
+    />
+  ) : null
+
+  const panelContent = (
+    <>
+      {editPanel}
+      {rightPanelExtra}
+    </>
+  )
+
+  const isDocked = panelMode === 'dock' || (panelMode === 'float' && panelAnchored)
+
+  return (
+    <>
+      {/* ── Flex content: block area + optional docked panel ── */}
+      <div className={styles.editorWrap}>
+        <div className={styles.blockArea}>
+          {block && (
+            <div className={styles.blockContent}>
+              {/* Block toolbar */}
+              <div className={styles.blockToolbar}>
+                <span className={styles.blockTypeLabel}>
+                  {BLOCK_LABEL[block.type] ?? block.type}
+                </span>
+                <button
+                  className={`${styles.editToggleBtn} ${panelOpen ? styles.editToggleBtnActive : ''}`}
+                  onClick={() => setPanelOpen(v => !v)}
+                >
+                  {panelOpen ? 'Close editor' : 'Edit block'}
+                </button>
+                {block.type !== 'hero' && (
+                  <button className={styles.disableBtn} onClick={() => toggleBlock(block.id)}>
+                    {isDisabled ? 'Enable' : 'Disable'}
+                  </button>
+                )}
+                <button
+                  className={`${styles.saveBtn} ${saved ? styles.saveBtnSaved : ''}`}
+                  onClick={saveLesson}
+                  disabled={saving}
+                >
+                  {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save'}
+                </button>
+              </div>
+
+              {/* Block render */}
+              <div className={`${styles.blockWrap} ${isDisabled ? styles.blockWrapDisabled : ''}`}>
+                {Component && !isDisabled && (
+                  <Component {...(block.props as Record<string, unknown>)} onComplete={() => {}} />
+                )}
+                {isDisabled && (
+                  <div className={styles.disabledPlaceholder}>
+                    Block disabled — will not appear in the published lesson
+                  </div>
+                )}
+              </div>
+
+              {/* Insert after current */}
+              <div className={styles.insertBar}>
+                <span className={styles.insertLabel}>Insert after</span>
+                {INSERTABLE_TYPES.map(t => (
+                  <button key={t.type} className={styles.insertChip} onClick={() => insertBlock(t.type)}>
+                    {t.icon} {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Docked right panel */}
+        {panelOpen && isDocked && (
+          <div className={styles.dockedPanel}>
+            {panelContent}
+          </div>
+        )}
+      </div>
+
+      {/* Floating panel overlay (float mode, not anchored) */}
+      {panelOpen && panelMode === 'float' && !panelAnchored && (
+        <div className={styles.floatingOverlay}>
+          <div className={styles.floatingPanel}>
+            {panelContent}
+          </div>
+        </div>
+      )}
+
+      {/* Fixed bottom paginator */}
+      <div className={styles.paginator} style={{ left: paginatorLeft }}>
+        <button
+          className={styles.pageArrow}
+          onClick={() => goTo(currentBlock - 1)}
+          disabled={currentBlock === 0}
+          aria-label="Previous block"
+        >←</button>
+
+        {useDotPaginator ? (
+          <div className={styles.pageDots} ref={dotsRef}>
+            {blocks.map((b, i) => (
+              <button
+                key={b.id}
+                className={`${styles.pageDot} ${i === currentBlock ? styles.pageDotActive : ''}`}
+                onClick={() => goTo(i)}
+                title={blockTitles[i]}
+                aria-label={blockTitles[i]}
+              />
+            ))}
+          </div>
+        ) : (
+          <select
+            className={styles.pageSelect}
+            value={currentBlock}
+            onChange={e => goTo(Number(e.target.value))}
+            aria-label="Go to block"
+          >
+            {blocks.map((b, i) => (
+              <option key={b.id} value={i}>{i + 1}. {blockTitles[i]}</option>
+            ))}
+          </select>
+        )}
+
+        <button
+          className={styles.pageArrow}
+          onClick={() => goTo(currentBlock + 1)}
+          disabled={currentBlock === blocks.length - 1}
+          aria-label="Next block"
+        >→</button>
+
+        <span className={styles.pageCounter}>{currentBlock + 1}/{blocks.length}</span>
+      </div>
+    </>
+  )
+}

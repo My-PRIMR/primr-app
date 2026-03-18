@@ -1,0 +1,275 @@
+/* Inherits CSS custom properties (--ink, --accent, etc.) from parent .root */
+
+/* ── Editor wrap: fills parent flex row ─────────────────────────────────── */
+.editorWrap {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* ── Block area (scrollable center) ─────────────────────────────────────── */
+.blockArea {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 2rem 1rem;
+}
+
+.blockContent {
+  width: 100%;
+  max-width: 760px;
+}
+
+/* ── Block toolbar ───────────────────────────────────────────────────────── */
+.blockToolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.blockTypeLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.editToggleBtn {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 4px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border-mid);
+  background: var(--surface-alt);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: border-color 150ms, color 150ms, background 150ms;
+}
+.editToggleBtn:hover { border-color: var(--accent); color: var(--accent); }
+.editToggleBtnActive {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.disableBtn {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms;
+}
+.disableBtn:hover { color: var(--accent); border-color: var(--accent); }
+
+.saveBtn {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 5px 16px;
+  border-radius: 6px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  margin-left: auto;
+  transition: opacity 150ms, background 150ms;
+}
+.saveBtn:hover:not(:disabled) { opacity: 0.88; }
+.saveBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.saveBtnSaved { background: var(--green, #22c55e); }
+
+/* ── Block wrap ──────────────────────────────────────────────────────────── */
+.blockWrap {
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: opacity 150ms;
+}
+.blockWrapDisabled { opacity: 0.4; }
+
+.disabledPlaceholder {
+  padding: 2rem;
+  text-align: center;
+  color: var(--ink-muted);
+  font-size: 13px;
+}
+
+/* ── Insert bar ──────────────────────────────────────────────────────────── */
+.insertBar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.insertLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+}
+
+.insertChip {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12px;
+  color: var(--ink-soft);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: border-color 120ms, color 120ms;
+}
+.insertChip:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Docked right panel ──────────────────────────────────────────────────── */
+.dockedPanel {
+  width: 360px;
+  flex-shrink: 0;
+  border-left: 0.5px solid var(--border);
+  overflow-y: auto;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Floating panel overlay (float mode) ────────────────────────────────── */
+.floatingOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.floatingPanel {
+  pointer-events: all;
+  width: 380px;
+  height: 100%;
+  background: var(--surface);
+  border-left: 0.5px solid var(--border-mid);
+  box-shadow: -4px 0 24px rgba(0,0,0,0.08);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Panel dock button (float mode only) ────────────────────────────────── */
+.panelDockBtn {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-mid);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 150ms, color 150ms, border-color 150ms;
+}
+.panelDockBtn:hover { background: var(--surface-alt); color: var(--ink); }
+.panelDockBtnActive {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.panelDockBtnActive:hover { background: var(--accent-soft); color: var(--accent); }
+
+/* ── Paginator (fixed bottom) ───────────────────────────────────────────── */
+.paginator {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0 1rem 0 100px;
+  background: var(--surface);
+  border-top: 0.5px solid var(--border);
+  z-index: 20;
+}
+
+.pageArrow {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--border-mid);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+}
+.pageArrow:hover:not(:disabled) { background: var(--surface-alt); color: var(--ink); }
+.pageArrow:disabled { opacity: 0.25; cursor: default; }
+
+.pageDots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 50vw;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 4px 2px;
+}
+.pageDots::-webkit-scrollbar { display: none; }
+
+.pageDot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border-mid);
+  border: none;
+  cursor: pointer;
+  transition: background 150ms, width 150ms, border-radius 150ms;
+  padding: 0;
+}
+.pageDot:hover { background: var(--ink-muted); }
+.pageDotActive {
+  width: 22px;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+.pageCounter {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  min-width: 40px;
+  text-align: center;
+}
+
+.pageSelect {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  background: var(--surface-alt);
+  border: 1px solid var(--border-mid);
+  border-radius: 6px;
+  padding: 5px 8px;
+  cursor: pointer;
+  max-width: 240px;
+}

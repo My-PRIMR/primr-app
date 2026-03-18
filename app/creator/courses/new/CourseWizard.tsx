@@ -17,8 +17,10 @@ interface WizardState {
   description: string
   audience: string
   level: 'beginner' | 'intermediate' | 'advanced'
-  // Step 3: tree
+  focus: string
+  // Step 3: tree + exclusions
   courseTree: CourseTree | null
+  excludedLessons: Set<string>  // localIds of lessons the creator wants to skip
   // Step 4: generation
   courseId: string | null
   flatLessons: FlatLesson[]
@@ -33,7 +35,9 @@ const initialState: WizardState = {
   description: '',
   audience: 'General',
   level: 'beginner',
+  focus: '',
   courseTree: null,
+  excludedLessons: new Set(),
   courseId: null,
   flatLessons: [],
   status: 'idle',
@@ -95,6 +99,7 @@ export default function CourseWizard() {
     formData.append('file', file)
     formData.append('audience', state.audience)
     formData.append('level', state.level)
+    if (state.focus.trim()) formData.append('focus', state.focus.trim())
 
     try {
       const res = await fetch('/api/courses/parse', { method: 'POST', body: formData })
@@ -140,8 +145,21 @@ export default function CourseWizard() {
   async function handleConfirmTree() {
     if (!state.courseTree) return
 
-    // Count total lessons
-    const lessonCount = state.courseTree.sections
+    // Build tree with excluded lessons removed and focus stamped on each lesson
+    const filteredTree = {
+      ...state.courseTree,
+      sections: state.courseTree.sections.map(s => ({
+        ...s,
+        chapters: s.chapters.map(c => ({
+          ...c,
+          lessons: c.lessons
+            .filter(l => !state.excludedLessons.has(l.localId))
+            .map(l => ({ ...l, focus: state.focus.trim() || l.focus })),
+        })).filter(c => c.lessons.length > 0),
+      })).filter(s => s.chapters.length > 0),
+    }
+
+    const lessonCount = filteredTree.sections
       .flatMap(s => s.chapters)
       .flatMap(c => c.lessons)
       .length
@@ -159,8 +177,8 @@ export default function CourseWizard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: state.courseTree.title,
-          description: state.courseTree.description,
+          title: filteredTree.title,
+          description: filteredTree.description,
         }),
       })
       const createData = await createRes.json()
@@ -171,11 +189,11 @@ export default function CourseWizard() {
 
       const courseId: string = createData.course.id
 
-      // 2. Start generation with full tree
+      // 2. Start generation with filtered tree
       const genRes = await fetch(`/api/courses/${courseId}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tree: state.courseTree }),
+        body: JSON.stringify({ tree: filteredTree }),
       })
       const genData = await genRes.json()
       if (!genRes.ok) {
@@ -319,6 +337,8 @@ export default function CourseWizard() {
     ? state.courseTree.sections.flatMap(s => s.chapters).flatMap(c => c.lessons).length
     : 0
 
+  const includedLessons = totalLessons - state.excludedLessons.size
+
   const doneLessons = state.flatLessons.filter(l => l.generationStatus === 'done').length
   const failedLessons = state.flatLessons.filter(l => l.generationStatus === 'failed').length
   const allSettled = state.flatLessons.length > 0 &&
@@ -394,6 +414,19 @@ export default function CourseWizard() {
               </div>
             </div>
 
+            <div className={styles.formGroup}>
+              <label className={styles.label}>
+                Scope / Focus <span className={styles.optional}>(optional)</span>
+              </label>
+              <input
+                className={styles.input}
+                value={state.focus}
+                onChange={e => set({ focus: e.target.value })}
+                placeholder="e.g. Class C passenger vehicles only, not commercial or motorcycle"
+              />
+              <p className={styles.fieldHint}>Narrows what Claude covers when structuring and generating lessons.</p>
+            </div>
+
             <div className={styles.uploadSection}>
               <label className={styles.uploadLabel}>
                 <input
@@ -441,7 +474,10 @@ export default function CourseWizard() {
             <div className={styles.treeHeader}>
               <div>
                 <h1 className={styles.heading}>Review course structure</h1>
-                <p className={styles.subheading}>{totalLessons} lessons across {state.courseTree.sections.length} sections. Rename, delete, or add nodes before generating.</p>
+                <p className={styles.subheading}>
+                  {includedLessons} of {totalLessons} lessons selected across {state.courseTree.sections.length} sections.
+                  Uncheck lessons to exclude them, rename or delete nodes, then generate.
+                </p>
               </div>
             </div>
 
@@ -484,20 +520,34 @@ export default function CourseWizard() {
                         <button className={styles.deleteBtn} onClick={() => deleteChapter(section.localId, chapter.localId)} title="Delete chapter">✕</button>
                       </div>
 
-                      {chapter.lessons.map(lesson => (
-                        <div key={lesson.localId} className={styles.lessonNode}>
-                          <span className={styles.lessonDot}>•</span>
-                          <input
-                            className={styles.nodeInput}
-                            value={lesson.title}
-                            onChange={e => updateLessonTitle(section.localId, chapter.localId, lesson.localId, e.target.value)}
-                          />
-                          {lesson.sourceText && (
-                            <span className={styles.snippetBadge} title={lesson.sourceText.slice(0, 200)}>has text</span>
-                          )}
-                          <button className={styles.deleteBtn} onClick={() => deleteLesson(section.localId, chapter.localId, lesson.localId)} title="Delete lesson">✕</button>
-                        </div>
-                      ))}
+                      {chapter.lessons.map(lesson => {
+                        const excluded = state.excludedLessons.has(lesson.localId)
+                        return (
+                          <div key={lesson.localId} className={`${styles.lessonNode} ${excluded ? styles.lessonNodeExcluded : ''}`}>
+                            <input
+                              type="checkbox"
+                              className={styles.lessonCheck}
+                              checked={!excluded}
+                              onChange={() => setState(s => {
+                                const next = new Set(s.excludedLessons)
+                                excluded ? next.delete(lesson.localId) : next.add(lesson.localId)
+                                return { ...s, excludedLessons: next }
+                              })}
+                              title={excluded ? 'Include this lesson' : 'Exclude this lesson'}
+                            />
+                            <input
+                              className={styles.nodeInput}
+                              value={lesson.title}
+                              onChange={e => updateLessonTitle(section.localId, chapter.localId, lesson.localId, e.target.value)}
+                              disabled={excluded}
+                            />
+                            {lesson.sourceText && !excluded && (
+                              <span className={styles.snippetBadge} title={lesson.sourceText.slice(0, 200)}>has text</span>
+                            )}
+                            <button className={styles.deleteBtn} onClick={() => deleteLesson(section.localId, chapter.localId, lesson.localId)} title="Delete lesson">✕</button>
+                          </div>
+                        )
+                      })}
 
                       <button className={styles.addBtn} onClick={() => addLesson(section.localId, chapter.localId)}>
                         + lesson
@@ -521,9 +571,9 @@ export default function CourseWizard() {
               <button
                 className={styles.primaryBtn}
                 onClick={handleConfirmTree}
-                disabled={state.status === 'loading' || totalLessons === 0}
+                disabled={state.status === 'loading' || includedLessons === 0}
               >
-                {state.status === 'loading' ? 'Starting…' : `Generate ${totalLessons} lessons →`}
+                {state.status === 'loading' ? 'Starting…' : `Generate ${includedLessons} lesson${includedLessons !== 1 ? 's' : ''} →`}
               </button>
             </div>
           </div>

@@ -6,6 +6,7 @@ export interface CourseLesson {
   sourceText?: string
   audience?: string
   level?: string
+  focus?: string  // creator-specified scope/focus hint fed into generation
 }
 
 export interface CourseChapter {

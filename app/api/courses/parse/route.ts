@@ -111,6 +111,14 @@ export async function POST(req: NextRequest) {
 
     if (!fullText) return NextResponse.json({ error: 'Could not extract any text from the file.' }, { status: 422 })
 
+    const MAX_TEXT_CHARS = 5_000_000
+    if (fullText.length > MAX_TEXT_CHARS) {
+      return NextResponse.json(
+        { error: `Document is too large (${(fullText.length / 1_000_000).toFixed(1)}M chars extracted). Please upload a shorter document or split it into smaller parts.` },
+        { status: 413 }
+      )
+    }
+
     // Send first 12k chars to Claude for structure analysis
     const excerpt = fullText.slice(0, 12000)
 

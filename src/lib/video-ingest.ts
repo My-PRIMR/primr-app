@@ -7,11 +7,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { extractJSON } from './extract-json'
 import { AssemblyAI } from 'assemblyai'
-import { exec } from 'child_process'
-import { promisify } from 'util'
-import { readFile, unlink } from 'fs/promises'
-import { tmpdir } from 'os'
-import { join } from 'path'
 import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
@@ -19,8 +14,6 @@ import type { LessonManifest } from '@primr/components'
 
 const anthropic = new Anthropic()
 const assemblyai = new AssemblyAI({ apiKey: process.env.ASSEMBLYAI_API_KEY! })
-const execAsync = promisify(exec)
-
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface Chapter {
@@ -36,7 +29,6 @@ interface YoutubeData {
   chapterTranscripts: Array<{ chapter: Chapter; text: string }>
 }
 
-type Json3Event = { tStartMs?: number; segs?: Array<{ utf8: string }> }
 
 // ── Prompts ───────────────────────────────────────────────────────────────────
 
@@ -151,59 +143,85 @@ function slugify(text: string): string {
     .replace(/-+/g, '-')
 }
 
-function parseEvents(events: Json3Event[]): string {
-  return events
-    .flatMap(e => e.segs ?? [])
-    .map(s => s.utf8?.replace(/\n/g, ' ') ?? '')
-    .join(' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function splitTranscriptByChapters(
-  events: Json3Event[],
-  chapters: Chapter[]
-): Array<{ chapter: Chapter; text: string }> {
-  return chapters.map(ch => {
-    const startMs = ch.start_time * 1000
-    const endMs = ch.end_time * 1000
-    const chEvents = events.filter(e => (e.tStartMs ?? 0) >= startMs && (e.tStartMs ?? 0) < endMs)
-    return { chapter: ch, text: parseEvents(chEvents) }
-  })
+function extractVideoId(url: string): string {
+  const m = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+  if (!m) throw new Error(`Cannot extract video ID from URL: ${url}`)
+  return m[1]
 }
 
 const MAX_TRANSCRIPT_CHARS = 40_000
 const MAX_CHAPTER_CHARS = 4_000   // per chapter in manifest prompt
 
-// ── YouTube data fetch (chapters + captions in one yt-dlp call) ───────────────
+// ── YouTube data fetch via Innertube (no yt-dlp required) ────────────────────
 
 async function fetchYouTubeData(videoUrl: string): Promise<YoutubeData> {
-  const outBase = join(tmpdir(), `primr-yt-${Date.now()}`)
-  const subFile = `${outBase}.en.json3`
+  const { Innertube } = await import('youtubei.js')
+  const videoId = extractVideoId(videoUrl)
 
-  try {
-    const { stdout } = await execAsync(
-      `yt-dlp --write-auto-subs --sub-langs en --sub-format json3 --skip-download --print-json -o "${outBase}" "${videoUrl}"`,
-      { timeout: 60_000 }
-    )
+  const yt = await Innertube.create({ retrieve_player: true })
+  const info = await yt.getInfo(videoId)
 
-    const meta = JSON.parse(stdout) as { title: string; chapters?: Chapter[] }
-    const chapters: Chapter[] = meta.chapters ?? []
+  const videoTitle = info.basic_info.title ?? 'Untitled Video'
+  const durationSec = info.basic_info.duration ?? 0
 
-    const subRaw = await readFile(subFile, 'utf8')
-    const subData = JSON.parse(subRaw) as { events?: Json3Event[] }
-    const events = subData.events ?? []
+  // ── Chapters ──────────────────────────────────────────────────────────────
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const overlay = (info.player_overlays as any)?.player_overlay
+  const markersMap: Array<{ key: string; value: { chapters?: unknown[] } }> =
+    overlay?.decorated_player_bar_renderer?.decorated_player_bar_renderer
+      ?.player_bar?.multi_markers_player_bar_renderer?.markers_map ?? []
 
-    const transcriptText = parseEvents(events).slice(0, MAX_TRANSCRIPT_CHARS)
+  const rawChapters = (
+    markersMap.find(m => m.key === 'DESCRIPTION_CHAPTERS' || m.key === 'AUTO_CHAPTERS')
+      ?.value?.chapters ?? []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ) as any[]
 
-    const chapterTranscripts = chapters.length > 0
-      ? splitTranscriptByChapters(events, chapters)
-      : []
+  const chapters: Chapter[] = rawChapters.map((ch, i) => ({
+    title: ch.title?.runs?.[0]?.text ?? ch.title?.text ?? `Chapter ${i + 1}`,
+    start_time: Math.floor((ch.time_range_start_millis ?? 0) / 1000),
+    end_time: i < rawChapters.length - 1
+      ? Math.floor((rawChapters[i + 1].time_range_start_millis ?? 0) / 1000)
+      : durationSec,
+  }))
 
-    return { videoTitle: meta.title, chapters, transcriptText, chapterTranscripts }
-  } finally {
-    unlink(subFile).catch(() => {})
+  // ── Transcript ────────────────────────────────────────────────────────────
+  const transcriptData = await info.getTranscript()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const segments: any[] =
+    transcriptData?.transcript?.content?.body?.initial_segments ?? []
+
+  const segText = (seg: unknown): string => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const s = seg as any
+    return s?.snippet?.runs?.[0]?.text ?? s?.snippet?.text ?? s?.snippet?.toString() ?? ''
   }
+
+  const transcriptText = segments
+    .map(segText)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, MAX_TRANSCRIPT_CHARS)
+
+  const chapterTranscripts = chapters.length > 0
+    ? chapters.map(ch => {
+        const startMs = ch.start_time * 1000
+        const endMs = ch.end_time * 1000
+        const text = segments
+          .filter(seg => {
+            const ms = parseInt(seg?.start_ms ?? '0', 10)
+            return ms >= startMs && ms < endMs
+          })
+          .map(segText)
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+        return { chapter: ch, text }
+      })
+    : []
+
+  return { videoTitle, chapters, transcriptText, chapterTranscripts }
 }
 
 // ── Main pipeline ─────────────────────────────────────────────────────────────

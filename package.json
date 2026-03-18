@@ -24,7 +24,8 @@
     "pdf-parse": "^2.4.5",
     "postgres": "^3.4.8",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "youtubei.js": "^17.0.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

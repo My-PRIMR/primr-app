@@ -158,7 +158,7 @@ async function fetchYouTubeData(videoUrl: string): Promise<YoutubeData> {
   const { Innertube } = await import('youtubei.js')
   const videoId = extractVideoId(videoUrl)
 
-  const yt = await Innertube.create({ retrieve_player: true })
+  const yt = await Innertube.create({ retrieve_player: false, generate_session_locally: true })
   const info = await yt.getInfo(videoId)
 
   const videoTitle = info.basic_info.title ?? 'Untitled Video'
@@ -186,10 +186,14 @@ async function fetchYouTubeData(videoUrl: string): Promise<YoutubeData> {
   }))
 
   // ── Transcript ────────────────────────────────────────────────────────────
-  const transcriptData = await info.getTranscript()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const segments: any[] =
-    transcriptData?.transcript?.content?.body?.initial_segments ?? []
+  let segments: any[] = []
+  try {
+    const transcriptData = await info.getTranscript()
+    segments = transcriptData?.transcript?.content?.body?.initial_segments ?? []
+  } catch (err) {
+    console.warn(`[video-ingest] getTranscript() failed, continuing without transcript:`, err)
+  }
 
   const segText = (seg: unknown): string => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -122,7 +122,7 @@ export default async function MyPrimrPage() {
       <nav className={styles.nav}>
         <Link href="/" className={styles.wordmark}>Primr</Link>
         <div className={styles.navActions}>
-          <UserMenu userName={session.user.name} userEmail={session.user.email} role={session.user.role} />
+          <UserMenu userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} />
         </div>
       </nav>
 

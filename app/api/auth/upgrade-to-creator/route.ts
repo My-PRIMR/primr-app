@@ -7,15 +7,17 @@ import { eq } from 'drizzle-orm'
 export async function POST() {
   const session = await getSession()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (session.user.role !== 'learner') return NextResponse.json({ error: 'Already a creator' }, { status: 400 })
+  if (session.user.productRole !== 'learner') return NextResponse.json({ error: 'Already a creator' }, { status: 400 })
 
   await db.update(users).set({ productRole: 'creator' }).where(eq(users.id, session.user.id))
 
   await issueSession({
-    id: session.user.id,
-    email: session.user.email,
-    name: session.user.name,
-    role: 'creator',
+    id:           session.user.id,
+    email:        session.user.email,
+    name:         session.user.name,
+    productRole:  'creator',
+    plan:         session.user.plan,
+    internalRole: session.user.internalRole,
   })
 
   return NextResponse.json({ ok: true })

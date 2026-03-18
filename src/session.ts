@@ -10,15 +10,30 @@ function getSecret() {
 
 export interface PrimrSession {
   user: {
-    id: string
-    email: string
-    name: string | null
-    role: string
+    id:           string
+    email:        string
+    name:         string | null
+    productRole:  string
+    plan:         string
+    internalRole: string | null
   }
 }
 
-export async function issueSession(payload: { id: string; email: string; name: string | null; role: string }) {
-  const token = await new SignJWT({ email: payload.email, name: payload.name, role: payload.role })
+export async function issueSession(payload: {
+  id:           string
+  email:        string
+  name:         string | null
+  productRole:  string
+  plan:         string
+  internalRole: string | null
+}) {
+  const token = await new SignJWT({
+    email:        payload.email,
+    name:         payload.name,
+    productRole:  payload.productRole,
+    plan:         payload.plan,
+    internalRole: payload.internalRole,
+  })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(payload.id)
     .setIssuedAt()
@@ -42,10 +57,12 @@ export async function getSession(): Promise<PrimrSession | null> {
     const { payload } = await jwtVerify(token, getSecret())
     return {
       user: {
-        id: payload.sub as string,
-        email: payload.email as string,
-        name: (payload.name as string | null) ?? null,
-        role: payload.role as string,
+        id:           payload.sub as string,
+        email:        payload.email as string,
+        name:         (payload.name as string | null) ?? null,
+        productRole:  (payload.productRole as string) ?? 'learner',
+        plan:         (payload.plan as string) ?? 'free',
+        internalRole: (payload.internalRole as string | null) ?? null,
       },
     }
   } catch {

@@ -31,7 +31,7 @@ export default async function LearnPage({ params }: { params: Promise<{ id: stri
 
   return (
     <>
-      <LearnHeader userName={session.user.name} userEmail={session.user.email} role={session.user.role} />
+      <LearnHeader userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} />
       <LessonPlayer lessonId={lesson.id} manifest={lesson.manifest} />
     </>
   )

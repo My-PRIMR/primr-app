@@ -17,8 +17,8 @@ export default async function DashboardPage() {
   const session = await getSession()
   if (!session?.user?.id || !session.user.email) redirect('/login')
 
-  const role = session.user.role ?? 'learner'
-  const isCreator = role === 'creator' || role === 'administrator'
+  const role = session.user.productRole ?? 'learner'
+  const isCreator = role === 'creator' || role === 'lnd_manager' || role === 'org_admin'
   const email = session.user.email.toLowerCase()
   const userId = session.user.id
 
@@ -174,7 +174,7 @@ export default async function DashboardPage() {
               <Link href="/creator/new" className={styles.newBtn}>+ New lesson</Link>
             </>
           )}
-          <UserMenu userName={session.user.name} userEmail={session.user.email} role={session.user.role} />
+          <UserMenu userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} />
         </div>
       </nav>
 

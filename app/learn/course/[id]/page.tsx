@@ -115,7 +115,7 @@ export default async function CourseLearnPage({
 
   return (
     <>
-      <LearnHeader userName={session.user.name} userEmail={session.user.email} role={session.user.role} />
+      <LearnHeader userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} />
       <CoursePlayer
         courseId={courseId}
         courseTitle={course.title}

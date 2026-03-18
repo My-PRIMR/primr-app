@@ -36,7 +36,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.productRole,
+          productRole: user.productRole,
         }
       },
     }),
@@ -45,13 +45,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     jwt({ token, user }) {
       if (user) {
         token.id = user.id
-        token.role = (user as { role: string }).role
+        token.productRole = user.productRole
       }
       return token
     },
     session({ session, token }) {
       session.user.id = token.id as string
-      ;(session.user as { role: string }).role = token.role as string
+      session.user.productRole = token.productRole as string
       return session
     },
   },

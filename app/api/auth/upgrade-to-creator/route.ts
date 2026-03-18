@@ -9,7 +9,7 @@ export async function POST() {
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (session.user.role !== 'learner') return NextResponse.json({ error: 'Already a creator' }, { status: 400 })
 
-  await db.update(users).set({ role: 'creator' }).where(eq(users.id, session.user.id))
+  await db.update(users).set({ productRole: 'creator' }).where(eq(users.id, session.user.id))
 
   await issueSession({
     id: session.user.id,

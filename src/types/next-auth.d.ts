@@ -2,7 +2,7 @@ import 'next-auth'
 
 declare module 'next-auth' {
   interface User {
-    role?: string
+    productRole?: string
   }
 
   interface Session {
@@ -10,7 +10,7 @@ declare module 'next-auth' {
       id: string
       email: string
       name?: string | null
-      role: string
+      productRole: string
     }
   }
 }

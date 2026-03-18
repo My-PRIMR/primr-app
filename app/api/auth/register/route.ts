@@ -31,8 +31,8 @@ export async function POST(req: NextRequest) {
     email: email.toLowerCase(),
     passwordHash,
     name: name || null,
-    role: 'creator', // early adopters get creator role
-  }).returning({ id: users.id, email: users.email, role: users.role })
+    productRole: 'creator', // early adopters get creator role
+  }).returning({ id: users.id, email: users.email, productRole: users.productRole })
 
   return NextResponse.json({ user })
 }

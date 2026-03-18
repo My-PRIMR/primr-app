@@ -944,13 +944,28 @@
           "primaryKey": false,
           "notNull": false
         },
-        "role": {
-          "name": "role",
-          "type": "user_role",
+        "product_role": {
+          "name": "product_role",
+          "type": "product_role",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
           "default": "'learner'"
+        },
+        "plan": {
+          "name": "plan",
+          "type": "plan",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'free'"
+        },
+        "internal_role": {
+          "name": "internal_role",
+          "type": "internal_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
         },
         "organization_id": {
           "name": "organization_id",
@@ -1043,13 +1058,31 @@
         "failed"
       ]
     },
-    "public.user_role": {
-      "name": "user_role",
+    "public.product_role": {
+      "name": "product_role",
       "schema": "public",
       "values": [
         "learner",
         "creator",
-        "administrator"
+        "lnd_manager",
+        "org_admin"
+      ]
+    },
+    "public.plan": {
+      "name": "plan",
+      "schema": "public",
+      "values": [
+        "free",
+        "pro",
+        "enterprise"
+      ]
+    },
+    "public.internal_role": {
+      "name": "internal_role",
+      "schema": "public",
+      "values": [
+        "staff",
+        "admin"
       ]
     }
   },

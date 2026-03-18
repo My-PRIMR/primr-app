@@ -2,7 +2,9 @@ import { pgTable, pgEnum, text, jsonb, timestamp, uuid, real, integer, boolean, 
 import type { LessonManifest } from '@primr/components'
 
 // ── Enums ────────────────────────────────────────────────────────────────────
-export const userRoleEnum = pgEnum('user_role', ['learner', 'creator', 'administrator'])
+export const productRoleEnum = pgEnum('product_role', ['learner', 'creator', 'lnd_manager', 'org_admin'])
+export const planEnum         = pgEnum('plan',         ['free', 'pro', 'enterprise'])
+export const internalRoleEnum = pgEnum('internal_role', ['staff', 'admin'])
 
 // ── Organizations ────────────────────────────────────────────────────────────
 export const organizations = pgTable('organizations', {
@@ -22,7 +24,9 @@ export const users = pgTable('users', {
   email:          text('email').notNull().unique(),
   passwordHash:   text('password_hash'),
   name:           text('name'),
-  role:           userRoleEnum('role').notNull().default('learner'),
+  productRole:  productRoleEnum('product_role').notNull().default('learner'),
+  plan:         planEnum('plan').notNull().default('free'),
+  internalRole: internalRoleEnum('internal_role'),
   organizationId: uuid('organization_id').references(() => organizations.id),
   createdAt:      timestamp('created_at').notNull().defaultNow(),
   updatedAt:      timestamp('updated_at').notNull().defaultNow(),

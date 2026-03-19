@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { getSession } from '@/session'
+import { resolveModel, DEFAULT_MODEL, modelById } from '@/lib/models'
 import type { ParsedCourseTree, CourseTree } from '@/types/course'
 import { extractJSON } from '@/lib/extract-json'
 
@@ -92,12 +93,22 @@ export async function POST(req: NextRequest) {
   const session = await getSession()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const internalRole = session.user.internalRole ?? null
+  let resolvedModel = modelById(DEFAULT_MODEL)!
+
   try {
     const formData = await req.formData()
     const file = formData.get('file') as File | null
     const audience = (formData.get('audience') as string | null) || 'General'
     const level = (formData.get('level') as string | null) || 'beginner'
     const focus = (formData.get('focus') as string | null) || ''
+    const model = (formData.get('model') as string | null) || undefined
+
+    if (model && internalRole) {
+      const m = resolveModel(model, internalRole)
+      if (!m) return NextResponse.json({ error: 'Unauthorized model selection' }, { status: 403 })
+      resolvedModel = m
+    }
 
     if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
 
@@ -122,9 +133,10 @@ export async function POST(req: NextRequest) {
     // Send first 12k chars to Claude for structure analysis
     const excerpt = fullText.slice(0, 12000)
 
+    console.log(`[courses/parse] using model: ${resolvedModel.id}`)
     const t0 = Date.now()
     const message = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: resolvedModel.id,
       max_tokens: 16384,
       system: PARSE_SYSTEM_PROMPT,
       messages: [

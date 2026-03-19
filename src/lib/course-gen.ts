@@ -6,7 +6,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { extractJSON } from './extract-json'
 import { db } from '@/db'
 import { courses, chapterLessons, lessons } from '@/db/schema'
-import { eq, and, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
+import { DEFAULT_MODEL } from '@/lib/models'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline } from '@/types/outline'
 
@@ -48,6 +49,7 @@ async function generateOutline(params: {
   level: string
   documentText?: string
   focus?: string
+  model?: string
 }): Promise<LessonOutline> {
   const focusLine = params.focus?.trim() ? `Focus/Scope: ${params.focus.trim()}\n` : ''
   const userContent = params.documentText?.trim()
@@ -55,7 +57,7 @@ async function generateOutline(params: {
     : `Title: ${params.title}\nTopic: ${params.title}\nAudience: ${params.audience}\nLevel: ${params.level}\n${focusLine}\nRespond with JSON only.`
 
   const message = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: params.model ?? DEFAULT_MODEL,
     max_tokens: 2048,
     system: OUTLINE_SYSTEM_PROMPT,
     messages: [{ role: 'user', content: userContent }],
@@ -140,6 +142,8 @@ async function generateLesson(params: {
   documentText?: string
   userId: string | null
   focus?: string
+  model?: string
+  passiveLesson?: boolean
 }): Promise<string> {  // returns lessonId
   const focusLine = params.focus?.trim() ? `\n\nFocus/Scope: ${params.focus.trim()} — only include content relevant to this focus.` : ''
   const userMessage = [
@@ -150,10 +154,15 @@ async function generateLesson(params: {
       : '',
   ].join('')
 
+  let systemPrompt = OUTLINE_LESSON_SYSTEM_PROMPT
+  if (params.passiveLesson) {
+    systemPrompt += '\n\nIMPORTANT: Generate only informational content blocks (hero, narrative, step-navigator). Do not include any interactive or assessment blocks (quiz, flashcard, fill-in-the-blank, or similar). The lesson should be purely informational — no questions, no exercises.'
+  }
+
   const message = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: params.model ?? DEFAULT_MODEL,
     max_tokens: 16384,
-    system: OUTLINE_LESSON_SYSTEM_PROMPT,
+    system: systemPrompt,
     messages: [{ role: 'user', content: userMessage + '\n\nRespond with JSON only.' }],
   })
 
@@ -188,12 +197,12 @@ export async function runCourseGeneration(
   courseId: string,
   lessonInputs: LessonGenInput[],
   userId: string | null,
+  model?: string,
+  passiveLesson?: boolean,
 ): Promise<void> {
   console.log(`[course-gen] Starting generation for course ${courseId}, ${lessonInputs.length} lessons`)
 
   await db.update(courses).set({ status: 'generating', updatedAt: new Date() }).where(eq(courses.id, courseId))
-
-  let allSucceeded = true
 
   for (const input of lessonInputs) {
     console.log(`[course-gen] Generating lesson: "${input.title}" (${input.chapterLessonId})`)
@@ -209,6 +218,7 @@ export async function runCourseGeneration(
         level: input.level || 'beginner',
         documentText: input.sourceText,
         focus: input.focus,
+        model,
       })
 
       const lessonId = await generateLesson({
@@ -216,6 +226,8 @@ export async function runCourseGeneration(
         documentText: input.sourceText,
         userId,
         focus: input.focus,
+        model,
+        passiveLesson,
       })
 
       await db.update(chapterLessons)
@@ -228,11 +240,10 @@ export async function runCourseGeneration(
       await db.update(chapterLessons)
         .set({ generationStatus: 'failed' })
         .where(eq(chapterLessons.id, input.chapterLessonId))
-      allSucceeded = false
     }
   }
 
-  const finalStatus = allSucceeded ? 'ready' : 'ready'  // still ready, failed lessons can be retried
-  await db.update(courses).set({ status: finalStatus, updatedAt: new Date() }).where(eq(courses.id, courseId))
-  console.log(`[course-gen] Course ${courseId} generation complete (status: ${finalStatus})`)
+  // Course is always marked ready; failed lessons can be individually retried
+  await db.update(courses).set({ status: 'ready', updatedAt: new Date() }).where(eq(courses.id, courseId))
+  console.log(`[course-gen] Course ${courseId} generation complete (status: ready)`)
 }

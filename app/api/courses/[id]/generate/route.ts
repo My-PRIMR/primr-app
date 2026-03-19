@@ -8,6 +8,8 @@ import { db } from '@/db'
 import { courses, courseSections, courseChapters, chapterLessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getSession } from '@/session'
+import { resolveModel, DEFAULT_MODEL, modelById } from '@/lib/models'
+import { checkCap, logUsage } from '@/lib/usage-cap'
 import { runCourseGeneration, type LessonGenInput } from '@/lib/course-gen'
 import type { CourseTree } from '@/types/course'
 
@@ -24,16 +26,30 @@ export async function POST(
   if (!course) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (course.createdBy !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const body = await req.json() as { tree: CourseTree }
-  const { tree } = body
+  const body = await req.json() as { tree: CourseTree, model?: string, passiveLesson?: boolean }
+  const { tree, model, passiveLesson } = body
 
   if (!tree?.sections?.length) {
     return NextResponse.json({ error: 'tree with sections is required' }, { status: 400 })
   }
 
+  const internalRole = session.user.internalRole ?? null
+  let resolvedModel = modelById(DEFAULT_MODEL)!
+  if (model && internalRole) {
+    const m = resolveModel(model, internalRole)
+    if (!m) return NextResponse.json({ error: 'Unauthorized model selection' }, { status: 403 })
+    resolvedModel = m
+  }
+
+  const { allowed } = await checkCap(session.user.id, resolvedModel.id)
+  if (!allowed) {
+    const resetAt = new Date()
+    resetAt.setUTCHours(24, 0, 0, 0)
+    return NextResponse.json({ error: 'Daily generation limit reached', resetAt: resetAt.toISOString() }, { status: 429 })
+  }
+
   // Create the full structure in DB
   const lessonInputs: LessonGenInput[] = []
-  let globalPosition = 0
 
   for (let si = 0; si < tree.sections.length; si++) {
     const section = tree.sections[si]
@@ -72,7 +88,6 @@ export async function POST(
           level: lesson.level,
           focus: lesson.focus,
         })
-        globalPosition++
       }
     }
   }
@@ -86,9 +101,12 @@ export async function POST(
 
   // Fire and forget — background generation
   const userId = session.user.id
-  runCourseGeneration(courseId, lessonInputs, userId).catch(err => {
+  runCourseGeneration(courseId, lessonInputs, userId, resolvedModel.id, passiveLesson).catch(err => {
     console.error(`[generate] Unhandled error in course generation for ${courseId}:`, err)
   })
+
+  // Log usage at generation start (fire-and-forget means we can't log on completion)
+  await logUsage(userId, 'course', resolvedModel.id)
 
   return NextResponse.json({
     courseId,

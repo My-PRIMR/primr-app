@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { getSession } from '@/session'
+import { resolveModel, DEFAULT_MODEL, modelById } from '@/lib/models'
 
 const client = new Anthropic()
 
@@ -32,21 +34,32 @@ Rules:
 - Return ONLY valid JSON. No markdown fences, no explanation.`
 
 export async function POST(req: NextRequest) {
-  const { title, topic, audience, level, documentText } = await req.json()
+  const { title, topic, audience, level, documentText, model } = await req.json()
 
   if (!title?.trim() || (!topic?.trim() && !documentText?.trim())) {
     return NextResponse.json({ error: 'title and either topic or a document are required' }, { status: 400 })
   }
 
+  const session = await getSession()
+  const internalRole = session?.user?.internalRole ?? null
+  let resolvedModel = modelById(DEFAULT_MODEL)!
+  if (model && internalRole) {
+    const m = resolveModel(model, internalRole)
+    if (!m) return NextResponse.json({ error: 'Unauthorized model selection' }, { status: 403 })
+    resolvedModel = m
+  }
+
   console.log(`[outline] title: "${title}", audience: "${audience}", level: "${level}", hasDoc: ${!!documentText}`)
+  console.log(`[outline] using model: ${resolvedModel.id}`)
   const t0 = Date.now()
 
   const userContent = documentText?.trim()
     ? `Title: ${title}\nAudience: ${audience || 'General'}\nLevel: ${level || 'beginner'}${topic?.trim() ? `\nAdditional context: ${topic}` : ''}\n\nSource document:\n"""\n${documentText}\n"""`
     : `Title: ${title}\nTopic: ${topic}\nAudience: ${audience || 'General'}\nLevel: ${level || 'beginner'}`
 
+  // No cap check: outline generation is a lightweight planning step, not billed against daily limits
   const message = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: resolvedModel.id,
     max_tokens: 2048,
     system: SYSTEM_PROMPT,
     messages: [{

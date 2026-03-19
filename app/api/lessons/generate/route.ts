@@ -4,6 +4,8 @@ import { extractJSON } from '@/lib/extract-json'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { getSession } from '@/session'
+import { resolveModel, DEFAULT_MODEL, modelById } from '@/lib/models'
+import { checkCap, logUsage } from '@/lib/usage-cap'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline } from '@/types/outline'
 
@@ -105,13 +107,37 @@ export async function POST(req: NextRequest) {
   const outline: LessonOutline | undefined = body.outline
   const topic: string | undefined = body.topic
   const documentText: string | undefined = body.documentText
+  const model: string | undefined = body.model
+  const passiveLesson: boolean | undefined = body.passiveLesson
 
   if (!outline && !topic?.trim()) {
     return NextResponse.json({ error: 'outline or topic is required' }, { status: 400 })
   }
 
+  const internalRole = session?.user?.internalRole ?? null
+  let resolvedModel = modelById(DEFAULT_MODEL)!
+  if (model && internalRole) {
+    const m = resolveModel(model, internalRole)
+    if (!m) return NextResponse.json({ error: 'Unauthorized model selection' }, { status: 403 })
+    resolvedModel = m
+  }
+
+  if (userId) {
+    const { allowed } = await checkCap(userId, resolvedModel.id)
+    if (!allowed) {
+      const resetAt = new Date()
+      resetAt.setUTCHours(24, 0, 0, 0)
+      return NextResponse.json({ error: 'Daily generation limit reached', resetAt: resetAt.toISOString() }, { status: 429 })
+    }
+  }
+
   const isOutlineBased = !!outline
-  const systemPrompt = isOutlineBased ? OUTLINE_SYSTEM_PROMPT : LEGACY_SYSTEM_PROMPT
+  let systemPrompt = isOutlineBased ? OUTLINE_SYSTEM_PROMPT : LEGACY_SYSTEM_PROMPT
+
+  if (passiveLesson && internalRole) {
+    systemPrompt += '\n\nIMPORTANT: Generate only informational content blocks (text, heading, narrative, step-navigator, hero, callout). Do not include any interactive or assessment blocks (quiz, flashcard, fill-in-the-blank, or similar). The lesson should be purely informational — no questions, no exercises.'
+  }
+
   const userMessage = isOutlineBased
     ? [
         topic?.trim() ? `Creator's intent: ${topic}\n` : '',
@@ -124,7 +150,7 @@ export async function POST(req: NextRequest) {
   const t0 = Date.now()
 
   const message = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: resolvedModel.id,
     max_tokens: 16384,
     system: systemPrompt,
     messages: [{ role: 'user', content: userMessage + '\n\nRespond with JSON only.' }],
@@ -155,6 +181,10 @@ export async function POST(req: NextRequest) {
     createdBy: userId,
   }).returning()
   console.log(`[generate] saved to DB in ${Date.now() - t1}ms, id=${lesson.id}`)
+
+  if (userId) {
+    await logUsage(userId, 'standalone_lesson', resolvedModel.id)
+  }
 
   return NextResponse.json({ id: lesson.id, manifest })
 }

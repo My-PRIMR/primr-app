@@ -6,6 +6,11 @@ interface Props {
   state: WizardState
   onField: (field: string, value: string) => void
   onSubmit: () => void
+  internalRole?: string | null
+  selectedModel?: string
+  onModelChange?: (model: string) => void
+  passiveLesson?: boolean
+  onPassiveLessonChange?: (v: boolean) => void
 }
 
 const EXAMPLES = [
@@ -14,7 +19,7 @@ const EXAMPLES = [
   { title: 'Introduction to Git Branching', topic: 'Cover creating branches, merging, rebasing, and resolving merge conflicts in Git.' },
 ]
 
-export default function Step1Form({ state, onField, onSubmit }: Props) {
+export default function Step1Form({ state, onField, onSubmit, internalRole, selectedModel, onModelChange, passiveLesson, onPassiveLessonChange }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [extracting, setExtracting] = useState(false)
   const [extractError, setExtractError] = useState('')
@@ -145,6 +150,35 @@ export default function Step1Form({ state, onField, onSubmit }: Props) {
           </button>
         ))}
       </div>
+
+      {internalRole && (
+        <div className={styles.internalControls}>
+          <label className={styles.label}>
+            Model
+            <select
+              className={styles.select}
+              value={selectedModel}
+              onChange={e => onModelChange?.(e.target.value)}
+            >
+              <option value="claude-haiku-4-5-20251001">Haiku (fast)</option>
+              <option value="claude-sonnet-4-6">Sonnet (better)</option>
+              {internalRole === 'admin' && (
+                <option value="claude-opus-4-6">Opus (best)</option>
+              )}
+            </select>
+          </label>
+
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={passiveLesson}
+              onChange={e => onPassiveLessonChange?.(e.target.checked)}
+              className={styles.checkbox}
+            />
+            Informational only (no interactive content)
+          </label>
+        </div>
+      )}
 
       {state.error && <p className={styles.error}>{state.error}</p>}
 

@@ -206,3 +206,30 @@
 .submit:hover:not(:disabled) { opacity: 0.88; }
 .submit:active:not(:disabled) { transform: scale(0.97); }
 .submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Internal admin controls ── */
+.internalControls {
+  padding: 14px 16px;
+  background: var(--surface-alt, #F7F6F3);
+  border: 1px solid var(--border, rgba(15,17,23,0.10));
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-soft, #4A4D5E);
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: var(--accent, #6B5CE7);
+}

@@ -134,6 +134,20 @@
   margin-top: 1px;
 }
 
+/* ── Primr Internal ── */
+.internalItem {
+  display: block;
+  padding: 11px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+  transition: background 120ms;
+}
+.internalItem:hover {
+  background: var(--accent-soft);
+}
+
 /* ── Log out ── */
 .logoutItem {
   display: block;

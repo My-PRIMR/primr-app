@@ -31,7 +31,7 @@ export default async function LearnPage({ params }: { params: Promise<{ id: stri
 
   return (
     <>
-      <LearnHeader userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} />
+      <LearnHeader userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} internalRole={session.user.internalRole} internalUrl={process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004'} />
       <LessonPlayer lessonId={lesson.id} manifest={lesson.manifest} />
     </>
   )

@@ -8,6 +8,8 @@ interface UserMenuProps {
   userName: string | null
   userEmail: string
   role: string
+  internalRole?: string | null
+  internalUrl?: string
 }
 
 function roleLabel(role: string) {
@@ -20,7 +22,7 @@ function roleLabel(role: string) {
   }
 }
 
-export function UserMenu({ userName, userEmail, role }: UserMenuProps) {
+export function UserMenu({ userName, userEmail, role, internalRole, internalUrl }: UserMenuProps) {
   const [open, setOpen] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -72,6 +74,16 @@ export function UserMenu({ userName, userEmail, role }: UserMenuProps) {
                   <span className={styles.upgradeSub}>It&apos;s free!</span>
                 </span>
               </button>
+              <div className={styles.divider} />
+            </>
+          )}
+
+          {/* Primr Internal — staff and admin only */}
+          {(internalRole === 'staff' || internalRole === 'admin') && (
+            <>
+              <a href={internalUrl} className={styles.internalItem}>
+                Primr Internal ↗
+              </a>
               <div className={styles.divider} />
             </>
           )}

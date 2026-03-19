@@ -122,7 +122,7 @@ export default async function MyPrimrPage() {
       <nav className={styles.nav}>
         <Link href="/" className={styles.wordmark}>Primr</Link>
         <div className={styles.navActions}>
-          <UserMenu userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} />
+          <UserMenu userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} internalRole={session.user.internalRole} internalUrl={process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004'} />
         </div>
       </nav>
 

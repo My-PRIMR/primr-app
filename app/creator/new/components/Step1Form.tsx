@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import type { WizardState } from '@/types/outline'
 import styles from './Step1Form.module.css'
+import { MODELS } from '@/lib/models'
 
 interface Props {
   state: WizardState
@@ -160,10 +161,10 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, sele
               value={selectedModel}
               onChange={e => onModelChange?.(e.target.value)}
             >
-              <option value="claude-haiku-4-5-20251001">Haiku (fast)</option>
-              <option value="claude-sonnet-4-6">Sonnet (better)</option>
+              <option value={MODELS.haiku.id}>Haiku (fast)</option>
+              <option value={MODELS.sonnet.id}>Sonnet (better)</option>
               {internalRole === 'admin' && (
-                <option value="claude-opus-4-6">Opus (best)</option>
+                <option value={MODELS.opus.id}>Opus (best)</option>
               )}
             </select>
           </label>

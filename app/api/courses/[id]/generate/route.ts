@@ -101,7 +101,7 @@ export async function POST(
 
   // Fire and forget — background generation
   const userId = session.user.id
-  runCourseGeneration(courseId, lessonInputs, userId, resolvedModel.id, passiveLesson).catch(err => {
+  runCourseGeneration(courseId, lessonInputs, userId, resolvedModel.id, passiveLesson && !!internalRole).catch(err => {
     console.error(`[generate] Unhandled error in course generation for ${courseId}:`, err)
   })
 

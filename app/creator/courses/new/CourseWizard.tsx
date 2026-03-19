@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import type { CourseTree, CourseSection, CourseChapter, CourseLesson, FlatLesson } from '@/types/course'
 import styles from './CourseWizard.module.css'
-import { DEFAULT_MODEL } from '@/lib/models'
+import { DEFAULT_MODEL, MODELS } from '@/lib/models'
 
 // ── Wizard State ──────────────────────────────────────────────────────────────
 
@@ -453,10 +453,10 @@ export default function CourseWizard({ internalRole }: CourseWizardProps) {
                     value={selectedModel}
                     onChange={e => setSelectedModel(e.target.value)}
                   >
-                    <option value="claude-haiku-4-5-20251001">Haiku (fast)</option>
-                    <option value="claude-sonnet-4-6">Sonnet (better)</option>
+                    <option value={MODELS.haiku.id}>Haiku (fast)</option>
+                    <option value={MODELS.sonnet.id}>Sonnet (better)</option>
                     {internalRole === 'admin' && (
-                      <option value="claude-opus-4-6">Opus (best)</option>
+                      <option value={MODELS.opus.id}>Opus (best)</option>
                     )}
                   </select>
                 </div>

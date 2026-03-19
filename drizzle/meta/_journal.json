@@ -64,6 +64,13 @@
       "when": 1773860359575,
       "tag": "0008_user_schema_refactor",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1773881029897,
+      "tag": "0009_chubby_paladin",
+      "breakpoints": true
     }
   ]
 }

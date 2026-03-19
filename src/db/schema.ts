@@ -187,3 +187,19 @@ export const courseInviteLinks = pgTable('course_invite_links', {
 
 export type CourseInviteLink = typeof courseInviteLinks.$inferSelect
 export type NewCourseInviteLink = typeof courseInviteLinks.$inferInsert
+
+// ── Internal Usage Log ────────────────────────────────────────────────────────
+export const internalUsageEventTypeEnum = pgEnum('internal_usage_event_type', ['standalone_lesson', 'course'])
+export const internalUsageCostCategoryEnum = pgEnum('internal_usage_cost_category', ['LOW', 'MEDIUM', 'HIGH'])
+
+export const internalUsageLog = pgTable('internal_usage_log', {
+  id:           uuid('id').primaryKey().defaultRandom(),
+  userId:       uuid('user_id').notNull().references(() => users.id),
+  eventType:    internalUsageEventTypeEnum('event_type').notNull(),
+  modelId:      text('model_id').notNull(),
+  costCategory: internalUsageCostCategoryEnum('cost_category').notNull(),
+  createdAt:    timestamp('created_at').notNull().defaultNow(),
+})
+
+export type InternalUsageLog = typeof internalUsageLog.$inferSelect
+export type NewInternalUsageLog = typeof internalUsageLog.$inferInsert

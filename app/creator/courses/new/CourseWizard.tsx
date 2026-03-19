@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import type { CourseTree, CourseSection, CourseChapter, CourseLesson, FlatLesson } from '@/types/course'
 import styles from './CourseWizard.module.css'
+import { DEFAULT_MODEL } from '@/lib/models'
 
 // ── Wizard State ──────────────────────────────────────────────────────────────
 
@@ -55,8 +56,14 @@ function genId() {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export default function CourseWizard() {
+interface CourseWizardProps {
+  internalRole: string | null
+}
+
+export default function CourseWizard({ internalRole }: CourseWizardProps) {
   const [state, setState] = useState<WizardState>(initialState)
+  const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL)
+  const [passiveLesson, setPassiveLesson] = useState(false)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Step 4 polling
@@ -109,6 +116,7 @@ export default function CourseWizard() {
     formData.append('audience', state.audience)
     formData.append('level', state.level)
     if (state.focus.trim()) formData.append('focus', state.focus.trim())
+    formData.append('model', selectedModel)
 
     try {
       const res = await fetch('/api/courses/parse', { method: 'POST', body: formData })
@@ -202,7 +210,7 @@ export default function CourseWizard() {
       const genRes = await fetch(`/api/courses/${courseId}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tree: filteredTree }),
+        body: JSON.stringify({ tree: filteredTree, model: selectedModel, passiveLesson }),
       })
       const genData = await genRes.json()
       if (!genRes.ok) {
@@ -435,6 +443,34 @@ export default function CourseWizard() {
               />
               <p className={styles.fieldHint}>Narrows what Claude covers when structuring and generating lessons.</p>
             </div>
+
+            {internalRole && (
+              <div className={styles.internalControls}>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Model</label>
+                  <select
+                    className={styles.select}
+                    value={selectedModel}
+                    onChange={e => setSelectedModel(e.target.value)}
+                  >
+                    <option value="claude-haiku-4-5-20251001">Haiku (fast)</option>
+                    <option value="claude-sonnet-4-6">Sonnet (better)</option>
+                    {internalRole === 'admin' && (
+                      <option value="claude-opus-4-6">Opus (best)</option>
+                    )}
+                  </select>
+                </div>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={passiveLesson}
+                    onChange={e => setPassiveLesson(e.target.checked)}
+                    className={styles.checkbox}
+                  />
+                  Informational only (no interactive content)
+                </label>
+              </div>
+            )}
 
             <div className={styles.uploadSection}>
               <label className={styles.uploadLabel}>

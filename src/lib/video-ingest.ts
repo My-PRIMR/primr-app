@@ -295,6 +295,54 @@ function distributeTranscriptAcrossChapters(
   })
 }
 
+// ── Supadata ──────────────────────────────────────────────────────────────────
+
+interface SupadataSegment { text: string; offset: number; duration: number; lang: string }
+
+async function fetchTranscriptViaSupadata(
+  videoUrl: string
+): Promise<{ transcriptText: string; segments: SupadataSegment[] }> {
+  const apiKey = process.env.SUPADATA_API_KEY?.trim()
+  if (!apiKey) throw new Error('SUPADATA_API_KEY not configured')
+
+  const url = `https://api.supadata.ai/v1/youtube/transcript?videoId=${encodeURIComponent(videoUrl)}&lang=en`
+  const res = await fetch(url, { headers: { 'x-api-key': apiKey } })
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`Supadata API error ${res.status}: ${body}`)
+  }
+
+  const data = await res.json() as { content: SupadataSegment[] | string; lang: string; availableLangs: string[] }
+
+  if (typeof data.content === 'string') {
+    return { transcriptText: data.content.slice(0, MAX_TRANSCRIPT_CHARS), segments: [] }
+  }
+
+  const segments = data.content
+  const transcriptText = segments.map(s => s.text).join(' ').replace(/\s+/g, ' ').trim().slice(0, MAX_TRANSCRIPT_CHARS)
+  return { transcriptText, segments }
+}
+
+function buildChapterTranscriptsFromSegments(
+  segments: SupadataSegment[],
+  chapters: Chapter[]
+): Array<{ chapter: Chapter; text: string }> {
+  return chapters.map(ch => {
+    const startMs = ch.start_time * 1000
+    const endMs = ch.end_time * 1000
+    const text = segments
+      .filter(s => s.offset >= startMs && s.offset < endMs)
+      .map(s => s.text)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+    return { chapter: ch, text }
+  })
+}
+
+// ── AssemblyAI ────────────────────────────────────────────────────────────────
+
 async function transcribeVideoUrlWithAssemblyAI(videoUrl: string): Promise<{ text: string; durationSec: number }> {
   if (!process.env.ASSEMBLYAI_API_KEY?.trim()) {
     throw new Error(
@@ -547,33 +595,45 @@ export async function runVideoIngestion(params: {
       chapterTranscripts = data.chapterTranscripts
       console.log(`[video-ingest] YouTube data done in ${Date.now() - t0}ms, chapters=${chapters.length}, chars=${transcriptText.length}`)
 
+      let supadataSegments: SupadataSegment[] = []
       let usedAssemblyFallback = false
+
       if (transcriptText.length < MIN_TRANSCRIPT_CHARS) {
-        console.log(
-          `[video-ingest] YouTube transcript short/empty (${transcriptText.length} chars); trying AssemblyAI…`
-        )
-        const fallbackSource = data.audioUrl
-        if (fallbackSource) {
-          const aa = await transcribeVideoUrlWithAssemblyAI(fallbackSource)
-          transcriptText = aa.text
-          durationHint = Math.max(durationHint, aa.durationSec)
-          usedAssemblyFallback = true
-        } else {
-          console.log('[video-ingest] No deciphered audio URL from youtubei; falling back to yt-dlp audio download…')
-          const aa = await transcribeYouTubeViaYtDlp(videoUrl!)
-          transcriptText = aa.text
-          durationHint = Math.max(durationHint, aa.durationSec)
-          usedAssemblyFallback = true
+        console.log(`[video-ingest] Innertube transcript empty/short (${transcriptText.length} chars); trying Supadata…`)
+        try {
+          const result = await fetchTranscriptViaSupadata(videoUrl!)
+          transcriptText = result.transcriptText
+          supadataSegments = result.segments
+          console.log(`[video-ingest] Supadata: ${transcriptText.length} chars, ${supadataSegments.length} segments`)
+        } catch (supadataErr) {
+          console.warn(`[video-ingest] Supadata failed: ${supadataErr}. Falling back to AssemblyAI…`)
+          const fallbackSource = data.audioUrl
+          if (fallbackSource) {
+            const aa = await transcribeVideoUrlWithAssemblyAI(fallbackSource)
+            transcriptText = aa.text
+            durationHint = Math.max(durationHint, aa.durationSec)
+            usedAssemblyFallback = true
+          } else {
+            console.log('[video-ingest] No audio URL from Innertube; falling back to yt-dlp…')
+            const aa = await transcribeYouTubeViaYtDlp(videoUrl!)
+            transcriptText = aa.text
+            durationHint = Math.max(durationHint, aa.durationSec)
+            usedAssemblyFallback = true
+          }
         }
       }
 
       const chapterTextTotal = () => chapterTranscripts.reduce((s, ct) => s + ct.text.length, 0)
 
       if (chapters.length > 0 && transcriptText.length >= MIN_TRANSCRIPT_CHARS) {
-        if (usedAssemblyFallback || chapterTextTotal() < MIN_TRANSCRIPT_CHARS) {
+        if (supadataSegments.length > 0) {
+          // Use Supadata's millisecond-accurate timestamps to map transcript to chapters
+          chapterTranscripts = buildChapterTranscriptsFromSegments(supadataSegments, chapters)
+          console.log(`[video-ingest] Mapped ${supadataSegments.length} Supadata segments to ${chapters.length} chapter(s)`)
+        } else if (usedAssemblyFallback || chapterTextTotal() < MIN_TRANSCRIPT_CHARS) {
           chapterTranscripts = distributeTranscriptAcrossChapters(chapters, transcriptText)
           console.log(
-            `[video-ingest] Mapped transcript to ${chapters.length} chapter(s) (fallback=${usedAssemblyFallback}, per-chapter text was sparse)`
+            `[video-ingest] Distributed transcript across ${chapters.length} chapter(s) (assembly_fallback=${usedAssemblyFallback})`
           )
         }
       }

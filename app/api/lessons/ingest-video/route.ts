@@ -47,14 +47,16 @@ export async function POST(req: NextRequest) {
   let audience: string | undefined
   let level: string | undefined
   let modelId: string | undefined
+  let passiveLesson: boolean = false
 
   if (isJson) {
-    const body = await req.json() as Record<string, string>
-    videoUrl = body.url?.trim() || undefined
-    title = body.title?.trim() || undefined
-    audience = body.audience?.trim() || undefined
-    level = body.level?.trim() || undefined
-    modelId = body.model?.trim() || undefined
+    const body = await req.json() as Record<string, string | boolean>
+    videoUrl = (body.url as string)?.trim() || undefined
+    title = (body.title as string)?.trim() || undefined
+    audience = (body.audience as string)?.trim() || undefined
+    level = (body.level as string)?.trim() || undefined
+    modelId = (body.model as string)?.trim() || undefined
+    passiveLesson = body.passiveLesson === true || body.passiveLesson === 'true'
 
     if (!videoUrl) return NextResponse.json({ error: 'url is required' }, { status: 400 })
     if (!isYouTubeUrl(videoUrl)) return NextResponse.json({ error: 'Only YouTube URLs are supported' }, { status: 400 })
@@ -65,6 +67,7 @@ export async function POST(req: NextRequest) {
     audience = typeof form.get('audience') === 'string' ? (form.get('audience') as string).trim() || undefined : undefined
     level = typeof form.get('level') === 'string' ? (form.get('level') as string).trim() || undefined : undefined
     modelId = typeof form.get('model') === 'string' ? (form.get('model') as string).trim() || undefined : undefined
+    passiveLesson = form.get('passiveLesson') === 'true'
 
     if (!(fileRaw instanceof File)) return NextResponse.json({ error: 'file is required' }, { status: 400 })
     if (fileRaw.size === 0) return NextResponse.json({ error: 'uploaded file is empty' }, { status: 400 })
@@ -97,7 +100,7 @@ export async function POST(req: NextRequest) {
 
   // ── Fire-and-forget pipeline ──────────────────────────────────────────────
   if (videoUrl) {
-    runVideoIngestion({ lessonId: lesson.id, videoUrl, title, audience, level, model: resolvedModel.id })
+    runVideoIngestion({ lessonId: lesson.id, videoUrl, title, audience, level, model: resolvedModel.id, passiveLesson })
       .catch(err => console.error(`[ingest-video] Unhandled error for ${lesson.id}:`, err))
   } else {
     const uploadDir = process.env.LOCAL_VIDEO_UPLOAD_DIR?.trim() || '/tmp/primr-video-uploads'
@@ -106,7 +109,7 @@ export async function POST(req: NextRequest) {
     const storedPath = join(uploadDir, `${Date.now()}-${randomUUID()}${ext}`)
     await writeFile(storedPath, new Uint8Array(await file!.arrayBuffer()))
 
-    runVideoIngestion({ lessonId: lesson.id, localFilePath: storedPath, sourceLabel: file!.name, title, audience, level, model: resolvedModel.id })
+    runVideoIngestion({ lessonId: lesson.id, localFilePath: storedPath, sourceLabel: file!.name, title, audience, level, model: resolvedModel.id, passiveLesson })
       .catch(err => console.error(`[ingest-video] Unhandled error for ${lesson.id}:`, err))
   }
 

@@ -85,11 +85,25 @@ media:
   completeOn?: 'mount' | 'end' — default 'end'`
 
 // Outline prompt — chapter-aware
-const OUTLINE_SYSTEM_PROMPT = `You are an expert instructional designer. Given a video transcript (split by chapter) and a list of chapters with timestamps, generate a lesson outline as JSON.
+function makeOutlineSystemPrompt(passive: boolean): string {
+  const chapterContentRule = passive
+    ? `2. For EACH chapter: one 'media' block (the clip) followed by 1–2 content blocks (narrative or step-navigator only — no interactive blocks)`
+    : `2. For EACH chapter: one 'media' block (the clip) followed by 2–3 content blocks. At least one MUST be interactive (fill-in-the-blank or flashcard); the rest can be narrative or step-navigator.`
+
+  const chapterInteractiveNote = passive
+    ? ''
+    : `\n- Each chapter section must include at least one fill-in-the-blank or flashcard block`
+
+  const exampleBlocks = passive
+    ? `    { "id": "ch0-content", "type": "narrative|step-navigator", "chapterIndex": 0, "summary": "...", "itemCount": number },`
+    : `    { "id": "ch0-content-1", "type": "narrative|step-navigator", "chapterIndex": 0, "summary": "...", "itemCount": number },
+    { "id": "ch0-interactive", "type": "fill-in-the-blank|flashcard", "chapterIndex": 0, "summary": "...", "itemCount": number },`
+
+  return `You are an expert instructional designer. Given a video transcript (split by chapter) and a list of chapters with timestamps, generate a lesson outline as JSON.
 
 The lesson MUST follow this exact structure:
 1. A single 'hero' block at the very start
-2. For EACH chapter: one 'media' block (the clip) followed by 1–2 content blocks (narrative or step-navigator only — NO quiz/flashcard/fill-in-the-blank here)
+${chapterContentRule}
 3. 1–3 'quiz' blocks at the very end ONLY, covering knowledge from across all chapters
 
 Return this exact JSON structure:
@@ -100,10 +114,10 @@ Return this exact JSON structure:
     { "id": "hero", "type": "hero", "summary": "..." },
 
     { "id": "ch0-media", "type": "media", "chapterIndex": 0, "summary": "Chapter title — what the clip covers" },
-    { "id": "ch0-content", "type": "narrative|step-navigator", "chapterIndex": 0, "summary": "...", "itemCount": number },
+${exampleBlocks}
 
     { "id": "ch1-media", "type": "media", "chapterIndex": 1, "summary": "..." },
-    { "id": "ch1-content", "type": "narrative|step-navigator", "chapterIndex": 1, "summary": "...", "itemCount": number },
+    { "id": "ch1-content-1", "type": "narrative|step-navigator", "chapterIndex": 1, "summary": "...", "itemCount": number },
 
     { "id": "quiz-1", "type": "quiz", "summary": "Tests knowledge from all chapters", "itemCount": 5 }
   ]
@@ -111,11 +125,11 @@ Return this exact JSON structure:
 
 Rules:
 - chapterIndex is the 0-based index into the chapters array provided
-- Never put quizzes, flashcards, or fill-in-the-blank blocks inside chapter sections
-- All quizzes must appear after the last chapter's content blocks
-- If only ONE chapter is provided, still output one media block + 1–2 content blocks for that chapter, then 1–3 quiz blocks at the end (do not stop after hero + one content block).
+- All quizzes must appear after the last chapter's content blocks${chapterInteractiveNote}
+- If only ONE chapter is provided, still output one media block + 2–3 content blocks for that chapter, then 1–3 quiz blocks at the end (do not stop after hero + one content block).
 - All content must be grounded in the transcript — do not invent material
 - Return ONLY valid JSON. No markdown fences, no explanation, no preamble. Start your response with { and end with }.`
+}
 
 // Lesson prompt — uses enriched outline that already has startTime/endTime injected
 const LESSON_SYSTEM_PROMPT = `You are an expert instructional designer. Generate a complete Primr lesson as JSON from the provided outline and chapter transcripts.
@@ -139,12 +153,29 @@ Rules:
 - Flashcard decks: max 6 cards. Quiz: max 5 questions. Step-navigator: max 5 steps.
 - Return ONLY valid JSON. No explanation, no markdown fences, no extra text, no preamble. Start your response with { and end with }.`
 
-const UPLOAD_OUTLINE_SYSTEM_PROMPT = `You are an expert instructional designer. Given a transcript from an uploaded media file, generate a lesson outline as JSON.
+function makeUploadOutlineSystemPrompt(passive: boolean): string {
+  const contentBlockRule = passive
+    ? `2. 3–7 content blocks (narrative or step-navigator) covering core concepts`
+    : `2. 3–7 content blocks covering core concepts; at least 2 must be interactive (fill-in-the-blank or flashcard), the rest narrative or step-navigator`
+
+  const interactiveNote = passive
+    ? ''
+    : `\n- At least 2 content blocks must be fill-in-the-blank or flashcard`
+
+  const exampleBlocks = passive
+    ? `    { "id": "concept-1", "type": "narrative|step-navigator", "summary": "...", "itemCount": number },
+    { "id": "concept-2", "type": "narrative|step-navigator", "summary": "...", "itemCount": number },`
+    : `    { "id": "concept-1", "type": "narrative|step-navigator", "summary": "...", "itemCount": number },
+    { "id": "concept-2", "type": "fill-in-the-blank|flashcard", "summary": "...", "itemCount": number },
+    { "id": "concept-3", "type": "narrative|step-navigator", "summary": "...", "itemCount": number },
+    { "id": "concept-4", "type": "fill-in-the-blank|flashcard", "summary": "...", "itemCount": number },`
+
+  return `You are an expert instructional designer. Given a transcript from an uploaded media file, generate a lesson outline as JSON.
 
 The lesson MUST follow this exact structure:
 1. A single 'hero' block at the very start
-2. 3-7 content blocks (narrative or step-navigator) covering core concepts
-3. 1-3 'quiz' blocks at the very end
+${contentBlockRule}
+3. 1–3 'quiz' blocks at the very end
 
 Return this exact JSON structure:
 {
@@ -152,17 +183,17 @@ Return this exact JSON structure:
   "slug": "kebab-case-slug",
   "blocks": [
     { "id": "hero", "type": "hero", "summary": "..." },
-    { "id": "concept-1", "type": "narrative|step-navigator", "summary": "...", "itemCount": number },
-    { "id": "concept-2", "type": "narrative|step-navigator", "summary": "...", "itemCount": number },
+${exampleBlocks}
     { "id": "quiz-1", "type": "quiz", "summary": "Tests key ideas", "itemCount": 5 }
   ]
 }
 
 Rules:
 - Do not emit media blocks for uploaded-file lessons.
-- All quizzes must appear after the last concept/content block.
+- All quizzes must appear after the last concept/content block.${interactiveNote}
 - All content must be grounded in the transcript — do not invent material.
 - Return ONLY valid JSON. No markdown fences, no explanation, no preamble. Start your response with { and end with }.`
+}
 
 const UPLOAD_LESSON_SYSTEM_PROMPT = `You are an expert instructional designer. Generate a complete Primr lesson as JSON from the provided outline and transcript.
 
@@ -550,8 +581,9 @@ export async function runVideoIngestion(params: {
   audience?: string
   level?: string
   model?: string
+  passiveLesson?: boolean
 }): Promise<void> {
-  const { lessonId, videoUrl, localFilePath, sourceLabel, title, audience = 'General', level = 'beginner', model = 'claude-haiku-4-5-20251001' } = params
+  const { lessonId, videoUrl, localFilePath, sourceLabel, title, audience = 'General', level = 'beginner', model = 'claude-haiku-4-5-20251001', passiveLesson = false } = params
   const sourceRef = localFilePath ?? videoUrl ?? 'unknown'
   console.log(`[video-ingest] Starting for lesson ${lessonId}, source=${sourceRef}`)
 
@@ -693,7 +725,7 @@ export async function runVideoIngestion(params: {
       chapterTranscriptSection,
     ].filter(Boolean).join('\n')
 
-    const outlineSystemPrompt = isLocalFile ? UPLOAD_OUTLINE_SYSTEM_PROMPT : OUTLINE_SYSTEM_PROMPT
+    const outlineSystemPrompt = isLocalFile ? makeUploadOutlineSystemPrompt(passiveLesson) : makeOutlineSystemPrompt(passiveLesson)
     const sourceLine = isLocalFile ? `Uploaded file: ${sourceLabel ?? 'upload'}` : `Video URL: ${videoUrl}`
     const outlineMsg = await anthropic.messages.create({
       model,

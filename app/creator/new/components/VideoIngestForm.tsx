@@ -28,6 +28,7 @@ export default function VideoIngestForm({ internalRole, productRole, selectedMod
   const [title, setTitle] = useState('')
   const [audience, setAudience] = useState('')
   const [level, setLevel] = useState('beginner')
+  const [passiveLesson, setPassiveLesson] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [uploadPercent, setUploadPercent] = useState(0)
   const [uploadStage, setUploadStage] = useState<'idle' | 'uploading' | 'processing'>('idle')
@@ -59,6 +60,7 @@ export default function VideoIngestForm({ internalRole, productRole, selectedMod
             audience: audience.trim() || undefined,
             level,
             model: selectedModel,
+            passiveLesson,
           }),
         })
         const data = await res.json() as { id?: string; error?: string }
@@ -84,6 +86,7 @@ export default function VideoIngestForm({ internalRole, productRole, selectedMod
     if (audience.trim()) form.append('audience', audience.trim())
     form.append('level', level)
     if (selectedModel) form.append('model', selectedModel)
+    form.append('passiveLesson', String(passiveLesson))
 
     const result = await new Promise<{ ok: boolean; status: number; data: { id?: string; error?: string } }>((resolve, reject) => {
       const xhr = new XMLHttpRequest()
@@ -202,6 +205,15 @@ export default function VideoIngestForm({ internalRole, productRole, selectedMod
           </select>
         </label>
       </div>
+
+      <label className={videoStyles.passiveLabel}>
+        <input
+          type="checkbox"
+          checked={passiveLesson}
+          onChange={e => setPassiveLesson(e.target.checked)}
+        />
+        Informational only <span className={videoStyles.optional}>(skip interactive exercises)</span>
+      </label>
 
       {canSelectModels(internalRole, productRole) && (
         <div className={styles.internalControls}>

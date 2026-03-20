@@ -59,7 +59,7 @@ export default function VideoIngestForm({ internalRole, productRole, selectedMod
             title: title.trim() || undefined,
             audience: audience.trim() || undefined,
             level,
-            model: selectedModel,
+            model: canSelectModels(internalRole, productRole) ? selectedModel : undefined,
             passiveLesson,
           }),
         })
@@ -85,7 +85,7 @@ export default function VideoIngestForm({ internalRole, productRole, selectedMod
     if (title.trim()) form.append('title', title.trim())
     if (audience.trim()) form.append('audience', audience.trim())
     form.append('level', level)
-    if (selectedModel) form.append('model', selectedModel)
+    if (selectedModel && canSelectModels(internalRole, productRole)) form.append('model', selectedModel)
     form.append('passiveLesson', String(passiveLesson))
 
     const result = await new Promise<{ ok: boolean; status: number; data: { id?: string; error?: string } }>((resolve, reject) => {

@@ -454,14 +454,19 @@ async function fetchYouTubeData(videoUrl: string): Promise<YoutubeData> {
 
   // ── Chapters ──────────────────────────────────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const overlay = (info.player_overlays as any)?.player_overlay
-  const markersMap: Array<{ key: string; value: { chapters?: unknown[] } }> =
-    overlay?.decorated_player_bar_renderer?.decorated_player_bar_renderer
+  const overlay = (info.player_overlays as any)
+  // youtubei.js restructured: decorated_player_bar (not decorated_player_bar_renderer)
+  // and marker_key (not key). Try both paths for forward/backward compatibility.
+  const markersMap: Array<{ marker_key?: string; key?: string; value: { chapters?: unknown[] } }> =
+    overlay?.decorated_player_bar?.player_bar?.markers_map ??
+    overlay?.player_overlay?.decorated_player_bar_renderer?.decorated_player_bar_renderer
       ?.player_bar?.multi_markers_player_bar_renderer?.markers_map ?? []
 
   const rawChapters = (
-    markersMap.find(m => m.key === 'DESCRIPTION_CHAPTERS' || m.key === 'AUTO_CHAPTERS')
-      ?.value?.chapters ?? []
+    markersMap.find(m =>
+      m.marker_key === 'DESCRIPTION_CHAPTERS' || m.marker_key === 'AUTO_CHAPTERS' ||
+      m.key === 'DESCRIPTION_CHAPTERS' || m.key === 'AUTO_CHAPTERS'
+    )?.value?.chapters ?? []
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ) as any[]
 

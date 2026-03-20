@@ -8,8 +8,8 @@
  * 3. Return the raw string as-is (let JSON.parse throw a useful error).
  */
 export function extractJSON(raw: string): string {
-  // 1. Try to pull out a fenced code block
-  const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/)
+  // 1. Try to pull out a fenced code block (only ```json or bare ```, not ```css etc.)
+  const fenceMatch = raw.match(/```(?:json)?[ \t]*\n([\s\S]*?)```/)
   if (fenceMatch) return fenceMatch[1].trim()
 
   // 2. Find the outermost JSON object or array

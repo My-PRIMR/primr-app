@@ -13,31 +13,80 @@ interface Props {
   onModelChange?: (model: string) => void
 }
 
+type SourceMode = 'url' | 'file'
+
+function isYouTubeUrl(val: string) {
+  return /youtu\.be\/|youtube\.com\/(watch|embed|shorts)/.test(val)
+}
+
 export default function VideoIngestForm({ internalRole, productRole, selectedModel, onModelChange }: Props) {
   const router = useRouter()
 
+  const [sourceMode, setSourceMode] = useState<SourceMode>('url')
+  const [url, setUrl] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [title, setTitle] = useState('')
   const [audience, setAudience] = useState('')
   const [level, setLevel] = useState('beginner')
+  const [passiveLesson, setPassiveLesson] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [uploadPercent, setUploadPercent] = useState(0)
   const [uploadStage, setUploadStage] = useState<'idle' | 'uploading' | 'processing'>('idle')
   const [error, setError] = useState('')
-  const fileValid = !!file
+
+  const urlValid = sourceMode === 'url' && isYouTubeUrl(url.trim())
+  const fileValid = sourceMode === 'file' && !!file
+  const canSubmit = urlValid || fileValid
+
+  function switchMode(mode: SourceMode) {
+    setSourceMode(mode)
+    setError('')
+  }
 
   async function handleSubmit() {
-    if (!fileValid) return
+    if (!canSubmit) return
     setSubmitting(true)
     setError('')
+
+    if (sourceMode === 'url') {
+      // URL path — simple JSON POST, no upload progress needed
+      try {
+        const res = await fetch('/api/lessons/ingest-video', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: url.trim(),
+            title: title.trim() || undefined,
+            audience: audience.trim() || undefined,
+            level,
+            model: selectedModel,
+            passiveLesson,
+          }),
+        })
+        const data = await res.json() as { id?: string; error?: string }
+        if (!res.ok) {
+          setError(data.error || `Failed (${res.status}).`)
+          setSubmitting(false)
+          return
+        }
+        router.push(`/creator/video-status/${data.id}`)
+      } catch {
+        setError('Network error. Please try again.')
+        setSubmitting(false)
+      }
+      return
+    }
+
+    // File upload path — XHR for progress tracking
     setUploadPercent(0)
     setUploadStage('uploading')
     const form = new FormData()
-    form.append('file', file)
+    form.append('file', file!)
     if (title.trim()) form.append('title', title.trim())
     if (audience.trim()) form.append('audience', audience.trim())
     form.append('level', level)
     if (selectedModel) form.append('model', selectedModel)
+    form.append('passiveLesson', String(passiveLesson))
 
     const result = await new Promise<{ ok: boolean; status: number; data: { id?: string; error?: string } }>((resolve, reject) => {
       const xhr = new XMLHttpRequest()
@@ -73,23 +122,54 @@ export default function VideoIngestForm({ internalRole, productRole, selectedMod
     <div className={styles.form}>
       <h1 className={styles.heading}>Generate from video</h1>
       <p className={styles.sub}>
-        Upload a video or audio file. We will transcribe it and generate a full lesson.
+        Paste a YouTube URL or upload a video/audio file — we'll generate a full lesson from it.
       </p>
 
-      <label className={styles.label}>
-        Source file
-        <input
-          className={styles.input}
-          type="file"
-          accept=".mp4,.mov,.m4v,.webm,.mkv,.mp3,.m4a,.wav,.aac,.ogg"
-          onChange={e => {
-            setFile(e.target.files?.[0] ?? null)
-            setError('')
-          }}
-          autoFocus
-        />
-        <span className={videoStyles.optional}>Accepted: mp4, mov, webm, mkv, mp3, m4a, wav, aac, ogg (max 1GB)</span>
-      </label>
+      <div className={videoStyles.sourceToggle}>
+        <button
+          type="button"
+          className={[videoStyles.sourceBtn, sourceMode === 'url' ? videoStyles.sourceBtnActive : ''].join(' ')}
+          onClick={() => switchMode('url')}
+        >
+          YouTube URL
+        </button>
+        <button
+          type="button"
+          className={[videoStyles.sourceBtn, sourceMode === 'file' ? videoStyles.sourceBtnActive : ''].join(' ')}
+          onClick={() => switchMode('file')}
+        >
+          Upload file
+        </button>
+      </div>
+
+      {sourceMode === 'url' ? (
+        <label className={styles.label}>
+          YouTube URL
+          <input
+            className={styles.input}
+            type="url"
+            placeholder="https://www.youtube.com/watch?v=..."
+            value={url}
+            onChange={e => { setUrl(e.target.value); setError('') }}
+            autoFocus
+          />
+          {url.trim() && !urlValid && (
+            <span className={videoStyles.fieldError}>Please enter a valid YouTube URL</span>
+          )}
+        </label>
+      ) : (
+        <label className={styles.label}>
+          Source file
+          <input
+            className={styles.input}
+            type="file"
+            accept=".mp4,.mov,.m4v,.webm,.mkv,.mp3,.m4a,.wav,.aac,.ogg"
+            onChange={e => { setFile(e.target.files?.[0] ?? null); setError('') }}
+            autoFocus
+          />
+          <span className={videoStyles.optional}>Accepted: mp4, mov, webm, mkv, mp3, m4a, wav, aac, ogg (max 1GB)</span>
+        </label>
+      )}
 
       <label className={styles.label}>
         Lesson title <span className={videoStyles.optional}>(optional — we'll infer from the content)</span>
@@ -126,6 +206,15 @@ export default function VideoIngestForm({ internalRole, productRole, selectedMod
         </label>
       </div>
 
+      <label className={videoStyles.passiveLabel}>
+        <input
+          type="checkbox"
+          checked={passiveLesson}
+          onChange={e => setPassiveLesson(e.target.checked)}
+        />
+        Informational only <span className={videoStyles.optional}>(skip interactive exercises)</span>
+      </label>
+
       {canSelectModels(internalRole, productRole) && (
         <div className={styles.internalControls}>
           <label className={styles.label}>
@@ -146,7 +235,7 @@ export default function VideoIngestForm({ internalRole, productRole, selectedMod
       )}
 
       {error && <p className={styles.error}>{error}</p>}
-      {submitting && (
+      {submitting && sourceMode === 'file' && (
         <div className={videoStyles.progressWrap}>
           <div className={videoStyles.progressLabelRow}>
             <span className={videoStyles.progressLabel}>
@@ -163,10 +252,12 @@ export default function VideoIngestForm({ internalRole, productRole, selectedMod
 
       <button
         className={styles.submit}
-        disabled={!fileValid || submitting}
+        disabled={!canSubmit || submitting}
         onClick={handleSubmit}
       >
-        {submitting ? 'Uploading…' : 'Generate lesson from file →'}
+        {submitting
+          ? (sourceMode === 'file' && uploadStage === 'uploading' ? 'Uploading…' : 'Starting generation…')
+          : 'Generate lesson →'}
       </button>
     </div>
   )

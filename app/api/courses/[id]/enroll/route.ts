@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomBytes } from 'crypto'
 import { db } from '@/db'
-import { courses, courseEnrollments } from '@/db/schema'
+import { courses, courseEnrollments, courseInviteLinks } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { getSession } from '@/session'
+import { sendEmail } from '@/lib/email'
 
 // GET /api/courses/[id]/enroll — list enrollments
 export async function GET(
@@ -46,7 +48,35 @@ export async function POST(
       enrolledBy: session.user.id,
     }).onConflictDoNothing().returning()
 
-    return NextResponse.json({ enrollment: enrollment ?? null }, { status: 201 })
+    if (enrollment) {
+      const existingLink = await db.query.courseInviteLinks.findFirst({
+        where: eq(courseInviteLinks.courseId, id),
+      })
+      const token = existingLink?.token ?? randomBytes(24).toString('base64url')
+      if (!existingLink) {
+        await db.insert(courseInviteLinks).values({ courseId: id, token, createdBy: session.user.id })
+      }
+
+      const appUrl = process.env.PRIMR_APP_URL ?? new URL(req.url).origin
+      const inviteUrl = `${appUrl}/api/course-invite/${token}`
+      const emailResult = await sendEmail({
+        to: normalizedEmail,
+        subject: `You're invited to a Primr course`,
+        html: `<p>You were invited to join a course on Primr${course.title ? `: <strong>${course.title}</strong>` : ''}.</p><p><a href="${inviteUrl}">Accept invite</a></p>`,
+        text: `You were invited to join a course on Primr${course.title ? `: ${course.title}` : ''}.\n\nAccept invite: ${inviteUrl}`,
+      })
+
+      return NextResponse.json(
+        {
+          enrollment,
+          emailed: emailResult.ok,
+          emailError: emailResult.ok ? null : (emailResult.error ?? emailResult.reason ?? 'unknown email error'),
+        },
+        { status: 201 }
+      )
+    }
+
+    return NextResponse.json({ enrollment: null, emailed: false }, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Failed to enroll.' }, { status: 500 })
   }

@@ -20,6 +20,24 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Outbound Email Setup (Resend)
+
+Set these environment variables in `.env.local` (or your deployment environment):
+
+```bash
+EMAIL_PROVIDER=resend
+RESEND_API_KEY=re_izJEPKAr_5hy5aibsqTuDXUjB1qomfMws
+EMAIL_FROM="Primr <noreply@primr.me>"
+# optional
+EMAIL_REPLY_TO="support@primr.me"
+# optional: set false to disable sending without changing code
+EMAIL_ENABLED=true
+```
+
+Current invite endpoints will send email when these values are present:
+- `POST /api/lessons/:id/invite`
+- `POST /api/courses/:id/enroll`
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

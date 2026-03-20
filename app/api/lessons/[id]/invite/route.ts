@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomBytes } from 'crypto'
 import { getSession } from '@/session'
 import { db } from '@/db'
-import { lessons, lessonInvitations } from '@/db/schema'
+import { lessons, lessonInvitations, lessonInviteLinks } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { sendEmail } from '@/lib/email'
 
 async function verifyOwner(lessonId: string, userId: string) {
   const lesson = await db.query.lessons.findFirst({
@@ -17,7 +19,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id: lessonId } = await params
-  if (!await verifyOwner(lessonId, session.user.id)) {
+  const lesson = await verifyOwner(lessonId, session.user.id)
+  if (!lesson) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -38,7 +41,38 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .onConflictDoNothing()
     .returning()
 
-  return NextResponse.json({ invited: results.length })
+  // Ensure a reusable invite link exists so email recipients can self-accept.
+  const existingLink = await db.query.lessonInviteLinks.findFirst({
+    where: eq(lessonInviteLinks.lessonId, lessonId),
+  })
+  const token = existingLink?.token ?? randomBytes(24).toString('base64url')
+  if (!existingLink) {
+    await db.insert(lessonInviteLinks).values({ lessonId, token, createdBy: session.user.id })
+  }
+
+  const appUrl = process.env.PRIMR_APP_URL ?? new URL(req.url).origin
+  const inviteUrl = `${appUrl}/api/invite/${token}`
+
+  let emailed = 0
+  const emailFailures: Array<{ email: string; error: string }> = []
+  for (const row of results) {
+    const emailResult = await sendEmail({
+      to: row.email,
+      subject: `You're invited to a Primr lesson`,
+      html: `<p>You were invited to join a lesson on Primr${lesson.title ? `: <strong>${lesson.title}</strong>` : ''}.</p><p><a href="${inviteUrl}">Accept invite</a></p>`,
+      text: `You were invited to join a lesson on Primr${lesson.title ? `: ${lesson.title}` : ''}.\n\nAccept invite: ${inviteUrl}`,
+    })
+    if (emailResult.ok) {
+      emailed += 1
+      continue
+    }
+    emailFailures.push({
+      email: row.email,
+      error: emailResult.error ?? emailResult.reason ?? 'unknown email error',
+    })
+  }
+
+  return NextResponse.json({ invited: results.length, emailed, emailFailures })
 }
 
 // GET — list invited emails

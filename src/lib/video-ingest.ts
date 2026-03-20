@@ -496,8 +496,9 @@ export async function runVideoIngestion(params: {
   title?: string
   audience?: string
   level?: string
+  model?: string
 }): Promise<void> {
-  const { lessonId, videoUrl, localFilePath, sourceLabel, title, audience = 'General', level = 'beginner' } = params
+  const { lessonId, videoUrl, localFilePath, sourceLabel, title, audience = 'General', level = 'beginner', model = 'claude-haiku-4-5-20251001' } = params
   const sourceRef = localFilePath ?? videoUrl ?? 'unknown'
   console.log(`[video-ingest] Starting for lesson ${lessonId}, source=${sourceRef}`)
 
@@ -630,7 +631,7 @@ export async function runVideoIngestion(params: {
     const outlineSystemPrompt = isLocalFile ? UPLOAD_OUTLINE_SYSTEM_PROMPT : OUTLINE_SYSTEM_PROMPT
     const sourceLine = isLocalFile ? `Uploaded file: ${sourceLabel ?? 'upload'}` : `Video URL: ${videoUrl}`
     const outlineMsg = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model,
       max_tokens: 4096,
       system: outlineSystemPrompt,
       messages: [{ role: 'user', content: `${sourceLine}\n${outlineUserContent}\n\nRespond with JSON only.` }],
@@ -667,7 +668,7 @@ export async function runVideoIngestion(params: {
 
     const lessonSystemPrompt = isLocalFile ? UPLOAD_LESSON_SYSTEM_PROMPT : LESSON_SYSTEM_PROMPT
     const lessonMsg = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model,
       max_tokens: 16384,
       system: lessonSystemPrompt,
       messages: [{ role: 'user', content: lessonUserContent + '\n\nRespond with JSON only.' }],

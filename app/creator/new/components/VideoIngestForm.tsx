@@ -4,8 +4,16 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './Step1Form.module.css'
 import videoStyles from './VideoIngestForm.module.css'
+import { MODELS, canSelectModels, canSelectOpus } from '@/lib/models'
 
-export default function VideoIngestForm() {
+interface Props {
+  internalRole?: string | null
+  productRole?: string | null
+  selectedModel?: string
+  onModelChange?: (model: string) => void
+}
+
+export default function VideoIngestForm({ internalRole, productRole, selectedModel, onModelChange }: Props) {
   const router = useRouter()
 
   const [file, setFile] = useState<File | null>(null)
@@ -29,6 +37,7 @@ export default function VideoIngestForm() {
     if (title.trim()) form.append('title', title.trim())
     if (audience.trim()) form.append('audience', audience.trim())
     form.append('level', level)
+    if (selectedModel) form.append('model', selectedModel)
 
     const result = await new Promise<{ ok: boolean; status: number; data: { id?: string; error?: string } }>((resolve, reject) => {
       const xhr = new XMLHttpRequest()
@@ -116,6 +125,25 @@ export default function VideoIngestForm() {
           </select>
         </label>
       </div>
+
+      {canSelectModels(internalRole, productRole) && (
+        <div className={styles.internalControls}>
+          <label className={styles.label}>
+            Model
+            <select
+              className={styles.select}
+              value={selectedModel}
+              onChange={e => onModelChange?.(e.target.value)}
+            >
+              <option value={MODELS.haiku.id}>Haiku (fast)</option>
+              <option value={MODELS.sonnet.id}>Sonnet (better)</option>
+              {canSelectOpus(internalRole, productRole) && (
+                <option value={MODELS.opus.id}>Opus (best)</option>
+              )}
+            </select>
+          </label>
+        </div>
+      )}
 
       {error && <p className={styles.error}>{error}</p>}
       {submitting && (

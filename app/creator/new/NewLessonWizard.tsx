@@ -188,7 +188,14 @@ export default function NewLessonWizard({ internalRole, productRole }: NewLesson
 
       <div className={styles.content}>
         {/* Video ingestion mode */}
-        {mode === 'video' && <VideoIngestForm />}
+        {mode === 'video' && (
+          <VideoIngestForm
+            internalRole={internalRole}
+            productRole={productRole}
+            selectedModel={selectedModel}
+            onModelChange={setSelectedModel}
+          />
+        )}
 
         {/* Step 1: Details form */}
         {mode === 'topic' && state.step === 1 && (

@@ -3,6 +3,7 @@ import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { getSession } from '@/session'
 import { runVideoIngestion } from '@/lib/video-ingest'
+import { resolveModel } from '@/lib/models'
 import type { LessonManifest } from '@primr/components'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join, extname } from 'node:path'
@@ -30,15 +31,27 @@ export async function POST(req: NextRequest) {
   }
   const userId = session.user.id
 
+  const internalRole = session.user.internalRole ?? null
+  const productRole = session.user.productRole ?? null
+
   const form = await req.formData()
   const file = form.get('file')
   const titleRaw = form.get('title')
   const audienceRaw = form.get('audience')
   const levelRaw = form.get('level')
+  const modelRaw = form.get('model')
 
   const title = typeof titleRaw === 'string' ? titleRaw.trim() || undefined : undefined
   const audience = typeof audienceRaw === 'string' ? audienceRaw.trim() || undefined : undefined
   const level = typeof levelRaw === 'string' ? levelRaw.trim() || undefined : undefined
+  const modelId = typeof modelRaw === 'string' ? modelRaw.trim() || undefined : undefined
+
+  let resolvedModel = resolveModel(undefined, internalRole, productRole)!
+  if (modelId) {
+    const m = resolveModel(modelId, internalRole, productRole)
+    if (!m) return NextResponse.json({ error: 'Unauthorized model selection' }, { status: 403 })
+    resolvedModel = m
+  }
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: 'file is required' }, { status: 400 })
@@ -90,6 +103,7 @@ export async function POST(req: NextRequest) {
     title,
     audience,
     level,
+    model: resolvedModel.id,
   }).catch(err => {
     console.error(`[ingest-video] Unhandled pipeline error for ${lesson.id}:`, err)
   })

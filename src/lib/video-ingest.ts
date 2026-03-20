@@ -127,6 +127,8 @@ Rules:
 - chapterIndex is the 0-based index into the chapters array provided
 - All quizzes must appear after the last chapter's content blocks${chapterInteractiveNote}
 - If only ONE chapter is provided, still output one media block + 2–3 content blocks for that chapter, then 1–3 quiz blocks at the end (do not stop after hero + one content block).
+- Tailor vocabulary, depth, and examples to the specified audience and level. Beginner: avoid jargon, use analogies. Intermediate: assume foundational knowledge. Advanced: use precise terminology and focus on nuance.
+- If a Scope/focus is provided, constrain content strictly to that focus — omit anything outside it even if it seems relevant.
 - All content must be grounded in the transcript — do not invent material
 - Return ONLY valid JSON. No markdown fences, no explanation, no preamble. Start your response with { and end with }.`
 }
@@ -191,6 +193,8 @@ ${exampleBlocks}
 Rules:
 - Do not emit media blocks for uploaded-file lessons.
 - All quizzes must appear after the last concept/content block.${interactiveNote}
+- Tailor vocabulary, depth, and examples to the specified audience and level. Beginner: avoid jargon, use analogies. Intermediate: assume foundational knowledge. Advanced: use precise terminology and focus on nuance.
+- If a Scope/focus is provided, constrain content strictly to that focus — omit anything outside it even if it seems relevant.
 - All content must be grounded in the transcript — do not invent material.
 - Return ONLY valid JSON. No markdown fences, no explanation, no preamble. Start your response with { and end with }.`
 }

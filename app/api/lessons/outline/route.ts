@@ -5,7 +5,7 @@ import { resolveModel, DEFAULT_MODEL, modelById } from '@/lib/models'
 
 const client = new Anthropic()
 
-const SYSTEM_PROMPT = `You are an expert instructional designer. Given a lesson title, topic description, target audience, and level, generate a lesson outline as JSON.
+const SYSTEM_PROMPT = `You are an expert instructional designer. Given a lesson title, topic description, target audience, level, and optional scope/focus, generate a lesson outline as JSON.
 
 Return this exact structure:
 {
@@ -26,6 +26,8 @@ Return this exact structure:
 Rules:
 - Always start with a 'hero' block (summary = tagline for the lesson)
 - Include 8–12 blocks total
+- Tailor vocabulary, depth, and examples to the specified audience and level. Beginner: avoid jargon, use analogies. Intermediate: assume foundational knowledge. Advanced: use precise terminology and focus on nuance.
+- If a Scope/focus is provided, constrain content strictly to that focus — omit anything outside it even if it seems relevant.
 - Each interactive block (quiz, flashcard, fill-in-the-blank) must be preceded by a narrative or step-navigator block that teaches the material it will test — never place an interactive block without a teaching block immediately before it
 - Use step-navigator for multi-part concepts or processes; use narrative for explanations and context
 - Mix interactive types for engagement: use at least 2 different interactive types (quiz, flashcard, fill-in-the-blank)

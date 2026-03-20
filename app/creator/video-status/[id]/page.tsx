@@ -115,15 +115,21 @@ export default function VideoStatusPage() {
           {/* Video info */}
           {lesson?.sourceVideoUrl && (
             <div className={styles.videoInfo}>
-              <span className={styles.videoLabel}>Source video</span>
-              <a
-                href={lesson.sourceVideoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.videoUrl}
-              >
-                {lesson.sourceVideoUrl}
-              </a>
+              <span className={styles.videoLabel}>
+                {lesson.sourceVideoUrl.startsWith('upload://') ? 'Source file' : 'Source video'}
+              </span>
+              {lesson.sourceVideoUrl.startsWith('upload://') ? (
+                <span className={styles.videoUrl}>{lesson.sourceVideoUrl.replace('upload://', '')}</span>
+              ) : (
+                <a
+                  href={lesson.sourceVideoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.videoUrl}
+                >
+                  {lesson.sourceVideoUrl}
+                </a>
+              )}
             </div>
           )}
 

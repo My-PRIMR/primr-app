@@ -94,6 +94,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const internalRole = session.user.internalRole ?? null
+  const productRole = session.user.productRole ?? null
   let resolvedModel = modelById(DEFAULT_MODEL)!
 
   try {
@@ -104,8 +105,8 @@ export async function POST(req: NextRequest) {
     const focus = (formData.get('focus') as string | null) || ''
     const model = (formData.get('model') as string | null) || undefined
 
-    if (model && internalRole) {
-      const m = resolveModel(model, internalRole)
+    if (model) {
+      const m = resolveModel(model, internalRole, productRole)
       if (!m) return NextResponse.json({ error: 'Unauthorized model selection' }, { status: 403 })
       resolvedModel = m
     }

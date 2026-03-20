@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { InvitePanel } from './InvitePanel'
+import { DeleteItemButton } from './DeleteItemButton'
 import { UserMenu } from '../components/UserMenu'
 import { db } from '@/db'
 import {
@@ -212,6 +213,7 @@ export default async function DashboardPage() {
                             Preview as learner
                           </Link>
                           <InvitePanel type="course" id={course.id} />
+                          <DeleteItemButton kind="course" id={course.id} />
                         </>
                       )}
                     </div>
@@ -247,6 +249,7 @@ export default async function DashboardPage() {
                       <Link href={`/creator/preview/${lesson.id}`} className={styles.previewLink}>Preview</Link>
                       <Link href={`/learn/${lesson.id}`} className={styles.previewLink}>Take lesson</Link>
                       <InvitePanel type="lesson" id={lesson.id} />
+                      <DeleteItemButton kind="lesson" id={lesson.id} />
                     </div>
                   </div>
                 ))}

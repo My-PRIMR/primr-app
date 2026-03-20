@@ -8,7 +8,7 @@ import { db } from '@/db'
 import { courses, courseSections, courseChapters, chapterLessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getSession } from '@/session'
-import { resolveModel, DEFAULT_MODEL, modelById } from '@/lib/models'
+import { resolveModel, DEFAULT_MODEL, modelById, canSelectModels } from '@/lib/models'
 import { checkCap, logUsage } from '@/lib/usage-cap'
 import { runCourseGeneration, type LessonGenInput } from '@/lib/course-gen'
 import type { CourseTree } from '@/types/course'
@@ -34,9 +34,10 @@ export async function POST(
   }
 
   const internalRole = session.user.internalRole ?? null
+  const productRole = session.user.productRole ?? null
   let resolvedModel = modelById(DEFAULT_MODEL)!
-  if (model && internalRole) {
-    const m = resolveModel(model, internalRole)
+  if (model) {
+    const m = resolveModel(model, internalRole, productRole)
     if (!m) return NextResponse.json({ error: 'Unauthorized model selection' }, { status: 403 })
     resolvedModel = m
   }
@@ -101,7 +102,7 @@ export async function POST(
 
   // Fire and forget — background generation
   const userId = session.user.id
-  runCourseGeneration(courseId, lessonInputs, userId, resolvedModel.id, passiveLesson && !!internalRole).catch(err => {
+  runCourseGeneration(courseId, lessonInputs, userId, resolvedModel.id, passiveLesson && canSelectModels(internalRole, productRole)).catch(err => {
     console.error(`[generate] Unhandled error in course generation for ${courseId}:`, err)
   })
 

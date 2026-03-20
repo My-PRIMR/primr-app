@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import type { CourseTree, CourseSection, CourseChapter, CourseLesson, FlatLesson } from '@/types/course'
 import styles from './CourseWizard.module.css'
-import { DEFAULT_MODEL, MODELS } from '@/lib/models'
+import { DEFAULT_MODEL, MODELS, canSelectModels, canSelectOpus } from '@/lib/models'
 
 // ── Wizard State ──────────────────────────────────────────────────────────────
 
@@ -58,9 +58,10 @@ function genId() {
 
 interface CourseWizardProps {
   internalRole: string | null
+  productRole: string | null
 }
 
-export default function CourseWizard({ internalRole }: CourseWizardProps) {
+export default function CourseWizard({ internalRole, productRole }: CourseWizardProps) {
   const [state, setState] = useState<WizardState>(initialState)
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL)
   const [passiveLesson, setPassiveLesson] = useState(false)
@@ -444,7 +445,7 @@ export default function CourseWizard({ internalRole }: CourseWizardProps) {
               <p className={styles.fieldHint}>Narrows what Claude covers when structuring and generating lessons.</p>
             </div>
 
-            {internalRole && (
+            {canSelectModels(internalRole, productRole) && (
               <div className={styles.internalControls}>
                 <div className={styles.formGroup}>
                   <label className={styles.label}>Model</label>
@@ -455,7 +456,7 @@ export default function CourseWizard({ internalRole }: CourseWizardProps) {
                   >
                     <option value={MODELS.haiku.id}>Haiku (fast)</option>
                     <option value={MODELS.sonnet.id}>Sonnet (better)</option>
-                    {internalRole === 'admin' && (
+                    {canSelectOpus(internalRole, productRole) && (
                       <option value={MODELS.opus.id}>Opus (best)</option>
                     )}
                   </select>

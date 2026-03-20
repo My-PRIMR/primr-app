@@ -155,6 +155,22 @@
 }
 .previewLink:hover { color: var(--ink-soft); }
 
+.deleteBtn {
+  font-size: 13px;
+  font-weight: 500;
+  color: #c0392b;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+.deleteBtn:hover { color: #a93226; }
+.deleteBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .creatorCta {
   margin-top: 3rem;
   padding: 1.5rem 2rem;

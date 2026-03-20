@@ -4,7 +4,7 @@ import { extractJSON } from '@/lib/extract-json'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { getSession } from '@/session'
-import { resolveModel, DEFAULT_MODEL, modelById } from '@/lib/models'
+import { resolveModel, DEFAULT_MODEL, modelById, canSelectModels } from '@/lib/models'
 import { checkCap, logUsage } from '@/lib/usage-cap'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline } from '@/types/outline'
@@ -115,9 +115,10 @@ export async function POST(req: NextRequest) {
   }
 
   const internalRole = session?.user?.internalRole ?? null
+  const productRole = session?.user?.productRole ?? null
   let resolvedModel = modelById(DEFAULT_MODEL)!
-  if (model && internalRole) {
-    const m = resolveModel(model, internalRole)
+  if (model) {
+    const m = resolveModel(model, internalRole, productRole)
     if (!m) return NextResponse.json({ error: 'Unauthorized model selection' }, { status: 403 })
     resolvedModel = m
   }
@@ -134,7 +135,7 @@ export async function POST(req: NextRequest) {
   const isOutlineBased = !!outline
   let systemPrompt = isOutlineBased ? OUTLINE_SYSTEM_PROMPT : LEGACY_SYSTEM_PROMPT
 
-  if (passiveLesson && internalRole) {
+  if (passiveLesson && canSelectModels(internalRole, productRole)) {
     systemPrompt += '\n\nIMPORTANT: Generate only informational content blocks (text, heading, narrative, step-navigator, hero, callout). Do not include any interactive or assessment blocks (quiz, flashcard, fill-in-the-blank, or similar). The lesson should be purely informational — no questions, no exercises.'
   }
 

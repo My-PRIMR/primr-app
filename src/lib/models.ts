@@ -15,17 +15,43 @@ export const DAILY_CAPS: Record<CostCategory, number | null> = {
 
 export const DEFAULT_MODEL = MODELS.haiku.id
 
+function hasStaffModelAccess(internalRole: string | null | undefined, productRole: string | null | undefined) {
+  return internalRole === 'staff' || internalRole === 'admin' || productRole === 'org_admin'
+}
+
+function hasAdminModelAccess(internalRole: string | null | undefined, productRole: string | null | undefined) {
+  return internalRole === 'admin' || productRole === 'org_admin'
+}
+
 /** Returns the MODELS entry for a given model ID, or null if not found */
 export function modelById(id: string) {
   return Object.values(MODELS).find(m => m.id === id) ?? null
 }
 
 /** Validate model ID and check role permission. Returns the model entry or null if unauthorized. */
-export function resolveModel(modelId: string | undefined, internalRole: string | null | undefined) {
+export function resolveModel(
+  modelId: string | undefined,
+  internalRole: string | null | undefined,
+  productRole?: string | null | undefined
+) {
   if (!modelId) return MODELS.haiku  // default
   const model = modelById(modelId)
   if (!model) return null  // unknown model
-  if (model.minRole === 'admin' && internalRole !== 'admin') return null
-  if ((model.minRole === 'staff') && internalRole !== 'staff' && internalRole !== 'admin') return null
+  if (model.minRole === 'admin' && !hasAdminModelAccess(internalRole, productRole)) return null
+  if (model.minRole === 'staff' && !hasStaffModelAccess(internalRole, productRole)) return null
   return model
+}
+
+export function canSelectModels(
+  internalRole: string | null | undefined,
+  productRole?: string | null | undefined
+) {
+  return hasStaffModelAccess(internalRole, productRole)
+}
+
+export function canSelectOpus(
+  internalRole: string | null | undefined,
+  productRole?: string | null | undefined
+) {
+  return hasAdminModelAccess(internalRole, productRole)
 }

@@ -4,19 +4,15 @@ import { lessons } from '@/db/schema'
 import { getSession } from '@/session'
 import { runVideoIngestion } from '@/lib/video-ingest'
 import type { LessonManifest } from '@primr/components'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { join, extname } from 'node:path'
+import { randomUUID } from 'node:crypto'
 
-// Reuse the same URL parser logic as MediaBlock (server-side, no React)
-function isSupportedVideoUrl(url: string): boolean {
-  try {
-    const u = new URL(url)
-    if (u.hostname === 'youtu.be') return true
-    if (u.hostname.includes('youtube.com') && (u.searchParams.get('v') || u.pathname.startsWith('/embed/'))) return true
-    if (u.hostname.includes('vimeo.com')) return true
-    return false
-  } catch {
-    return false
-  }
-}
+const MAX_UPLOAD_BYTES = 1024 * 1024 * 1024 // 1GB
+const ALLOWED_EXTENSIONS = new Set([
+  '.mp4', '.mov', '.m4v', '.webm', '.mkv',
+  '.mp3', '.m4a', '.wav', '.aac', '.ogg',
+])
 
 function slugify(text: string): string {
   return text
@@ -34,22 +30,38 @@ export async function POST(req: NextRequest) {
   }
   const userId = session.user.id
 
-  const body = await req.json()
-  const url: string | undefined = body.url
-  const title: string | undefined = body.title?.trim() || undefined
-  const audience: string | undefined = body.audience?.trim() || undefined
-  const level: string | undefined = body.level?.trim() || undefined
+  const form = await req.formData()
+  const file = form.get('file')
+  const titleRaw = form.get('title')
+  const audienceRaw = form.get('audience')
+  const levelRaw = form.get('level')
 
-  if (!url?.trim()) {
-    return NextResponse.json({ error: 'url is required' }, { status: 400 })
+  const title = typeof titleRaw === 'string' ? titleRaw.trim() || undefined : undefined
+  const audience = typeof audienceRaw === 'string' ? audienceRaw.trim() || undefined : undefined
+  const level = typeof levelRaw === 'string' ? levelRaw.trim() || undefined : undefined
+
+  if (!(file instanceof File)) {
+    return NextResponse.json({ error: 'file is required' }, { status: 400 })
+  }
+  if (file.size === 0) {
+    return NextResponse.json({ error: 'uploaded file is empty' }, { status: 400 })
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return NextResponse.json({ error: 'file is too large (max 1GB)' }, { status: 400 })
   }
 
-  if (!isSupportedVideoUrl(url)) {
-    return NextResponse.json(
-      { error: 'Unsupported video URL. Provide a YouTube or Vimeo link.' },
-      { status: 400 }
-    )
+  const originalName = file.name || 'upload.bin'
+  const ext = extname(originalName).toLowerCase()
+  if (!ALLOWED_EXTENSIONS.has(ext)) {
+    return NextResponse.json({ error: 'unsupported file type' }, { status: 400 })
   }
+
+  const uploadDir = process.env.LOCAL_VIDEO_UPLOAD_DIR?.trim() || '/tmp/primr-video-uploads'
+  await mkdir(uploadDir, { recursive: true })
+  const storedFileName = `${Date.now()}-${randomUUID()}${ext}`
+  const storedPath = join(uploadDir, storedFileName)
+  const bytes = await file.arrayBuffer()
+  await writeFile(storedPath, new Uint8Array(bytes))
 
   // Create a placeholder lesson so we can return an ID immediately
   const pendingTitle = title || 'Processing video…'
@@ -66,12 +78,19 @@ export async function POST(req: NextRequest) {
     title: pendingTitle,
     manifest: placeholderManifest,
     createdBy: userId,
-    sourceVideoUrl: url,
+    sourceVideoUrl: `upload://${originalName}`,
     generationStatus: 'pending',
   }).returning()
 
   // Fire-and-forget background pipeline
-  runVideoIngestion({ lessonId: lesson.id, videoUrl: url, title, audience, level }).catch(err => {
+  runVideoIngestion({
+    lessonId: lesson.id,
+    localFilePath: storedPath,
+    sourceLabel: originalName,
+    title,
+    audience,
+    level,
+  }).catch(err => {
     console.error(`[ingest-video] Unhandled pipeline error for ${lesson.id}:`, err)
   })
 

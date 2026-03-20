@@ -70,9 +70,10 @@ type Mode = 'topic' | 'video'
 
 interface NewLessonWizardProps {
   internalRole: string | null
+  productRole: string | null
 }
 
-export default function NewLessonWizard({ internalRole }: NewLessonWizardProps) {
+export default function NewLessonWizard({ internalRole, productRole }: NewLessonWizardProps) {
   const [mode, setMode] = useState<Mode>('topic')
   const [state, dispatch] = useReducer(reducer, initialState)
   const [editingBlock, setEditingBlock] = useState<number | null>(null)
@@ -196,6 +197,7 @@ export default function NewLessonWizard({ internalRole }: NewLessonWizardProps) 
             onField={(field, value) => dispatch({ type: 'SET_FIELD', field: field as keyof WizardState, value })}
             onSubmit={generateOutline}
             internalRole={internalRole}
+            productRole={productRole}
             selectedModel={selectedModel}
             onModelChange={setSelectedModel}
             passiveLesson={passiveLesson}

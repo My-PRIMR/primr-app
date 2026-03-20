@@ -1,13 +1,14 @@
 import { useRef, useState } from 'react'
 import type { WizardState } from '@/types/outline'
 import styles from './Step1Form.module.css'
-import { MODELS } from '@/lib/models'
+import { MODELS, canSelectModels, canSelectOpus } from '@/lib/models'
 
 interface Props {
   state: WizardState
   onField: (field: string, value: string) => void
   onSubmit: () => void
   internalRole?: string | null
+  productRole?: string | null
   selectedModel?: string
   onModelChange?: (model: string) => void
   passiveLesson?: boolean
@@ -20,7 +21,7 @@ const EXAMPLES = [
   { title: 'Introduction to Git Branching', topic: 'Cover creating branches, merging, rebasing, and resolving merge conflicts in Git.' },
 ]
 
-export default function Step1Form({ state, onField, onSubmit, internalRole, selectedModel, onModelChange, passiveLesson, onPassiveLessonChange }: Props) {
+export default function Step1Form({ state, onField, onSubmit, internalRole, productRole, selectedModel, onModelChange, passiveLesson, onPassiveLessonChange }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [extracting, setExtracting] = useState(false)
   const [extractError, setExtractError] = useState('')
@@ -152,7 +153,7 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, sele
         ))}
       </div>
 
-      {internalRole && (
+      {canSelectModels(internalRole, productRole) && (
         <div className={styles.internalControls}>
           <label className={styles.label}>
             Model
@@ -163,7 +164,7 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, sele
             >
               <option value={MODELS.haiku.id}>Haiku (fast)</option>
               <option value={MODELS.sonnet.id}>Sonnet (better)</option>
-              {internalRole === 'admin' && (
+              {canSelectOpus(internalRole, productRole) && (
                 <option value={MODELS.opus.id}>Opus (best)</option>
               )}
             </select>

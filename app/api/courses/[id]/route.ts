@@ -114,3 +114,20 @@ export async function PATCH(
 
   return NextResponse.json({ course: updated })
 }
+
+// DELETE /api/courses/[id] — delete a course created by current user
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getSession()
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await params
+  const course = await db.query.courses.findFirst({ where: eq(courses.id, id) })
+  if (!course) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (course.createdBy !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  await db.delete(courses).where(eq(courses.id, id))
+  return NextResponse.json({ ok: true })
+}

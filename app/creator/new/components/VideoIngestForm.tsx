@@ -5,103 +5,85 @@ import { useRouter } from 'next/navigation'
 import styles from './Step1Form.module.css'
 import videoStyles from './VideoIngestForm.module.css'
 
-function isYouTubeOrVimeo(url: string): boolean {
-  try {
-    const u = new URL(url)
-    if (u.hostname === 'youtu.be') return true
-    if (u.hostname.includes('youtube.com') && (u.searchParams.get('v') || u.pathname.startsWith('/embed/'))) return true
-    if (u.hostname.includes('vimeo.com')) return true
-    return false
-  } catch {
-    return false
-  }
-}
-
-const EXAMPLES = [
-  { label: 'YouTube video', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
-  { label: 'YouTube short URL', url: 'https://youtu.be/dQw4w9WgXcQ' },
-  { label: 'Vimeo', url: 'https://vimeo.com/123456789' },
-]
-
 export default function VideoIngestForm() {
   const router = useRouter()
 
-  const [url, setUrl] = useState('')
+  const [file, setFile] = useState<File | null>(null)
   const [title, setTitle] = useState('')
   const [audience, setAudience] = useState('')
   const [level, setLevel] = useState('beginner')
   const [submitting, setSubmitting] = useState(false)
+  const [uploadPercent, setUploadPercent] = useState(0)
+  const [uploadStage, setUploadStage] = useState<'idle' | 'uploading' | 'processing'>('idle')
   const [error, setError] = useState('')
-
-  const urlValid = url.trim() && isYouTubeOrVimeo(url.trim())
-  const urlTouched = url.trim().length > 0
-  const urlInvalid = urlTouched && !urlValid
+  const fileValid = !!file
 
   async function handleSubmit() {
-    if (!urlValid) return
+    if (!fileValid) return
     setSubmitting(true)
     setError('')
+    setUploadPercent(0)
+    setUploadStage('uploading')
+    const form = new FormData()
+    form.append('file', file)
+    if (title.trim()) form.append('title', title.trim())
+    if (audience.trim()) form.append('audience', audience.trim())
+    form.append('level', level)
 
-    const res = await fetch('/api/lessons/ingest-video', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        url: url.trim(),
-        title: title.trim() || undefined,
-        audience: audience.trim() || undefined,
-        level,
-      }),
+    const result = await new Promise<{ ok: boolean; status: number; data: { id?: string; error?: string } }>((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', '/api/lessons/ingest-video')
+      xhr.responseType = 'json'
+      xhr.upload.onprogress = e => {
+        if (!e.lengthComputable) return
+        const pct = Math.max(1, Math.min(99, Math.round((e.loaded / e.total) * 100)))
+        setUploadPercent(pct)
+      }
+      xhr.onload = () => {
+        const data = (xhr.response ?? {}) as { id?: string; error?: string }
+        resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, data })
+      }
+      xhr.onerror = () => reject(new Error('Network error while uploading file.'))
+      xhr.send(form)
     })
 
-    const data = await res.json()
     setSubmitting(false)
+    setUploadPercent(100)
+    setUploadStage('processing')
 
-    if (!res.ok) {
-      setError(data.error || 'Something went wrong.')
+    if (!result.ok) {
+      setUploadStage('idle')
+      setError(result.data.error || `Upload failed (${result.status}).`)
       return
     }
 
-    router.push(`/creator/video-status/${data.id}`)
+    router.push(`/creator/video-status/${result.data.id}`)
   }
 
   return (
     <div className={styles.form}>
       <h1 className={styles.heading}>Generate from video</h1>
       <p className={styles.sub}>
-        Paste a YouTube or Vimeo link. We'll transcribe it and generate a full lesson from the content.
+        Upload a video or audio file. We will transcribe it and generate a full lesson.
       </p>
 
       <label className={styles.label}>
-        Video URL
+        Source file
         <input
-          className={[styles.input, urlInvalid ? videoStyles.inputError : ''].join(' ')}
-          placeholder="https://www.youtube.com/watch?v=… or https://vimeo.com/…"
-          value={url}
-          onChange={e => { setUrl(e.target.value); setError('') }}
+          className={styles.input}
+          type="file"
+          accept=".mp4,.mov,.m4v,.webm,.mkv,.mp3,.m4a,.wav,.aac,.ogg"
+          onChange={e => {
+            setFile(e.target.files?.[0] ?? null)
+            setError('')
+          }}
           autoFocus
-          type="url"
         />
-        {urlInvalid && (
-          <span className={videoStyles.fieldError}>Paste a YouTube or Vimeo URL.</span>
-        )}
+        <span className={videoStyles.optional}>Accepted: mp4, mov, webm, mkv, mp3, m4a, wav, aac, ogg (max 1GB)</span>
       </label>
 
-      <div className={styles.examples}>
-        <span className={styles.examplesLabel}>Supported formats:</span>
-        {EXAMPLES.map(ex => (
-          <button
-            key={ex.label}
-            type="button"
-            className={styles.exampleChip}
-            onClick={() => setUrl(ex.url)}
-          >
-            {ex.label}
-          </button>
-        ))}
-      </div>
-
       <label className={styles.label}>
-        Lesson title <span className={videoStyles.optional}>(optional — we'll infer from the video)</span>
+        Lesson title <span className={videoStyles.optional}>(optional — we'll infer from the content)</span>
         <input
           className={styles.input}
           placeholder="e.g. Introduction to Machine Learning"
@@ -136,13 +118,27 @@ export default function VideoIngestForm() {
       </div>
 
       {error && <p className={styles.error}>{error}</p>}
+      {submitting && (
+        <div className={videoStyles.progressWrap}>
+          <div className={videoStyles.progressLabelRow}>
+            <span className={videoStyles.progressLabel}>
+              {uploadStage === 'uploading'
+                ? `Uploading file… ${uploadPercent}%`
+                : 'Upload complete. Starting generation…'}
+            </span>
+          </div>
+          <div className={videoStyles.progressTrack} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={uploadPercent}>
+            <div className={videoStyles.progressFill} style={{ width: `${uploadPercent}%` }} />
+          </div>
+        </div>
+      )}
 
       <button
         className={styles.submit}
-        disabled={!urlValid || submitting}
+        disabled={!fileValid || submitting}
         onClick={handleSubmit}
       >
-        {submitting ? 'Starting…' : 'Generate lesson from video →'}
+        {submitting ? 'Uploading…' : 'Generate lesson from file →'}
       </button>
     </div>
   )

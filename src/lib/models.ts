@@ -37,6 +37,9 @@ export function resolveModel(
   if (!modelId) return MODELS.haiku  // default
   const model = modelById(modelId)
   if (!model) return null  // unknown model
+  // The default model (haiku) is always permitted — non-staff users receive it
+  // without a model selector, but the request may still carry the default ID.
+  if (model === MODELS.haiku) return model
   if (model.minRole === 'admin' && !hasAdminModelAccess(internalRole, productRole)) return null
   if (model.minRole === 'staff' && !hasStaffModelAccess(internalRole, productRole)) return null
   return model

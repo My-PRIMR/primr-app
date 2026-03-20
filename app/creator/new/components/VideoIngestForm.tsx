@@ -28,6 +28,7 @@ export default function VideoIngestForm({ internalRole, productRole, selectedMod
   const [title, setTitle] = useState('')
   const [audience, setAudience] = useState('')
   const [level, setLevel] = useState('beginner')
+  const [scope, setScope] = useState('')
   const [passiveLesson, setPassiveLesson] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [uploadPercent, setUploadPercent] = useState(0)
@@ -59,6 +60,7 @@ export default function VideoIngestForm({ internalRole, productRole, selectedMod
             title: title.trim() || undefined,
             audience: audience.trim() || undefined,
             level,
+            scope: scope.trim() || undefined,
             model: canSelectModels(internalRole, productRole) ? selectedModel : undefined,
             passiveLesson,
           }),
@@ -85,6 +87,7 @@ export default function VideoIngestForm({ internalRole, productRole, selectedMod
     if (title.trim()) form.append('title', title.trim())
     if (audience.trim()) form.append('audience', audience.trim())
     form.append('level', level)
+    if (scope.trim()) form.append('scope', scope.trim())
     if (selectedModel && canSelectModels(internalRole, productRole)) form.append('model', selectedModel)
     form.append('passiveLesson', String(passiveLesson))
 
@@ -205,6 +208,16 @@ export default function VideoIngestForm({ internalRole, productRole, selectedMod
           </select>
         </label>
       </div>
+
+      <label className={styles.label}>
+        Scope / focus <span className={videoStyles.optional}>(optional)</span>
+        <input
+          className={styles.input}
+          placeholder="e.g. Focus on practical examples, skip theory"
+          value={scope}
+          onChange={e => setScope(e.target.value)}
+        />
+      </label>
 
       <label className={videoStyles.passiveLabel}>
         <input

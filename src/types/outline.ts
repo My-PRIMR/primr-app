@@ -26,6 +26,7 @@ export interface WizardState {
   topic: string
   audience: string
   level: 'beginner' | 'intermediate' | 'advanced'
+  scope: string
   documentText: string
   documentName: string
   // Step 2-3 outline

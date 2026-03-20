@@ -580,10 +580,11 @@ export async function runVideoIngestion(params: {
   title?: string
   audience?: string
   level?: string
+  scope?: string
   model?: string
   passiveLesson?: boolean
 }): Promise<void> {
-  const { lessonId, videoUrl, localFilePath, sourceLabel, title, audience = 'General', level = 'beginner', model = 'claude-haiku-4-5-20251001', passiveLesson = false } = params
+  const { lessonId, videoUrl, localFilePath, sourceLabel, title, audience = 'General', level = 'beginner', scope, model = 'claude-haiku-4-5-20251001', passiveLesson = false } = params
   const sourceRef = localFilePath ?? videoUrl ?? 'unknown'
   console.log(`[video-ingest] Starting for lesson ${lessonId}, source=${sourceRef}`)
 
@@ -721,6 +722,7 @@ export async function runVideoIngestion(params: {
       title ? `Title: ${title}` : '',
       `Audience: ${audience}`,
       `Level: ${level}`,
+      scope ? `Scope/focus: ${scope}` : '',
       chapterList,
       chapterTranscriptSection,
     ].filter(Boolean).join('\n')

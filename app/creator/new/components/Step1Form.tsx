@@ -139,6 +139,16 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, prod
         </label>
       </div>
 
+      <label className={styles.label}>
+        Scope / focus <span className={styles.optional}>(optional)</span>
+        <input
+          className={styles.input}
+          placeholder="e.g. Focus on practical examples, skip theory"
+          value={state.scope}
+          onChange={e => onField('scope', e.target.value)}
+        />
+      </label>
+
       <div className={styles.examples}>
         <span className={styles.examplesLabel}>Try an example:</span>
         {EXAMPLES.map(ex => (

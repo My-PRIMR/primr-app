@@ -11,6 +11,7 @@ import { getSession } from '@/session'
 import { resolveModel, DEFAULT_MODEL, modelById, canSelectModels } from '@/lib/models'
 import { checkCap, logUsage } from '@/lib/usage-cap'
 import { runCourseGeneration, type LessonGenInput } from '@/lib/course-gen'
+import { users } from '@/db/schema'
 import type { CourseTree } from '@/types/course'
 
 export async function POST(
@@ -26,8 +27,8 @@ export async function POST(
   if (!course) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (course.createdBy !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const body = await req.json() as { tree: CourseTree, model?: string, passiveLesson?: boolean }
-  const { tree, model, passiveLesson } = body
+  const body = await req.json() as { tree: CourseTree, model?: string, passiveLesson?: boolean, notifyEmail?: boolean }
+  const { tree, model, passiveLesson, notifyEmail } = body
 
   if (!tree?.sections?.length) {
     return NextResponse.json({ error: 'tree with sections is required' }, { status: 400 })
@@ -100,9 +101,16 @@ export async function POST(
     updatedAt: new Date(),
   }).where(eq(courses.id, courseId))
 
+  // Look up creator email for completion notification
+  let creatorEmail: string | undefined
+  if (notifyEmail) {
+    const creator = await db.query.users.findFirst({ where: eq(users.id, session.user.id) })
+    creatorEmail = creator?.email
+  }
+
   // Fire and forget — background generation
   const userId = session.user.id
-  runCourseGeneration(courseId, lessonInputs, userId, resolvedModel.id, passiveLesson && canSelectModels(internalRole, productRole)).catch(err => {
+  runCourseGeneration(courseId, lessonInputs, userId, resolvedModel.id, passiveLesson && canSelectModels(internalRole, productRole), creatorEmail).catch(err => {
     console.error(`[generate] Unhandled error in course generation for ${courseId}:`, err)
   })
 

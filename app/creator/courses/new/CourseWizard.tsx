@@ -68,6 +68,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
   const [state, setState] = useState<WizardState>(initialState)
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL)
   const [passiveLesson, setPassiveLesson] = useState(false)
+  const [notifyEmail, setNotifyEmail] = useState(true)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Step 4 polling
@@ -220,7 +221,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
       const genRes = await fetch(`/api/courses/${courseId}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tree: filteredTree, model: selectedModel, passiveLesson }),
+        body: JSON.stringify({ tree: filteredTree, model: selectedModel, passiveLesson, notifyEmail }),
       })
       const genData = await genRes.json()
       if (!genRes.ok) {
@@ -453,6 +454,18 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
                 placeholder="e.g. Class C passenger vehicles only, not commercial or motorcycle"
               />
               <p className={styles.fieldHint}>Narrows what Claude covers when structuring and generating lessons.</p>
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={notifyEmail}
+                  onChange={e => setNotifyEmail(e.target.checked)}
+                  className={styles.checkbox}
+                />
+                Email me when course generation finishes
+              </label>
             </div>
 
             {canSelectModels(internalRole, productRole) && (

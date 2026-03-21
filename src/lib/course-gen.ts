@@ -8,6 +8,7 @@ import { db } from '@/db'
 import { courses, chapterLessons, lessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { DEFAULT_MODEL } from '@/lib/models'
+import { sendEmail } from '@/lib/email'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline } from '@/types/outline'
 
@@ -199,10 +200,13 @@ export async function runCourseGeneration(
   userId: string | null,
   model?: string,
   passiveLesson?: boolean,
+  creatorEmail?: string,
 ): Promise<void> {
   console.log(`[course-gen] Starting generation for course ${courseId}, ${lessonInputs.length} lessons`)
 
   await db.update(courses).set({ status: 'generating', updatedAt: new Date() }).where(eq(courses.id, courseId))
+
+  const failedIds = new Set<string>()
 
   for (const input of lessonInputs) {
     console.log(`[course-gen] Generating lesson: "${input.title}" (${input.chapterLessonId})`)
@@ -240,10 +244,40 @@ export async function runCourseGeneration(
       await db.update(chapterLessons)
         .set({ generationStatus: 'failed' })
         .where(eq(chapterLessons.id, input.chapterLessonId))
+      failedIds.add(input.chapterLessonId)
     }
   }
 
   // Course is always marked ready; failed lessons can be individually retried
+  const courseRecord = await db.query.courses.findFirst({ where: eq(courses.id, courseId) })
   await db.update(courses).set({ status: 'ready', updatedAt: new Date() }).where(eq(courses.id, courseId))
-  console.log(`[course-gen] Course ${courseId} generation complete (status: ready)`)
+
+  const doneCount = lessonInputs.length - failedIds.size
+  console.log(`[course-gen] Course ${courseId} generation complete — ${doneCount}/${lessonInputs.length} done, ${failedIds.size} failed`)
+
+  if (creatorEmail && courseRecord) {
+    const appBase = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? 'https://app.primr.me'
+    const courseUrl = `${appBase}/creator/courses/${courseId}/edit`
+    const hasFailures = failedIds.size > 0
+    const subject = hasFailures
+      ? `Your course "${courseRecord.title}" finished with ${failedIds.size} failed lesson${failedIds.size !== 1 ? 's' : ''}`
+      : `Your course "${courseRecord.title}" is ready`
+
+    const html = hasFailures
+      ? `<p>Your Primr course <strong>${courseRecord.title}</strong> finished generating.</p>
+         <p>✅ ${doneCount} lesson${doneCount !== 1 ? 's' : ''} generated successfully<br>
+         ❌ ${failedIds.size} lesson${failedIds.size !== 1 ? 's' : ''} failed — you can retry them from the course editor.</p>
+         <p><a href="${courseUrl}">Open course editor →</a></p>`
+      : `<p>Your Primr course <strong>${courseRecord.title}</strong> is ready with ${doneCount} lesson${doneCount !== 1 ? 's' : ''}.</p>
+         <p><a href="${courseUrl}">Open course →</a></p>`
+
+    const text = hasFailures
+      ? `Your course "${courseRecord.title}" finished. ${doneCount} lessons done, ${failedIds.size} failed.\n\nOpen the course editor to retry failed lessons: ${courseUrl}`
+      : `Your course "${courseRecord.title}" is ready with ${doneCount} lessons.\n\n${courseUrl}`
+
+    const result = await sendEmail({ to: creatorEmail, subject, html, text })
+    if (!result.ok && !result.skipped) {
+      console.error(`[course-gen] Failed to send completion email to ${creatorEmail}:`, result.error)
+    }
+  }
 }

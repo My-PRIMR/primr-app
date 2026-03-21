@@ -27,21 +27,26 @@ Return this exact structure:
   "blocks": [
     {
       "id": "unique-kebab-id",
-      "type": "hero|narrative|step-navigator|quiz|flashcard|fill-in-the-blank",
-      "summary": "1-2 sentence description of what this block covers",
+      "type": "hero|narrative|step-navigator|media|quiz|flashcard|fill-in-the-blank",
+      "summary": "1-2 sentence description of what this block teaches or tests",
       "itemCount": number (optional — for quiz: number of questions, flashcard: number of cards, step-navigator: number of steps)
     }
   ]
 }
 
 Rules:
-- Always start with a 'hero' block (summary = tagline for the lesson)
-- Include 8–12 blocks total
-- Each interactive block (quiz, flashcard, fill-in-the-blank) must be preceded by a narrative or step-navigator block that teaches the material it will test — never place an interactive block without a teaching block immediately before it
-- Use step-navigator for multi-part concepts or processes; use narrative for explanations and context
-- Mix interactive types for engagement: use at least 2 different interactive types (quiz, flashcard, fill-in-the-blank)
-- Summaries should be specific to the content, not generic
-- If a source document is provided, ALL block summaries must describe content drawn directly from that document. Do not introduce topics not covered in the document.
+- Always start with a 'hero' block (summary = one-sentence lesson tagline)
+- Organize the rest of the lesson into 2–4 "learning units". Each unit consists of:
+    1. ONE teaching block — narrative, step-navigator, or media — that provides complete, self-contained context on a concept
+    2. ONE to THREE interactive blocks — quiz, flashcard, or fill-in-the-blank — that test only what the preceding teaching block explicitly covered
+       Use 1 interactive block for focused content, 2–3 when the teaching block covers multiple distinct facts or sub-topics
+- Teaching blocks must be comprehensive: a learner who reads/watches the teaching block should be able to answer every question in the follow-up interactive block(s) without any outside knowledge
+- Interactive block summaries must name the specific facts, terms, or concepts from their teaching block that they will test
+- Only use 'media' blocks when a video URL is explicitly provided in the source material
+- Use step-navigator for processes and multi-step how-tos; use narrative for explanations, definitions, and context
+- Use at least 2 different interactive block types across the lesson (quiz, flashcard, fill-in-the-blank)
+- Aim for 10–16 blocks total (hero + 2–4 learning units × 2–4 blocks each)
+- If a source document is provided, ALL block content must draw directly from it — do not introduce topics not in the document
 - Return ONLY valid JSON. No markdown fences, no explanation, no preamble. Start your response with { and end with }.`
 
 async function generateOutline(params: {
@@ -52,14 +57,22 @@ async function generateOutline(params: {
   focus?: string
   model?: string
   skipHero?: boolean
+  videoUrl?: string
+  videoStartTime?: number
+  videoEndTime?: number
 }): Promise<LessonOutline> {
   const focusLine = params.focus?.trim() ? `Focus/Scope: ${params.focus.trim()}\n` : ''
   const heroOverride = params.skipHero
     ? '\n\nIMPORTANT: Do NOT include a hero block. Start the lesson directly with a narrative or step-navigator block.'
     : ''
+
+  const videoLine = params.videoUrl
+    ? `Video URL: ${params.videoUrl}${params.videoStartTime != null ? ` | Start: ${params.videoStartTime}s` : ''}${params.videoEndTime != null ? ` | End: ${params.videoEndTime}s` : ''} — you may use a "media" block with this URL as the teaching portion of a learning unit\n`
+    : ''
+
   const userContent = params.documentText?.trim()
-    ? `Title: ${params.title}\nAudience: ${params.audience}\nLevel: ${params.level}\n${focusLine}\nSource document:\n"""\n${params.documentText}\n"""\n\nRespond with JSON only.`
-    : `Title: ${params.title}\nTopic: ${params.title}\nAudience: ${params.audience}\nLevel: ${params.level}\n${focusLine}\nRespond with JSON only.`
+    ? `Title: ${params.title}\nAudience: ${params.audience}\nLevel: ${params.level}\n${focusLine}${videoLine}\nSource document:\n"""\n${params.documentText}\n"""\n\nRespond with JSON only.`
+    : `Title: ${params.title}\nTopic: ${params.title}\nAudience: ${params.audience}\nLevel: ${params.level}\n${focusLine}${videoLine}\nRespond with JSON only.`
 
   const message = await client.messages.create({
     model: params.model ?? DEFAULT_MODEL,
@@ -83,7 +96,7 @@ hero:
   cta?: string — CTA button label (default: "Start lesson")
 
 narrative:
-  body: string (required) — markdown text
+  body: string (required) — markdown text, comprehensive enough that learners can answer all follow-up interactive blocks from it alone
   title?: string — serif heading
   eyebrow?: string — small uppercase label
 
@@ -91,6 +104,15 @@ step-navigator:
   steps: Array<{ title: string, body: string, hint?: string }>
   badge?: string — e.g. "Step walkthrough"
   title?: string
+
+media:
+  url: string (required) — YouTube or Vimeo URL
+  title?: string — heading above the video
+  badge?: string — small label (default: "Video")
+  caption?: string — one-sentence description below the video
+  startTime?: number — start time in seconds
+  endTime?: number — end time in seconds
+  completeOn?: "mount" | "end" — "end" requires the learner to mark as watched (default), "mount" auto-completes
 
 quiz:
   questions: Array<{ prompt: string, options: string[], correctIndex: number, explanation?: string }>
@@ -129,8 +151,10 @@ Rules:
 - If itemCount is specified, generate exactly that many items (questions, cards, steps, etc.)
 - Tailor content to the specified audience and level
 - Body/prompt fields support markdown: **bold**, *italic*, __underline__, \`code\`, and links
-- Keep content concise: narrative body max ~150 words, quiz explanations max ~30 words, step body max ~100 words
+- TEACHING BLOCKS (narrative, step-navigator, media): must be self-contained and comprehensive. Narrative body should be 120–200 words and explicitly state every fact, term, and answer that the subsequent interactive block(s) will test. A learner should be able to answer every question solely from the teaching block — never assume outside knowledge.
+- INTERACTIVE BLOCKS (quiz, flashcard, fill-in-the-blank): every correct answer must be directly stated in the preceding teaching block. Do not test facts that were not explicitly taught.
 - Flashcard decks: max 6 cards. Quiz: max 5 questions. Step-navigator: max 5 steps.
+- Quiz explanations (max 30 words) should reference where in the teaching block the answer was covered.
 - Return ONLY valid JSON. No explanation, no markdown fences, no extra text, no preamble. Start your response with { and end with }.`
 
 function slugify(text: string): string {
@@ -150,11 +174,18 @@ async function generateLesson(params: {
   model?: string
   passiveLesson?: boolean
   skipHero?: boolean
+  videoUrl?: string
+  videoStartTime?: number
+  videoEndTime?: number
 }): Promise<string> {  // returns lessonId
   const focusLine = params.focus?.trim() ? `\n\nFocus/Scope: ${params.focus.trim()} — only include content relevant to this focus.` : ''
+  const videoLine = params.videoUrl
+    ? `\n\nVideo URL: ${params.videoUrl}${params.videoStartTime != null ? ` (start: ${params.videoStartTime}s` : ''}${params.videoEndTime != null ? `, end: ${params.videoEndTime}s)` : (params.videoStartTime != null ? ')' : '')} — use this URL in any media block props`
+    : ''
   const userMessage = [
     `Generate a Primr lesson from this outline:\n\n${JSON.stringify(params.outline, null, 2)}`,
     focusLine,
+    videoLine,
     params.documentText?.trim()
       ? `\n\nSource document (use this as the primary source for all content — do not invent material not present in this document):\n"""\n${params.documentText}\n"""`
       : '',
@@ -200,6 +231,9 @@ export interface LessonGenInput {
   audience?: string
   level?: string
   focus?: string
+  videoUrl?: string
+  videoStartTime?: number
+  videoEndTime?: number
 }
 
 export async function runCourseGeneration(
@@ -233,6 +267,9 @@ export async function runCourseGeneration(
         focus: input.focus,
         model,
         skipHero,
+        videoUrl: input.videoUrl,
+        videoStartTime: input.videoStartTime,
+        videoEndTime: input.videoEndTime,
       })
 
       const lessonId = await generateLesson({
@@ -243,6 +280,9 @@ export async function runCourseGeneration(
         model,
         passiveLesson,
         skipHero,
+        videoUrl: input.videoUrl,
+        videoStartTime: input.videoStartTime,
+        videoEndTime: input.videoEndTime,
       })
 
       await db.update(chapterLessons)

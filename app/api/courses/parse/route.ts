@@ -283,6 +283,9 @@ export async function POST(req: NextRequest) {
 
             let docChunk = ''
             let videoChunk = ''
+            let lessonVideoUrl: string | undefined
+            let lessonVideoStart: number | undefined
+            let lessonVideoEnd: number | undefined
 
             if (structureSource === 'document') {
               // Primary: doc slice by headingMarker
@@ -293,11 +296,19 @@ export async function POST(req: NextRequest) {
               const vci = lesson.videoChapterIndex
               if (vci != null && chapterTranscripts[vci]) {
                 videoChunk = chapterTranscripts[vci].text.slice(0, 5000)
+                lessonVideoUrl = videoUrl || undefined
+                lessonVideoStart = videoData?.chapters[vci]?.start_time
+                lessonVideoEnd = videoData?.chapters[vci]?.end_time
               }
             } else {
               // Primary: video chapter transcript by headingMarker (= chapter title)
               const ct = chapterTranscripts.find(c => c.chapter.title === lesson.headingMarker)
               videoChunk = ct ? ct.text.slice(0, 6000) : ''
+              if (ct) {
+                lessonVideoUrl = videoUrl || undefined
+                lessonVideoStart = ct.chapter.start_time
+                lessonVideoEnd = ct.chapter.end_time
+              }
 
               // Supplementary: doc slice by annotated docMarker
               if (lesson.docMarker && docText) {
@@ -315,6 +326,9 @@ export async function POST(req: NextRequest) {
               audience,
               level,
               focus: focus || undefined,
+              videoUrl: lessonVideoUrl,
+              videoStartTime: lessonVideoStart,
+              videoEndTime: lessonVideoEnd,
             }
           }),
         })),

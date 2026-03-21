@@ -89,6 +89,9 @@ export async function POST(
           audience: lesson.audience,
           level: lesson.level,
           focus: lesson.focus,
+          videoUrl: lesson.videoUrl,
+          videoStartTime: lesson.videoStartTime,
+          videoEndTime: lesson.videoEndTime,
         })
       }
     }

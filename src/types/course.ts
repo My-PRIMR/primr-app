@@ -7,6 +7,10 @@ export interface CourseLesson {
   audience?: string
   level?: string
   focus?: string  // creator-specified scope/focus hint fed into generation
+  // Video chapter metadata — present when the lesson maps to a specific video chapter
+  videoUrl?: string
+  videoStartTime?: number
+  videoEndTime?: number
 }
 
 export interface CourseChapter {

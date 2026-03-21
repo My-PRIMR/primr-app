@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { BlockConfig } from '@/types/outline'
 import styles from './BlockEditPanel.module.css'
+import { PAGE_ARRAY_KEY } from '../../lib/pageArrayKey'
 
 interface Props {
   block: BlockConfig
@@ -11,10 +12,26 @@ interface Props {
   onUpdate: (index: number, block: BlockConfig) => void
   onClose: () => void
   headerAction?: React.ReactNode
+  activePage?: number
+  onPageChange?: (index: number) => void
 }
 
 /** Render labeled form fields for a block's props based on its type */
-function PropsEditor({ blockType, props, onChange }: { blockType: string; props: Record<string, unknown>; onChange: (key: string, value: unknown) => void }) {
+function PropsEditor({ blockType, props, onChange, activePage, onPageChange }: {
+  blockType: string
+  props: Record<string, unknown>
+  onChange: (key: string, value: unknown) => void
+  activePage?: number
+  onPageChange?: (index: number) => void
+}) {
+  const pageArrayKey = PAGE_ARRAY_KEY[blockType]
+  const pageItemRefs = useRef<(HTMLDivElement | null)[]>([])
+
+  useEffect(() => {
+    if (!pageArrayKey || activePage === undefined) return
+    pageItemRefs.current[activePage]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [activePage, pageArrayKey])
+
   return (
     <div className={styles.fields}>
       {Object.entries(props).map(([key, value]) => {
@@ -58,8 +75,19 @@ function PropsEditor({ blockType, props, onChange }: { blockType: string; props:
                 <label className={styles.fieldLabel}>{formatLabel(key)} ({arr.length})</label>
                 {!locked && <TipButton cls={styles.arrayAddBtn} tip="Add a new item" onClick={addItem}>+ Add</TipButton>}
               </div>
-              {arr.map((item: unknown, idx: number) => (
-                <div key={idx} className={styles.arrayItem}>
+              {arr.map((item: unknown, idx: number) => {
+                const isPageArray = key === pageArrayKey
+                return (
+                  <div
+                    key={idx}
+                    ref={isPageArray ? (el) => { pageItemRefs.current[idx] = el } : undefined}
+                    className={[
+                      styles.arrayItem,
+                      isPageArray && idx === activePage ? styles.arrayItemActive : '',
+                    ].filter(Boolean).join(' ')}
+                    onClick={isPageArray && onPageChange ? () => onPageChange(idx) : undefined}
+                    style={isPageArray && onPageChange ? { cursor: 'pointer' } : undefined}
+                  >
                   <div className={styles.arrayControls}>
                     <span className={styles.arrayIndex}>{idx + 1}</span>
                     {!locked && <>
@@ -96,7 +124,8 @@ function PropsEditor({ blockType, props, onChange }: { blockType: string; props:
                     />
                   )}
                 </div>
-              ))}
+                )
+              })}
             </div>
           )
         }
@@ -201,7 +230,7 @@ function formatLabel(key: string): string {
     .trim()
 }
 
-export default function BlockEditPanel({ block, blockIndex, onUpdate, onClose, headerAction }: Props) {
+export default function BlockEditPanel({ block, blockIndex, lessonTitle, activePage, onPageChange, onUpdate, onClose, headerAction }: Props) {
   const [localProps, setLocalProps] = useState<Record<string, unknown>>(block.props as Record<string, unknown>)
   const [jsonOpen, setJsonOpen] = useState(false)
 
@@ -224,7 +253,7 @@ export default function BlockEditPanel({ block, blockIndex, onUpdate, onClose, h
       </div>
 
       <div className={styles.scrollArea}>
-        <PropsEditor blockType={block.type} props={localProps} onChange={handleFieldChange} />
+        <PropsEditor blockType={block.type} props={localProps} onChange={handleFieldChange} activePage={activePage} onPageChange={onPageChange} />
 
         {/* AI rewrite — disabled for now */}
         <div className={styles.aiSection}>

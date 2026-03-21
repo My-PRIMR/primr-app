@@ -253,6 +253,12 @@ async function generateLesson(params: {
   return lesson.id
 }
 
+// ── Concurrency ───────────────────────────────────────────────────────────────
+
+// Max number of lessons to generate simultaneously. Each lesson makes 2 API
+// calls (outline + content), so this is effectively 2× the API concurrency.
+const GENERATION_CONCURRENCY = 5
+
 // ── Main entry point ──────────────────────────────────────────────────────────
 
 export interface LessonGenInput {
@@ -285,96 +291,104 @@ export async function runCourseGeneration(
 
   const failedIds = new Set<string>()
 
-  try {
-    for (const input of lessonInputs) {
-      // Stop immediately if the course was deleted or cancelled
-      if (courseCtrl.signal.aborted) {
-        console.log(`[course-gen] Course ${courseId} cancelled — stopping`)
-        return
-      }
+  // Per-lesson work extracted so workers can pull from a shared queue.
+  async function processLesson(input: LessonGenInput): Promise<void> {
+    if (courseCtrl.signal.aborted) return
 
-      // Stop if the course was deleted while generation was running
-      const courseExists = await db.query.courses.findFirst({ where: eq(courses.id, courseId) })
-      if (!courseExists) {
-        console.log(`[course-gen] Course ${courseId} was deleted — stopping generation`)
-        return
-      }
+    // Stop if the course was deleted while generation was running
+    const courseExists = await db.query.courses.findFirst({ where: eq(courses.id, courseId) })
+    if (!courseExists) {
+      console.log(`[course-gen] Course ${courseId} was deleted — stopping generation`)
+      courseCtrl.abort()  // signal other workers to stop too
+      return
+    }
 
-      // Skip if this specific lesson was deleted
-      const lessonExists = await db.query.chapterLessons.findFirst({ where: eq(chapterLessons.id, input.chapterLessonId) })
-      if (!lessonExists) {
-        console.log(`[course-gen] Lesson ${input.chapterLessonId} ("${input.title}") was deleted — skipping`)
-        continue
-      }
+    // Skip if this specific lesson was deleted
+    const lessonExists = await db.query.chapterLessons.findFirst({ where: eq(chapterLessons.id, input.chapterLessonId) })
+    if (!lessonExists) {
+      console.log(`[course-gen] Lesson ${input.chapterLessonId} ("${input.title}") was deleted — skipping`)
+      return
+    }
 
-      console.log(`[course-gen] Generating lesson: "${input.title}" (${input.chapterLessonId})`)
+    console.log(`[course-gen] Generating lesson: "${input.title}" (${input.chapterLessonId})`)
 
-      // Create a per-lesson controller linked to the course controller.
-      // Aborting the lesson controller cancels the current API calls but lets
-      // the loop continue with the next lesson (unlike course abort which stops everything).
-      const lessonCtrl = new AbortController()
-      lessonControllers.set(input.chapterLessonId, lessonCtrl)
-      const onCourseAbort = () => lessonCtrl.abort()
-      courseCtrl.signal.addEventListener('abort', onCourseAbort, { once: true })
+    // Per-lesson controller linked to the course controller so a course abort
+    // immediately cancels the in-flight API call. Aborting the lesson controller
+    // alone only cancels this lesson — other workers continue.
+    const lessonCtrl = new AbortController()
+    lessonControllers.set(input.chapterLessonId, lessonCtrl)
+    const onCourseAbort = () => lessonCtrl.abort()
+    courseCtrl.signal.addEventListener('abort', onCourseAbort, { once: true })
+
+    await db.update(chapterLessons)
+      .set({ generationStatus: 'generating' })
+      .where(eq(chapterLessons.id, input.chapterLessonId))
+
+    try {
+      const outline = await generateOutline({
+        title: input.title,
+        audience: input.audience || 'General',
+        level: input.level || 'beginner',
+        documentText: input.sourceText,
+        focus: input.focus,
+        model,
+        skipHero,
+        passiveLesson,
+        videoUrl: input.videoUrl,
+        videoStartTime: input.videoStartTime,
+        videoEndTime: input.videoEndTime,
+        signal: lessonCtrl.signal,
+      })
+
+      const lessonId = await generateLesson({
+        outline,
+        documentText: input.sourceText,
+        userId,
+        focus: input.focus,
+        model,
+        passiveLesson,
+        skipHero,
+        videoUrl: input.videoUrl,
+        videoStartTime: input.videoStartTime,
+        videoEndTime: input.videoEndTime,
+        signal: lessonCtrl.signal,
+      })
 
       await db.update(chapterLessons)
-        .set({ generationStatus: 'generating' })
+        .set({ generationStatus: 'done', lessonId })
         .where(eq(chapterLessons.id, input.chapterLessonId))
 
-      try {
-        const outline = await generateOutline({
-          title: input.title,
-          audience: input.audience || 'General',
-          level: input.level || 'beginner',
-          documentText: input.sourceText,
-          focus: input.focus,
-          model,
-          skipHero,
-          passiveLesson,
-          videoUrl: input.videoUrl,
-          videoStartTime: input.videoStartTime,
-          videoEndTime: input.videoEndTime,
-          signal: lessonCtrl.signal,
-        })
+      console.log(`[course-gen] Done: "${input.title}" → lesson ${lessonId}`)
+    } catch (err) {
+      // Course cancelled — other workers will also see the aborted signal
+      if (courseCtrl.signal.aborted) return
 
-        const lessonId = await generateLesson({
-          outline,
-          documentText: input.sourceText,
-          userId,
-          focus: input.focus,
-          model,
-          passiveLesson,
-          skipHero,
-          videoUrl: input.videoUrl,
-          videoStartTime: input.videoStartTime,
-          videoEndTime: input.videoEndTime,
-          signal: lessonCtrl.signal,
-        })
-
-        await db.update(chapterLessons)
-          .set({ generationStatus: 'done', lessonId })
-          .where(eq(chapterLessons.id, input.chapterLessonId))
-
-        console.log(`[course-gen] Done: "${input.title}" → lesson ${lessonId}`)
-      } catch (err) {
-        // If the course was cancelled/deleted, exit the loop entirely
-        if (courseCtrl.signal.aborted) {
-          console.log(`[course-gen] Course ${courseId} cancelled mid-lesson — stopping`)
-          return
-        }
-
-        // Lesson was individually cancelled or failed — mark failed and continue
-        const reason = lessonCtrl.signal.aborted ? 'cancelled' : 'failed'
-        console.error(`[course-gen] ${reason === 'cancelled' ? 'Cancelled' : 'Failed'}: "${input.title}"`, reason === 'failed' ? err : '')
-        await db.update(chapterLessons)
-          .set({ generationStatus: 'failed' })
-          .where(eq(chapterLessons.id, input.chapterLessonId))
-        failedIds.add(input.chapterLessonId)
-      } finally {
-        courseCtrl.signal.removeEventListener('abort', onCourseAbort)
-        lessonControllers.delete(input.chapterLessonId)
-      }
+      // Lesson individually cancelled or errored — mark failed, worker continues
+      const wasCancelled = lessonCtrl.signal.aborted
+      console.error(`[course-gen] ${wasCancelled ? 'Cancelled' : 'Failed'}: "${input.title}"`, wasCancelled ? '' : err)
+      await db.update(chapterLessons)
+        .set({ generationStatus: 'failed' })
+        .where(eq(chapterLessons.id, input.chapterLessonId))
+      failedIds.add(input.chapterLessonId)
+    } finally {
+      courseCtrl.signal.removeEventListener('abort', onCourseAbort)
+      lessonControllers.delete(input.chapterLessonId)
     }
+  }
+
+  try {
+    // Worker pool: up to GENERATION_CONCURRENCY workers pull from the shared queue.
+    // queue.shift() is synchronous so there are no race conditions between workers.
+    const queue = [...lessonInputs]
+    const workers = Array.from(
+      { length: Math.min(GENERATION_CONCURRENCY, lessonInputs.length) },
+      async () => {
+        while (queue.length > 0 && !courseCtrl.signal.aborted) {
+          await processLesson(queue.shift()!)
+        }
+      },
+    )
+    await Promise.all(workers)
   } finally {
     courseControllers.delete(courseId)
   }

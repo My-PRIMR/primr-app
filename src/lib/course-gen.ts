@@ -51,8 +51,12 @@ async function generateOutline(params: {
   documentText?: string
   focus?: string
   model?: string
+  skipHero?: boolean
 }): Promise<LessonOutline> {
   const focusLine = params.focus?.trim() ? `Focus/Scope: ${params.focus.trim()}\n` : ''
+  const heroOverride = params.skipHero
+    ? '\n\nIMPORTANT: Do NOT include a hero block. Start the lesson directly with a narrative or step-navigator block.'
+    : ''
   const userContent = params.documentText?.trim()
     ? `Title: ${params.title}\nAudience: ${params.audience}\nLevel: ${params.level}\n${focusLine}\nSource document:\n"""\n${params.documentText}\n"""\n\nRespond with JSON only.`
     : `Title: ${params.title}\nTopic: ${params.title}\nAudience: ${params.audience}\nLevel: ${params.level}\n${focusLine}\nRespond with JSON only.`
@@ -60,7 +64,7 @@ async function generateOutline(params: {
   const message = await client.messages.create({
     model: params.model ?? DEFAULT_MODEL,
     max_tokens: 2048,
-    system: OUTLINE_SYSTEM_PROMPT,
+    system: OUTLINE_SYSTEM_PROMPT + heroOverride,
     messages: [{ role: 'user', content: userContent }],
   })
 
@@ -145,6 +149,7 @@ async function generateLesson(params: {
   focus?: string
   model?: string
   passiveLesson?: boolean
+  skipHero?: boolean
 }): Promise<string> {  // returns lessonId
   const focusLine = params.focus?.trim() ? `\n\nFocus/Scope: ${params.focus.trim()} — only include content relevant to this focus.` : ''
   const userMessage = [
@@ -158,6 +163,9 @@ async function generateLesson(params: {
   let systemPrompt = OUTLINE_LESSON_SYSTEM_PROMPT
   if (params.passiveLesson) {
     systemPrompt += '\n\nIMPORTANT: Generate only informational content blocks (hero, narrative, step-navigator). Do not include any interactive or assessment blocks (quiz, flashcard, fill-in-the-blank, or similar). The lesson should be purely informational — no questions, no exercises.'
+  }
+  if (params.skipHero) {
+    systemPrompt += '\n\nIMPORTANT: Do NOT generate a hero block. The outline may list one — skip it. Start directly with the second block.'
   }
 
   const message = await client.messages.create({
@@ -201,6 +209,7 @@ export async function runCourseGeneration(
   model?: string,
   passiveLesson?: boolean,
   creatorEmail?: string,
+  skipHero?: boolean,
 ): Promise<void> {
   console.log(`[course-gen] Starting generation for course ${courseId}, ${lessonInputs.length} lessons`)
 
@@ -223,6 +232,7 @@ export async function runCourseGeneration(
         documentText: input.sourceText,
         focus: input.focus,
         model,
+        skipHero,
       })
 
       const lessonId = await generateLesson({
@@ -232,6 +242,7 @@ export async function runCourseGeneration(
         focus: input.focus,
         model,
         passiveLesson,
+        skipHero,
       })
 
       await db.update(chapterLessons)

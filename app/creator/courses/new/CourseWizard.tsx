@@ -68,6 +68,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
   const [state, setState] = useState<WizardState>(initialState)
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL)
   const [passiveLesson, setPassiveLesson] = useState(false)
+  const [skipHero, setSkipHero] = useState(false)
   const [notifyEmail, setNotifyEmail] = useState(true)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -221,7 +222,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
       const genRes = await fetch(`/api/courses/${courseId}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tree: filteredTree, model: selectedModel, passiveLesson, notifyEmail }),
+        body: JSON.stringify({ tree: filteredTree, model: selectedModel, passiveLesson, skipHero, notifyEmail }),
       })
       const genData = await genRes.json()
       if (!genRes.ok) {
@@ -330,6 +331,15 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
         }),
       }),
     }))
+  }
+
+  function toggleSection(section: CourseTree['sections'][number], include: boolean) {
+    const lessonIds = section.chapters.flatMap(c => c.lessons.map(l => l.localId))
+    setState(s => {
+      const next = new Set(s.excludedLessons)
+      for (const id of lessonIds) include ? next.delete(id) : next.add(id)
+      return { ...s, excludedLessons: next }
+    })
   }
 
   function addLesson(sectionLocalId: string, chapterLocalId: string) {
@@ -456,7 +466,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
               <p className={styles.fieldHint}>Narrows what Claude covers when structuring and generating lessons.</p>
             </div>
 
-            <div className={styles.formGroup}>
+            <div className={styles.formGroup} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label className={styles.checkboxLabel}>
                 <input
                   type="checkbox"
@@ -465,6 +475,15 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
                   className={styles.checkbox}
                 />
                 Email me when course generation finishes
+              </label>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={skipHero}
+                  onChange={e => setSkipHero(e.target.checked)}
+                  className={styles.checkbox}
+                />
+                Skip hero block in each lesson
               </label>
             </div>
 
@@ -629,10 +648,23 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
 
             {/* Tree */}
             <div className={styles.tree}>
-              {state.courseTree.sections.map(section => (
+              {state.courseTree.sections.map(section => {
+                const sectionLessonIds = section.chapters.flatMap(c => c.lessons.map(l => l.localId))
+                const excludedInSection = sectionLessonIds.filter(id => state.excludedLessons.has(id)).length
+                const sectionAllExcluded = sectionLessonIds.length > 0 && excludedInSection === sectionLessonIds.length
+                const sectionIndeterminate = excludedInSection > 0 && !sectionAllExcluded
+
+                return (
                 <div key={section.localId} className={styles.sectionNode}>
                   <div className={styles.sectionRow}>
-                    <span className={styles.nodeIcon}>▸</span>
+                    <input
+                      type="checkbox"
+                      className={styles.lessonCheck}
+                      checked={!sectionAllExcluded}
+                      ref={el => { if (el) el.indeterminate = sectionIndeterminate }}
+                      onChange={e => toggleSection(section, e.target.checked)}
+                      title={sectionAllExcluded ? 'Include section' : 'Exclude section'}
+                    />
                     <input
                       className={styles.nodeInput}
                       value={section.title}
@@ -693,7 +725,8 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
                     + chapter
                   </button>
                 </div>
-              ))}
+              )
+              })}
 
               <button className={styles.addSectionBtn} onClick={addSection}>
                 + Add section

@@ -239,7 +239,8 @@ export async function POST(req: NextRequest) {
     console.log(`[courses/parse] Claude responded in ${Date.now() - t0}ms`)
 
     const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-    let parsed: ParsedCourseTree & {
+    let parsed: {
+      title: string; description: string;
       sections: Array<{
         title: string; inferred: boolean;
         chapters: Array<{

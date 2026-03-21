@@ -153,6 +153,7 @@ export const chapterLessons = pgTable('chapter_lessons', {
   title:            text('title').notNull(),
   position:         integer('position').notNull(),
   generationStatus: generationStatusEnum('generation_status').notNull().default('pending'),
+  isDisabled:       boolean('is_disabled').notNull().default(false),
   sourceText:       text('source_text'),
   audience:         text('audience'),
   level:            text('level'),

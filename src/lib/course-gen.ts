@@ -14,6 +14,31 @@ import type { LessonOutline } from '@/types/outline'
 
 const client = new Anthropic()
 
+// ── Cancellation registry ─────────────────────────────────────────────────────
+
+// One AbortController per active course generation run.
+const courseControllers = new Map<string, AbortController>()
+
+// One AbortController per lesson currently being generated (replaced each iteration).
+// Aborting a lesson controller cancels the current API calls but lets the loop continue.
+const lessonControllers = new Map<string, AbortController>()
+
+export function cancelCourseGeneration(courseId: string) {
+  const ctrl = courseControllers.get(courseId)
+  if (ctrl) {
+    ctrl.abort()
+    courseControllers.delete(courseId)
+  }
+}
+
+export function cancelLessonGeneration(chapterLessonId: string) {
+  const ctrl = lessonControllers.get(chapterLessonId)
+  if (ctrl) {
+    ctrl.abort()
+    lessonControllers.delete(chapterLessonId)
+  }
+}
+
 // ── Outline generation ────────────────────────────────────────────────────────
 
 const OUTLINE_SYSTEM_PROMPT = `You are an expert instructional designer. Given a lesson title, topic description, target audience, and level, generate a lesson outline as JSON.
@@ -57,13 +82,18 @@ async function generateOutline(params: {
   focus?: string
   model?: string
   skipHero?: boolean
+  passiveLesson?: boolean
   videoUrl?: string
   videoStartTime?: number
   videoEndTime?: number
+  signal?: AbortSignal
 }): Promise<LessonOutline> {
   const focusLine = params.focus?.trim() ? `Focus/Scope: ${params.focus.trim()}\n` : ''
   const heroOverride = params.skipHero
     ? '\n\nIMPORTANT: Do NOT include a hero block. Start the lesson directly with a narrative or step-navigator block.'
+    : ''
+  const passiveOverride = params.passiveLesson
+    ? '\n\nIMPORTANT: Use ONLY informational block types (hero, narrative, step-navigator, media). Do NOT include any interactive blocks (quiz, flashcard, fill-in-the-blank). Every block must be a teaching block.'
     : ''
 
   const videoLine = params.videoUrl
@@ -77,9 +107,9 @@ async function generateOutline(params: {
   const message = await client.messages.create({
     model: params.model ?? DEFAULT_MODEL,
     max_tokens: 2048,
-    system: OUTLINE_SYSTEM_PROMPT + heroOverride,
+    system: OUTLINE_SYSTEM_PROMPT + heroOverride + passiveOverride,
     messages: [{ role: 'user', content: userContent }],
-  })
+  }, { signal: params.signal })
 
   const raw = message.content[0].type === 'text' ? message.content[0].text : ''
   return JSON.parse(extractJSON(raw)) as LessonOutline
@@ -177,6 +207,7 @@ async function generateLesson(params: {
   videoUrl?: string
   videoStartTime?: number
   videoEndTime?: number
+  signal?: AbortSignal
 }): Promise<string> {  // returns lessonId
   const focusLine = params.focus?.trim() ? `\n\nFocus/Scope: ${params.focus.trim()} — only include content relevant to this focus.` : ''
   const videoLine = params.videoUrl
@@ -204,7 +235,7 @@ async function generateLesson(params: {
     max_tokens: 16384,
     system: systemPrompt,
     messages: [{ role: 'user', content: userMessage + '\n\nRespond with JSON only.' }],
-  })
+  }, { signal: params.signal })
 
   const raw = message.content[0].type === 'text' ? message.content[0].text : ''
   const manifest: LessonManifest = JSON.parse(extractJSON(raw))
@@ -247,60 +278,113 @@ export async function runCourseGeneration(
 ): Promise<void> {
   console.log(`[course-gen] Starting generation for course ${courseId}, ${lessonInputs.length} lessons`)
 
+  const courseCtrl = new AbortController()
+  courseControllers.set(courseId, courseCtrl)
+
   await db.update(courses).set({ status: 'generating', updatedAt: new Date() }).where(eq(courses.id, courseId))
 
   const failedIds = new Set<string>()
 
-  for (const input of lessonInputs) {
-    console.log(`[course-gen] Generating lesson: "${input.title}" (${input.chapterLessonId})`)
+  try {
+    for (const input of lessonInputs) {
+      // Stop immediately if the course was deleted or cancelled
+      if (courseCtrl.signal.aborted) {
+        console.log(`[course-gen] Course ${courseId} cancelled — stopping`)
+        return
+      }
 
-    await db.update(chapterLessons)
-      .set({ generationStatus: 'generating' })
-      .where(eq(chapterLessons.id, input.chapterLessonId))
+      // Stop if the course was deleted while generation was running
+      const courseExists = await db.query.courses.findFirst({ where: eq(courses.id, courseId) })
+      if (!courseExists) {
+        console.log(`[course-gen] Course ${courseId} was deleted — stopping generation`)
+        return
+      }
 
-    try {
-      const outline = await generateOutline({
-        title: input.title,
-        audience: input.audience || 'General',
-        level: input.level || 'beginner',
-        documentText: input.sourceText,
-        focus: input.focus,
-        model,
-        skipHero,
-        videoUrl: input.videoUrl,
-        videoStartTime: input.videoStartTime,
-        videoEndTime: input.videoEndTime,
-      })
+      // Skip if this specific lesson was deleted
+      const lessonExists = await db.query.chapterLessons.findFirst({ where: eq(chapterLessons.id, input.chapterLessonId) })
+      if (!lessonExists) {
+        console.log(`[course-gen] Lesson ${input.chapterLessonId} ("${input.title}") was deleted — skipping`)
+        continue
+      }
 
-      const lessonId = await generateLesson({
-        outline,
-        documentText: input.sourceText,
-        userId,
-        focus: input.focus,
-        model,
-        passiveLesson,
-        skipHero,
-        videoUrl: input.videoUrl,
-        videoStartTime: input.videoStartTime,
-        videoEndTime: input.videoEndTime,
-      })
+      console.log(`[course-gen] Generating lesson: "${input.title}" (${input.chapterLessonId})`)
+
+      // Create a per-lesson controller linked to the course controller.
+      // Aborting the lesson controller cancels the current API calls but lets
+      // the loop continue with the next lesson (unlike course abort which stops everything).
+      const lessonCtrl = new AbortController()
+      lessonControllers.set(input.chapterLessonId, lessonCtrl)
+      const onCourseAbort = () => lessonCtrl.abort()
+      courseCtrl.signal.addEventListener('abort', onCourseAbort, { once: true })
 
       await db.update(chapterLessons)
-        .set({ generationStatus: 'done', lessonId })
+        .set({ generationStatus: 'generating' })
         .where(eq(chapterLessons.id, input.chapterLessonId))
 
-      console.log(`[course-gen] Done: "${input.title}" → lesson ${lessonId}`)
-    } catch (err) {
-      console.error(`[course-gen] Failed: "${input.title}":`, err)
-      await db.update(chapterLessons)
-        .set({ generationStatus: 'failed' })
-        .where(eq(chapterLessons.id, input.chapterLessonId))
-      failedIds.add(input.chapterLessonId)
+      try {
+        const outline = await generateOutline({
+          title: input.title,
+          audience: input.audience || 'General',
+          level: input.level || 'beginner',
+          documentText: input.sourceText,
+          focus: input.focus,
+          model,
+          skipHero,
+          passiveLesson,
+          videoUrl: input.videoUrl,
+          videoStartTime: input.videoStartTime,
+          videoEndTime: input.videoEndTime,
+          signal: lessonCtrl.signal,
+        })
+
+        const lessonId = await generateLesson({
+          outline,
+          documentText: input.sourceText,
+          userId,
+          focus: input.focus,
+          model,
+          passiveLesson,
+          skipHero,
+          videoUrl: input.videoUrl,
+          videoStartTime: input.videoStartTime,
+          videoEndTime: input.videoEndTime,
+          signal: lessonCtrl.signal,
+        })
+
+        await db.update(chapterLessons)
+          .set({ generationStatus: 'done', lessonId })
+          .where(eq(chapterLessons.id, input.chapterLessonId))
+
+        console.log(`[course-gen] Done: "${input.title}" → lesson ${lessonId}`)
+      } catch (err) {
+        // If the course was cancelled/deleted, exit the loop entirely
+        if (courseCtrl.signal.aborted) {
+          console.log(`[course-gen] Course ${courseId} cancelled mid-lesson — stopping`)
+          return
+        }
+
+        // Lesson was individually cancelled or failed — mark failed and continue
+        const reason = lessonCtrl.signal.aborted ? 'cancelled' : 'failed'
+        console.error(`[course-gen] ${reason === 'cancelled' ? 'Cancelled' : 'Failed'}: "${input.title}"`, reason === 'failed' ? err : '')
+        await db.update(chapterLessons)
+          .set({ generationStatus: 'failed' })
+          .where(eq(chapterLessons.id, input.chapterLessonId))
+        failedIds.add(input.chapterLessonId)
+      } finally {
+        courseCtrl.signal.removeEventListener('abort', onCourseAbort)
+        lessonControllers.delete(input.chapterLessonId)
+      }
     }
+  } finally {
+    courseControllers.delete(courseId)
   }
 
   // Course is always marked ready; failed lessons can be individually retried
   const courseRecord = await db.query.courses.findFirst({ where: eq(courses.id, courseId) })
+  if (!courseRecord) {
+    console.log(`[course-gen] Course ${courseId} was deleted before generation finished — nothing to finalize`)
+    return
+  }
   await db.update(courses).set({ status: 'ready', updatedAt: new Date() }).where(eq(courses.id, courseId))
 
   const doneCount = lessonInputs.length - failedIds.size

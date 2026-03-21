@@ -95,6 +95,7 @@ export interface FullCourseTree {
         position: number
         generationStatus: GenerationStatus
         lessonId: string | null
+        isDisabled: boolean
       }>
     }>
   }>

@@ -4,11 +4,12 @@
  *
  * If the server was killed mid-generation, any courses with status='generating'
  * will never complete. This marks stuck lessons as 'failed' and courses as 'ready'
- * so creators can retry individual lessons from the editor.
+ * so creators can retry individual lessons from the editor, then emails the creator.
  */
 import { db } from '@/db'
-import { courses, courseSections, courseChapters, chapterLessons } from '@/db/schema'
+import { courses, courseSections, courseChapters, chapterLessons, users } from '@/db/schema'
 import { and, eq, inArray, ne } from 'drizzle-orm'
+import { sendEmail } from '@/lib/email'
 
 export async function recoverStuckCourses(): Promise<void> {
   const stuckCourses = await db.query.courses.findMany({
@@ -26,6 +27,9 @@ export async function recoverStuckCourses(): Promise<void> {
     })
     const sectionIds = sections.map(s => s.id)
 
+    let failedCount = 0
+    let doneCount = 0
+
     if (sectionIds.length > 0) {
       const chapters = await db.query.courseChapters.findMany({
         where: inArray(courseChapters.sectionId, sectionIds),
@@ -33,17 +37,28 @@ export async function recoverStuckCourses(): Promise<void> {
       const chapterIds = chapters.map(c => c.id)
 
       if (chapterIds.length > 0) {
+        const allLessons = await db.query.chapterLessons.findMany({
+          where: inArray(chapterLessons.chapterId, chapterIds),
+        })
+
+        doneCount = allLessons.filter(l => l.generationStatus === 'done').length
+        failedCount = allLessons.filter(
+          l => l.generationStatus === 'generating' || l.generationStatus === 'pending'
+        ).length
+
         // Mark stuck/pending lessons as failed so creators can retry them
         // Leave 'done' and already-'failed' lessons untouched
-        await db.update(chapterLessons)
-          .set({ generationStatus: 'failed' })
-          .where(
-            and(
-              inArray(chapterLessons.chapterId, chapterIds),
-              ne(chapterLessons.generationStatus, 'done'),
-              ne(chapterLessons.generationStatus, 'failed'),
-            ),
-          )
+        if (failedCount > 0) {
+          await db.update(chapterLessons)
+            .set({ generationStatus: 'failed' })
+            .where(
+              and(
+                inArray(chapterLessons.chapterId, chapterIds),
+                ne(chapterLessons.generationStatus, 'done'),
+                ne(chapterLessons.generationStatus, 'failed'),
+              ),
+            )
+        }
       }
     }
 
@@ -52,6 +67,29 @@ export async function recoverStuckCourses(): Promise<void> {
       .set({ status: 'ready', updatedAt: new Date() })
       .where(eq(courses.id, course.id))
 
-    console.log(`[course-recovery] Recovered course ${course.id} ("${course.title}")`)
+    console.log(`[course-recovery] Recovered course ${course.id} ("${course.title}") — ${doneCount} done, ${failedCount} interrupted`)
+
+    // Notify the creator if we have their email
+    if (course.createdBy) {
+      const creator = await db.query.users.findFirst({ where: eq(users.id, course.createdBy) })
+      if (creator?.email) {
+        const appBase = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? 'https://app.primr.me'
+        const courseUrl = `${appBase}/creator/courses/${course.id}/edit`
+
+        const subject = `Your course "${course.title}" was interrupted`
+        const html = `<p>Your Primr course <strong>${course.title}</strong> was interrupted when the server restarted.</p>
+          <p>
+            ${doneCount > 0 ? `✅ ${doneCount} lesson${doneCount !== 1 ? 's' : ''} completed successfully<br>` : ''}
+            ${failedCount > 0 ? `❌ ${failedCount} lesson${failedCount !== 1 ? 's' : ''} did not finish — you can retry them from the course editor.` : ''}
+          </p>
+          <p><a href="${courseUrl}">Open course editor →</a></p>`
+        const text = `Your course "${course.title}" was interrupted by a server restart.\n\n${doneCount > 0 ? `${doneCount} lesson${doneCount !== 1 ? 's' : ''} completed.\n` : ''}${failedCount > 0 ? `${failedCount} lesson${failedCount !== 1 ? 's' : ''} did not finish — retry from the course editor:\n${courseUrl}` : ''}`
+
+        const result = await sendEmail({ to: creator.email, subject, html, text })
+        if (!result.ok && !result.skipped) {
+          console.error(`[course-recovery] Failed to email ${creator.email}:`, result.error)
+        }
+      }
+    }
   }
 }

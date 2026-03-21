@@ -6,245 +6,304 @@
  *
  * Used to build AI generation prompts and to derive the allowed block list
  * for informational-only (passive) lessons.
+ *
+ * To add a new block: add an entry to RAW_DEFINITIONS. The schema string
+ * for AI prompt injection is built automatically from the typed PropDef structure.
  */
 
+// ── Schema types ──────────────────────────────────────────────────────────────
+
+/** Definition of a single prop for use in AI generation prompts. */
+export interface PropDef {
+  /** TypeScript-style type string, e.g. "string", "number", "Array<{ id: string, label: string }>" */
+  type: string
+  /** Whether the prop must be present. Renders as "(required)" in the schema string. */
+  required?: boolean
+  /** Human-readable description injected into the AI prompt. */
+  description?: string
+  /** Default value, rendered as "— default: value". */
+  default?: string
+}
+
+/** Full definition of a block type, used to build the AI schema string and derived type lists. */
+export interface BlockSchemaDef {
+  type: string
+  isInteractive: boolean
+  props: Record<string, PropDef>
+  /** Block-level notes appended after props, e.g. "IMPORTANT: Each answer must be 1-2 words only." */
+  notes?: string[]
+}
+
+/** Compiled block definition — schema string ready for AI prompt injection. */
 export interface BlockDef {
   type: string
-  /** Whether the block gates progress or requires the learner to complete an action. */
   isInteractive: boolean
-  /** Prop schema description injected into AI generation prompts. */
   schema: string
 }
 
-export const BLOCK_DEFINITIONS: BlockDef[] = [
+// ── Schema builder ─────────────────────────────────────────────────────────────
+
+function buildSchema({ type, props, notes }: BlockSchemaDef): string {
+  const lines = Object.entries(props).map(([name, p]) => {
+    const opt = p.required ? '' : '?'
+    const req = p.required ? ' (required)' : ''
+    const desc = p.description ? ` — ${p.description}` : ''
+    const dflt = p.default !== undefined ? ` — default: ${p.default}` : ''
+    return `  ${name}${opt}: ${p.type}${req}${desc}${dflt}`
+  })
+  const noteLines = (notes ?? []).map(n => `  ${n}`)
+  return [type + ':', ...lines, ...noteLines].join('\n')
+}
+
+// ── Common props ──────────────────────────────────────────────────────────────
+
+/** badge and title appear on most blocks. Spread into props where applicable. */
+const common: Record<string, PropDef> = {
+  badge: { type: 'string' },
+  title: { type: 'string' },
+}
+
+// ── Block definitions ─────────────────────────────────────────────────────────
+
+const RAW_DEFINITIONS: BlockSchemaDef[] = [
   {
     type: 'hero',
     isInteractive: false,
-    schema: `hero:
-  title: string (required) — large serif title
-  tagline?: string — one sentence
-  meta?: Array<{ label: string, icon?: 'clock' | 'level' | 'tag' }>
-  cta?: string — CTA button label (default: "Start lesson")`,
+    props: {
+      title:   { type: 'string', required: true, description: 'large serif title' },
+      tagline: { type: 'string', description: 'one sentence' },
+      meta:    { type: "Array<{ label: string, icon?: 'clock' | 'level' | 'tag' }>" },
+      cta:     { type: 'string', description: 'CTA button label', default: '"Start lesson"' },
+    },
   },
   {
     type: 'narrative',
     isInteractive: false,
-    schema: `narrative:
-  body: string (required) — markdown text, comprehensive enough that learners can answer all follow-up interactive blocks from it alone
-  title?: string — serif heading
-  eyebrow?: string — small uppercase label`,
+    props: {
+      body:    { type: 'string', required: true, description: 'markdown text, comprehensive enough that learners can answer all follow-up interactive blocks from it alone' },
+      title:   { type: 'string', description: 'serif heading' },
+      eyebrow: { type: 'string', description: 'small uppercase label' },
+    },
   },
   {
     type: 'step-navigator',
     isInteractive: false,
-    schema: `step-navigator:
-  steps: Array<{ title: string, body: string, hint?: string }>
-  badge?: string — e.g. "Step walkthrough"
-  title?: string`,
+    props: {
+      steps: { type: 'Array<{ title: string, body: string, hint?: string }>', required: true },
+      badge: { type: 'string', description: 'e.g. "Step walkthrough"' },
+      title: { type: 'string' },
+    },
   },
   {
     type: 'media',
     isInteractive: false,
-    schema: `media:
-  url: string (required) — YouTube or Vimeo URL
-  title?: string — heading above the video
-  badge?: string — small label (default: "Video")
-  caption?: string — one-sentence description below the video
-  startTime?: number — start time in seconds
-  endTime?: number — end time in seconds
-  completeOn?: "mount" | "end" — "end" requires the learner to mark as watched (default), "mount" auto-completes`,
+    props: {
+      url:        { type: 'string', required: true, description: 'YouTube or Vimeo URL' },
+      title:      { type: 'string', description: 'heading above the video' },
+      badge:      { type: 'string', description: 'small label', default: '"Video"' },
+      caption:    { type: 'string', description: 'one-sentence description below the video' },
+      startTime:  { type: 'number', description: 'start time in seconds' },
+      endTime:    { type: 'number', description: 'end time in seconds' },
+      completeOn: { type: '"mount" | "end"', description: '"end" requires the learner to mark as watched, "mount" auto-completes', default: '"end"' },
+    },
   },
   {
     type: 'quiz',
     isInteractive: true,
-    schema: `quiz:
-  questions: Array<{ prompt: string, options: string[], correctIndex: number, explanation?: string }>
-  badge?: string
-  title?: string
-  passScore?: number — 0 to 1`,
+    props: {
+      questions: { type: 'Array<{ prompt: string, options: string[], correctIndex: number, explanation?: string }>', required: true },
+      passScore: { type: 'number', description: '0 to 1' },
+      ...common,
+    },
   },
   {
     type: 'flashcard',
     isInteractive: true,
-    schema: `flashcard:
-  cards: Array<{ front: string, back: string }>
-  badge?: string
-  title?: string`,
+    props: {
+      cards: { type: 'Array<{ front: string, back: string }>', required: true },
+      ...common,
+    },
   },
   {
     type: 'fill-in-the-blank',
     isInteractive: true,
-    schema: `fill-in-the-blank:
-  prompt: string — text with {{blank}} placeholders
-  answers: Array<string | string[]> — one entry per blank, can be array of accepted answers
-  badge?: string
-  title?: string
-  hint?: string
-  IMPORTANT: Each answer must be 1-2 words only, no punctuation.`,
+    props: {
+      prompt:  { type: 'string', required: true, description: 'text with {{blank}} placeholders' },
+      answers: { type: 'Array<string | string[]>', required: true, description: 'one entry per blank, can be array of accepted answers' },
+      hint:    { type: 'string' },
+      ...common,
+    },
+    notes: ['IMPORTANT: Each answer must be 1-2 words only, no punctuation.'],
   },
   // ── Phase 1 — Foundation ────────────────────────────────────────────────────
   {
     type: 'hotspot-image',
     isInteractive: true,
-    schema: `hotspot-image:
-  imageUrl: string (required) — URL of the diagram or photo
-  imageAlt?: string — alt text
-  hotspots: Array<{ id: string, label: string, description?: string, x: number, y: number }> — x/y are percentages (0–100) of image dimensions
-  badge?: string
-  title?: string`,
+    props: {
+      imageUrl: { type: 'string', required: true, description: 'URL of the diagram or photo' },
+      imageAlt: { type: 'string', description: 'alt text' },
+      hotspots: { type: 'Array<{ id: string, label: string, description?: string, x: number, y: number }>', required: true, description: 'x/y are percentages (0–100) of image dimensions' },
+      ...common,
+    },
   },
   {
     type: 'decision-tree',
     isInteractive: true,
-    schema: `decision-tree:
-  rootId: string (required) — ID of the first node to display
-  nodes: Array<{ id: string, prompt: string, description?: string, choices?: Array<{ label: string, nextId: string }> }> — nodes with no choices are terminal outcomes
-  badge?: string
-  title?: string`,
+    props: {
+      rootId: { type: 'string', required: true, description: 'ID of the first node to display' },
+      nodes:  { type: 'Array<{ id: string, prompt: string, description?: string, choices?: Array<{ label: string, nextId: string }> }>', required: true, description: 'nodes with no choices are terminal outcomes' },
+      ...common,
+    },
   },
   {
     type: 'sort-rank',
     isInteractive: true,
-    schema: `sort-rank:
-  items: Array<{ id: string, label: string, correctPosition: number }> — correctPosition is 0-based index in the correct order
-  prompt?: string — instruction text
-  badge?: string
-  title?: string`,
+    props: {
+      items:  { type: 'Array<{ id: string, label: string, correctPosition: number }>', required: true, description: 'correctPosition is 0-based index in the correct order' },
+      prompt: { type: 'string', description: 'instruction text' },
+      ...common,
+    },
   },
   {
     type: 'code-runner',
     isInteractive: true,
-    schema: `code-runner:
-  language?: "javascript" | "python" — default "javascript"
-  starterCode?: string — initial code in the editor
-  instructions?: string — text shown above the editor
-  badge?: string
-  title?: string`,
+    props: {
+      language:     { type: '"javascript" | "python"', default: '"javascript"' },
+      starterCode:  { type: 'string', description: 'initial code in the editor' },
+      instructions: { type: 'string', description: 'text shown above the editor' },
+      ...common,
+    },
   },
   {
     type: 'equation-renderer',
     isInteractive: false,
-    schema: `equation-renderer:
-  equations: Array<{ latex: string, label?: string, explanation?: string, displayMode?: boolean }> — latex is a LaTeX expression string
-  badge?: string
-  title?: string`,
+    props: {
+      equations: { type: 'Array<{ latex: string, label?: string, explanation?: string, displayMode?: boolean }>', required: true, description: 'latex is a LaTeX expression string' },
+      ...common,
+    },
   },
   {
     type: 'graph-plotter',
     isInteractive: false,
-    schema: `graph-plotter:
-  functions: Array<{ expression: string, label?: string, color?: string }> — expression uses x as variable, supports sin/cos/sqrt/etc.
-  xMin?: number — default -10
-  xMax?: number — default 10
-  yMin?: number — default -10
-  yMax?: number — default 10
-  badge?: string
-  title?: string`,
+    props: {
+      functions: { type: 'Array<{ expression: string, label?: string, color?: string }>', required: true, description: 'expression uses x as variable, supports sin/cos/sqrt/etc.' },
+      xMin:      { type: 'number', default: '-10' },
+      xMax:      { type: 'number', default: '10' },
+      yMin:      { type: 'number', default: '-10' },
+      yMax:      { type: 'number', default: '10' },
+      ...common,
+    },
   },
   // ── Phase 2 — STEM expansion ────────────────────────────────────────────────
   {
     type: 'reaction-balancer',
     isInteractive: true,
-    schema: `reaction-balancer:
-  reactants: Array<{ id: string, formula: string, name?: string }> — left-side species, formula like "H2O"
-  products: Array<{ id: string, formula: string, name?: string }> — right-side species
-  badge?: string
-  title?: string`,
+    props: {
+      reactants: { type: 'Array<{ id: string, formula: string, name?: string }>', required: true, description: 'left-side species, formula like "H2O"' },
+      products:  { type: 'Array<{ id: string, formula: string, name?: string }>', required: true, description: 'right-side species' },
+      ...common,
+    },
   },
   {
     type: 'anatomy-labeler',
     isInteractive: true,
-    schema: `anatomy-labeler:
-  imageUrl: string (required) — URL of the anatomical diagram
-  imageAlt?: string
-  regions: Array<{ id: string, label: string, x: number, y: number }> — x/y as percentages (0–100)
-  badge?: string
-  title?: string`,
+    props: {
+      imageUrl: { type: 'string', required: true, description: 'URL of the anatomical diagram' },
+      imageAlt: { type: 'string' },
+      regions:  { type: 'Array<{ id: string, label: string, x: number, y: number }>', required: true, description: 'x/y as percentages (0–100)' },
+      ...common,
+    },
   },
   {
     type: 'circuit-builder',
     isInteractive: true,
-    schema: `circuit-builder:
-  availableComponents: Array<{ type: string, label?: string }> — types: "battery", "resistor", "led", "bulb", "switch", "wire"
-  badge?: string
-  title?: string`,
+    props: {
+      availableComponents: { type: 'Array<{ type: string, label?: string }>', required: true, description: 'types: "battery", "resistor", "led", "bulb", "switch", "wire"' },
+      ...common,
+    },
   },
   {
     type: 'chart-builder',
     isInteractive: true,
-    schema: `chart-builder:
-  data: Array<{ label: string, value: number, color?: string }> — initial data points
-  chartType?: "bar" | "line" | "pie" — default "bar"
-  badge?: string
-  title?: string`,
+    props: {
+      data:      { type: 'Array<{ label: string, value: number, color?: string }>', required: true, description: 'initial data points' },
+      chartType: { type: '"bar" | "line" | "pie"', default: '"bar"' },
+      ...common,
+    },
   },
   {
     type: 'clickable-map',
     isInteractive: true,
-    schema: `clickable-map:
-  imageUrl: string (required) — URL of the map image
-  imageAlt?: string
-  regions: Array<{ id: string, label: string, description?: string, x: number, y: number, width?: number, height?: number }> — x/y/width/height as percentages (0–100)
-  mode?: "explore" | "identify" — default "explore"
-  badge?: string
-  title?: string`,
+    props: {
+      imageUrl: { type: 'string', required: true, description: 'URL of the map image' },
+      imageAlt: { type: 'string' },
+      regions:  { type: 'Array<{ id: string, label: string, description?: string, x: number, y: number, width?: number, height?: number }>', required: true, description: 'x/y/width/height as percentages (0–100)' },
+      mode:     { type: '"explore" | "identify"', default: '"explore"' },
+      ...common,
+    },
   },
   // ── Phase 3 — Professional & Creative ──────────────────────────────────────
   {
     type: 'sql-sandbox',
     isInteractive: true,
-    schema: `sql-sandbox:
-  tables: Array<{ name: string, columns: Array<{ name: string, type: string }>, rows: Array<Record<string, string|number|null>> }>
-  starterQuery?: string — initial SQL shown in editor
-  badge?: string
-  title?: string`,
+    props: {
+      tables:       { type: 'Array<{ name: string, columns: Array<{ name: string, type: string }>, rows: Array<Record<string, string|number|null>> }>', required: true },
+      starterQuery: { type: 'string', description: 'initial SQL shown in editor' },
+      ...common,
+    },
   },
   {
     type: 'audio-pronunciation',
     isInteractive: true,
-    schema: `audio-pronunciation:
-  words: Array<{ word: string, ipa?: string, translation?: string, example?: string, audioUrl?: string }>
-  language?: string — BCP-47 tag e.g. "en-US", "es-ES", "fr-FR" — default "en-US"
-  badge?: string
-  title?: string`,
+    props: {
+      words:    { type: 'Array<{ word: string, ipa?: string, translation?: string, example?: string, audioUrl?: string }>', required: true },
+      language: { type: 'string', description: 'BCP-47 tag e.g. "en-US", "es-ES", "fr-FR"', default: '"en-US"' },
+      ...common,
+    },
   },
   {
     type: 'financial-calculator',
     isInteractive: false,
-    schema: `financial-calculator:
-  mode?: "compound" | "loan" | "roi" — default "compound"
-  defaultPrincipal?: number
-  defaultRate?: number — annual rate as percent, e.g. 7 for 7%
-  defaultYears?: number
-  defaultCompoundFreq?: number — default 12
-  defaultLoanAmount?: number
-  defaultLoanRate?: number
-  defaultLoanTermMonths?: number
-  defaultInvestment?: number
-  defaultGain?: number
-  badge?: string
-  title?: string`,
+    props: {
+      mode:                  { type: '"compound" | "loan" | "roi"', default: '"compound"' },
+      defaultPrincipal:      { type: 'number' },
+      defaultRate:           { type: 'number', description: 'annual rate as percent, e.g. 7 for 7%' },
+      defaultYears:          { type: 'number' },
+      defaultCompoundFreq:   { type: 'number', default: '12' },
+      defaultLoanAmount:     { type: 'number' },
+      defaultLoanRate:       { type: 'number' },
+      defaultLoanTermMonths: { type: 'number' },
+      defaultInvestment:     { type: 'number' },
+      defaultGain:           { type: 'number' },
+      ...common,
+    },
   },
   {
     type: 'statute-annotator',
     isInteractive: true,
-    schema: `statute-annotator:
-  text: string (required) — the full document or clause text to annotate
-  tags?: Array<{ id: string, label: string, color: string }> — annotation categories, defaults to: Obligation/Exception/Definition/Right/Penalty
-  badge?: string
-  title?: string`,
+    props: {
+      text: { type: 'string', required: true, description: 'the full document or clause text to annotate' },
+      tags: { type: 'Array<{ id: string, label: string, color: string }>', description: 'annotation categories, defaults to: Obligation/Exception/Definition/Right/Penalty' },
+      ...common,
+    },
   },
   {
     type: 'physics-simulator',
     isInteractive: false,
-    schema: `physics-simulator:
-  simulation?: "projectile" | "pendulum" | "spring" — default "projectile"
-  badge?: string
-  title?: string`,
+    props: {
+      simulation: { type: '"projectile" | "pendulum" | "spring"', default: '"projectile"' },
+      ...common,
+    },
   },
 ]
 
-// ── Derived constants ─────────────────────────────────────────────────────────
+// ── Exports ───────────────────────────────────────────────────────────────────
+
+export const BLOCK_DEFINITIONS: BlockDef[] = RAW_DEFINITIONS.map(def => ({
+  type: def.type,
+  isInteractive: def.isInteractive,
+  schema: buildSchema(def),
+}))
 
 export const INFORMATIONAL_TYPES = BLOCK_DEFINITIONS
   .filter(b => !b.isInteractive)
@@ -255,6 +314,11 @@ export const INTERACTIVE_TYPES = BLOCK_DEFINITIONS
   .map(b => b.type)
 
 export const ALL_BLOCK_TYPES = BLOCK_DEFINITIONS.map(b => b.type)
+
+/** Per-type schema string lookup — convenience map for single-block prompt injection. */
+export const BLOCK_SCHEMA_MAP: Record<string, string> = Object.fromEntries(
+  BLOCK_DEFINITIONS.map(b => [b.type, b.schema])
+)
 
 /** Full prop schema string for injection into AI generation prompts. */
 export const BLOCK_SCHEMAS = `Block prop schemas:\n\n${BLOCK_DEFINITIONS.map(b => b.schema).join('\n\n')}`

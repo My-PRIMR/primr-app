@@ -1,16 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { BLOCK_SCHEMA_MAP } from '@/lib/block-schemas'
 
 const client = new Anthropic()
-
-const BLOCK_SCHEMA: Record<string, string> = {
-  hero: `hero props: { title: string, tagline?: string, meta?: Array<{ label: string, icon?: 'clock'|'level'|'tag' }>, cta?: string }`,
-  narrative: `narrative props: { body: string (markdown), title?: string, eyebrow?: string }`,
-  'step-navigator': `step-navigator props: { steps: Array<{ title: string, body: string, hint?: string }>, badge?: string, title?: string }`,
-  quiz: `quiz props: { questions: Array<{ prompt: string, options: string[], correctIndex: number, explanation?: string }>, badge?: string, title?: string, passScore?: number }`,
-  flashcard: `flashcard props: { cards: Array<{ front: string, back: string }>, badge?: string, title?: string }`,
-  'fill-in-the-blank': `fill-in-the-blank props: { prompt: string (with {{blank}} placeholders), answers: Array<string|string[]>, badge?: string, title?: string, hint?: string }`,
-}
 
 export async function POST(req: NextRequest) {
   const { block, instructions, lessonTitle, adjacentBlocks } = await req.json()
@@ -19,7 +11,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'block and instructions are required' }, { status: 400 })
   }
 
-  const schema = BLOCK_SCHEMA[block.type] || ''
+  const schema = BLOCK_SCHEMA_MAP[block.type] || ''
   const context = adjacentBlocks?.length
     ? `\nSurrounding blocks for context: ${adjacentBlocks.join(' → ')}`
     : ''

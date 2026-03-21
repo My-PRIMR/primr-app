@@ -18,6 +18,15 @@ function initStatuses(course: FullCourseTree): Map<string, LessonStatus> {
   return map
 }
 
+function initDisabled(course: FullCourseTree): Set<string> {
+  const s = new Set<string>()
+  for (const section of course.sections)
+    for (const chapter of section.chapters)
+      for (const cl of chapter.lessons)
+        if (cl.isDisabled) s.add(cl.id)
+  return s
+}
+
 type StatusIcon = { label: string; cls: string }
 function statusIcon(status: string): StatusIcon {
   switch (status) {
@@ -45,6 +54,7 @@ export default function CourseEditClient({ course }: { course: FullCourseTree })
   // ── Sidebar state ──────────────────────────────────────────────────────────
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
   const [collapsedChapters, setCollapsedChapters] = useState<Set<string>>(new Set())
+  const [disabledLessons, setDisabledLessons] = useState<Set<string>>(() => initDisabled(course))
 
   // ── Live lesson statuses (updated by polling) ──────────────────────────────
   const [lessonStatuses, setLessonStatuses] = useState<Map<string, LessonStatus>>(() => initStatuses(course))
@@ -160,6 +170,20 @@ export default function CourseEditClient({ course }: { course: FullCourseTree })
     startPolling()
   }
 
+  async function toggleDisabled(clId: string) {
+    const next = !disabledLessons.has(clId)
+    setDisabledLessons(prev => {
+      const s = new Set(prev)
+      next ? s.add(clId) : s.delete(clId)
+      return s
+    })
+    await fetch(`/api/courses/${course.id}/lessons/${clId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isDisabled: next }),
+    })
+  }
+
   // ── Nav breadcrumb ─────────────────────────────────────────────────────────
   let selectedLessonTitle = ''
   for (const section of course.sections) {
@@ -255,11 +279,12 @@ export default function CourseEditClient({ course }: { course: FullCourseTree })
                           const isSelected = cl.id === selectedClId
                           const canEdit = status.generationStatus === 'done' && status.lessonId
                           const isFailed = status.generationStatus === 'failed'
+                          const isOff = disabledLessons.has(cl.id)
 
                           return (
                             <div
                               key={cl.id}
-                              className={`${styles.lessonRow} ${isSelected ? styles.lessonRowActive : ''} ${!canEdit && !isFailed ? styles.lessonRowDisabled : ''}`}
+                              className={`${styles.lessonRow} ${isSelected ? styles.lessonRowActive : ''} ${!canEdit && !isFailed ? styles.lessonRowDisabled : ''} ${isOff ? styles.lessonRowOff : ''}`}
                             >
                               <span className={`${styles.statusMark} ${icon.cls}`}>{icon.label}</span>
                               <button
@@ -279,6 +304,13 @@ export default function CourseEditClient({ course }: { course: FullCourseTree })
                                   ↺ Retry
                                 </button>
                               )}
+                              <button
+                                className={styles.disableBtn}
+                                onClick={() => toggleDisabled(cl.id)}
+                                title={isOff ? 'Enable lesson (learners can see it)' : 'Disable lesson (hide from learners)'}
+                              >
+                                {isOff ? '○' : '●'}
+                              </button>
                             </div>
                           )
                         })}

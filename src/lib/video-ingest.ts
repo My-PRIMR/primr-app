@@ -14,90 +14,52 @@ import { tmpdir } from 'node:os'
 import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
+import { BLOCK_SCHEMAS, INFORMATIONAL_TYPES, INTERACTIVE_TYPES } from '@/lib/block-schemas'
 import type { LessonManifest } from '@primr/components'
 
 const anthropic = new Anthropic()
 const assemblyai = new AssemblyAI({ apiKey: process.env.ASSEMBLYAI_API_KEY! })
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface Chapter {
+export interface VideoChapter {
   title: string
   start_time: number  // seconds
   end_time: number    // seconds
 }
 
-interface YoutubeData {
+export interface YouTubeData {
   videoTitle: string
   durationSec: number
   audioUrl: string | null
-  chapters: Chapter[]
+  chapters: VideoChapter[]
   transcriptText: string                              // full, for outline
-  chapterTranscripts: Array<{ chapter: Chapter; text: string }>
+  chapterTranscripts: Array<{ chapter: VideoChapter; text: string }>
 }
+
+// Internal aliases kept for backward compatibility within this file
+type Chapter = VideoChapter
+type YoutubeData = YouTubeData
 
 
 // ── Prompts ───────────────────────────────────────────────────────────────────
 
-const BLOCK_SCHEMAS = `Block prop schemas:
-
-hero:
-  title: string (required) — large serif lesson title
-  tagline?: string — one sentence
-  meta?: Array<{ label: string, icon?: 'clock' | 'level' | 'tag' }>
-  cta?: string — CTA button label
-
-narrative:
-  body: string (required) — markdown text
-  title?: string — serif heading
-  eyebrow?: string — small uppercase label
-
-step-navigator:
-  steps: Array<{ title: string, body: string, hint?: string }>
-  badge?: string
-  title?: string
-
-quiz:
-  questions: Array<{ prompt: string, options: string[], correctIndex: number, explanation?: string }>
-  badge?: string
-  title?: string
-  passScore?: number — 0 to 1
-
-flashcard:
-  cards: Array<{ front: string, back: string }>
-  badge?: string
-  title?: string
-
-fill-in-the-blank:
-  prompt: string — text with {{blank}} placeholders
-  answers: Array<string | string[]> — one entry per blank; can be array of synonyms
-  badge?: string
-  title?: string
-  hint?: string
-  IMPORTANT: Each answer must be 1–2 words only, no punctuation.
-
-media:
-  url: string (required) — original YouTube or Vimeo URL
-  title?: string — chapter title
-  badge?: string — e.g. "Chapter 1"
-  caption?: string — one sentence describing what the clip covers
-  startTime?: number — clip start in seconds
-  endTime?: number — clip end in seconds
-  completeOn?: 'mount' | 'end' — default 'end'`
-
 // Outline prompt — chapter-aware
 function makeOutlineSystemPrompt(passive: boolean): string {
+  const informational = INFORMATIONAL_TYPES.filter(t => t !== 'hero' && t !== 'media').join(' or ')
+  const interactive = INTERACTIVE_TYPES.join(' or ')
+
   const chapterContentRule = passive
-    ? `2. For EACH chapter: one 'media' block (the clip) followed by 1–2 content blocks (narrative or step-navigator only — no interactive blocks)`
-    : `2. For EACH chapter: one 'media' block (the clip) followed by 2–3 content blocks. At least one MUST be interactive (fill-in-the-blank or flashcard); the rest can be narrative or step-navigator.`
+    ? `2. For EACH chapter: one 'media' block (the clip) followed by 1–2 content blocks (${informational} only — no interactive blocks)`
+    : `2. For EACH chapter: one 'media' block (the clip) followed by 2–3 content blocks. At least one MUST be interactive (${interactive}); the rest can be ${informational}.`
 
   const chapterInteractiveNote = passive
     ? ''
-    : `\n- Each chapter section must include at least one fill-in-the-blank or flashcard block`
+    : `\n- Each chapter section must include at least one ${interactive} block`
 
   const exampleBlocks = passive
-    ? `    { "id": "ch0-content", "type": "narrative|step-navigator", "chapterIndex": 0, "summary": "...", "itemCount": number },`
-    : `    { "id": "ch0-content-1", "type": "narrative|step-navigator", "chapterIndex": 0, "summary": "...", "itemCount": number },
-    { "id": "ch0-interactive", "type": "fill-in-the-blank|flashcard", "chapterIndex": 0, "summary": "...", "itemCount": number },`
+    ? `    { "id": "ch0-content", "type": "${informational.replace(' or ', '|')}", "chapterIndex": 0, "summary": "...", "itemCount": number },`
+    : `    { "id": "ch0-content-1", "type": "${informational.replace(' or ', '|')}", "chapterIndex": 0, "summary": "...", "itemCount": number },
+    { "id": "ch0-interactive", "type": "${interactive.replace(/ or /g, '|')}", "chapterIndex": 0, "summary": "...", "itemCount": number },`
 
   return `You are an expert instructional designer. Given a video transcript (split by chapter) and a list of chapters with timestamps, generate a lesson outline as JSON.
 
@@ -461,7 +423,7 @@ async function transcribeYouTubeViaYtDlp(videoUrl: string): Promise<{ text: stri
 
 // ── YouTube data fetch via Innertube (no yt-dlp required) ────────────────────
 
-async function fetchYouTubeData(videoUrl: string): Promise<YoutubeData> {
+export async function fetchYouTubeData(videoUrl: string): Promise<YouTubeData> {
   const { Innertube } = await import('youtubei.js')
   const videoId = extractVideoId(videoUrl)
 

@@ -19,8 +19,9 @@ interface WizardState {
   audience: string
   level: 'beginner' | 'intermediate' | 'advanced'
   focus: string
-  // Staged file (selected but not yet uploaded)
-  stagedFile: File | null
+  videoUrl: string
+  stagedFiles: File[]
+  structureSource: 'document' | 'video'
   // Step 3: tree + exclusions
   courseTree: CourseTree | null
   excludedLessons: Set<string>  // localIds of lessons the creator wants to skip
@@ -39,7 +40,9 @@ const initialState: WizardState = {
   audience: 'General',
   level: 'beginner',
   focus: '',
-  stagedFile: null,
+  videoUrl: '',
+  stagedFiles: [],
+  structureSource: 'document',
   courseTree: null,
   excludedLessons: new Set(),
   courseId: null,
@@ -65,6 +68,8 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
   const [state, setState] = useState<WizardState>(initialState)
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL)
   const [passiveLesson, setPassiveLesson] = useState(false)
+  const [skipHero, setSkipHero] = useState(false)
+  const [notifyEmail, setNotifyEmail] = useState(true)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Step 4 polling
@@ -101,22 +106,29 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
   // ── Step 1: Upload or manual ──────────────────────────────────────────────
 
   function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0] ?? null
-    set({ stagedFile: file, errorMessage: '' })
-    // Reset input so the same file can be re-selected after clearing
+    const picked = Array.from(e.target.files ?? [])
+    set({ stagedFiles: [...state.stagedFiles, ...picked].slice(0, 5), errorMessage: '' })
     e.target.value = ''
   }
 
-  async function handleAnalyzeDocument() {
-    if (!state.stagedFile) return
+  function removeFile(idx: number) {
+    set({ stagedFiles: state.stagedFiles.filter((_, i) => i !== idx) })
+  }
+
+  const hasSources = state.stagedFiles.length > 0 || state.videoUrl.trim().length > 0
+
+  async function handleAnalyzeSources() {
+    if (!hasSources) return
 
     set({ status: 'loading', step: 2, errorMessage: '' })
 
     const formData = new FormData()
-    formData.append('file', state.stagedFile)
+    for (const f of state.stagedFiles) formData.append('file', f)
+    if (state.videoUrl.trim()) formData.append('videoUrl', state.videoUrl.trim())
     formData.append('audience', state.audience)
     formData.append('level', state.level)
     if (state.focus.trim()) formData.append('focus', state.focus.trim())
+    formData.append('structureSource', state.structureSource)
     formData.append('model', selectedModel)
 
     try {
@@ -124,16 +136,15 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
       const data = await res.json()
 
       if (!res.ok) {
-        set({ status: 'error', step: 1, errorMessage: data.error || 'Failed to parse document.' })
+        set({ status: 'error', step: 1, errorMessage: data.error || 'Failed to analyze sources.' })
         return
       }
 
       const tree: CourseTree = data.courseTree
-      // Override title/description if user filled them in
       if (state.title.trim()) tree.title = state.title.trim()
       if (state.description.trim()) tree.description = state.description.trim()
 
-      set({ status: 'idle', step: 3, courseTree: tree, stagedFile: null })
+      set({ status: 'idle', step: 3, courseTree: tree, stagedFiles: [], videoUrl: '' })
     } catch {
       set({ status: 'error', step: 1, errorMessage: 'Network error. Please try again.' })
     }
@@ -211,7 +222,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
       const genRes = await fetch(`/api/courses/${courseId}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tree: filteredTree, model: selectedModel, passiveLesson }),
+        body: JSON.stringify({ tree: filteredTree, model: selectedModel, passiveLesson, skipHero, notifyEmail }),
       })
       const genData = await genRes.json()
       if (!genRes.ok) {
@@ -322,6 +333,15 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
     }))
   }
 
+  function toggleSection(section: CourseTree['sections'][number], include: boolean) {
+    const lessonIds = section.chapters.flatMap(c => c.lessons.map(l => l.localId))
+    setState(s => {
+      const next = new Set(s.excludedLessons)
+      for (const id of lessonIds) include ? next.delete(id) : next.add(id)
+      return { ...s, excludedLessons: next }
+    })
+  }
+
   function addLesson(sectionLocalId: string, chapterLocalId: string) {
     updateTree(tree => ({
       ...tree,
@@ -372,7 +392,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
       <div className={styles.content}>
         {/* Step indicator */}
         <div className={styles.steps}>
-          {(['Upload', 'Analyzing', 'Review', 'Generating', 'Done'] as const).map((label, i) => (
+          {(['Sources', 'Analyzing', 'Review', 'Generating', 'Done'] as const).map((label, i) => (
             <div key={label} className={`${styles.stepDot} ${state.step === i + 1 ? styles.stepActive : ''} ${state.step > i + 1 ? styles.stepDone : ''}`}>
               <span>{i + 1}</span>
             </div>
@@ -383,7 +403,8 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
         {state.step === 1 && (
           <div className={styles.card}>
             <h1 className={styles.heading}>Create a course</h1>
-            <p className={styles.subheading}>Upload a document to auto-generate the course structure, or fill in the details manually.</p>
+
+            <p className={styles.subheading}>Add a YouTube video, documents, or both — we'll extract the content and generate the course structure for you to review.</p>
 
             {state.errorMessage && <div className={styles.error}>{state.errorMessage}</div>}
 
@@ -445,6 +466,27 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
               <p className={styles.fieldHint}>Narrows what Claude covers when structuring and generating lessons.</p>
             </div>
 
+            <div className={styles.formGroup} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={notifyEmail}
+                  onChange={e => setNotifyEmail(e.target.checked)}
+                  className={styles.checkbox}
+                />
+                Email me when course generation finishes
+              </label>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={skipHero}
+                  onChange={e => setSkipHero(e.target.checked)}
+                  className={styles.checkbox}
+                />
+                Skip hero block in each lesson
+              </label>
+            </div>
+
             {canSelectModels(internalRole, productRole) && (
               <div className={styles.internalControls}>
                 <div className={styles.formGroup}>
@@ -473,37 +515,84 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
               </div>
             )}
 
-            <div className={styles.uploadSection}>
-              <label className={styles.uploadLabel}>
-                <input
-                  type="file"
-                  accept=".pdf,.docx,.txt,.md"
-                  className={styles.fileInput}
-                  onChange={handleFilePick}
-                />
-                <div className={`${styles.uploadBox} ${state.stagedFile ? styles.uploadBoxStaged : ''}`}>
-                  <span className={styles.uploadIcon}>{state.stagedFile ? '📎' : '📄'}</span>
-                  <span className={styles.uploadText}>
-                    {state.stagedFile ? state.stagedFile.name : 'Upload document to auto-generate structure'}
-                  </span>
-                  <span className={styles.uploadHint}>
-                    {state.stagedFile ? 'Click to choose a different file' : 'PDF, DOCX, TXT, or MD'}
-                  </span>
-                </div>
-              </label>
+            <div className={styles.formGroup}>
+              <label className={styles.label}>YouTube URL <span className={styles.optional}>(optional)</span></label>
+              <input
+                className={styles.input}
+                type="url"
+                placeholder="https://www.youtube.com/watch?v=..."
+                value={state.videoUrl}
+                onChange={e => set({ videoUrl: e.target.value, errorMessage: '' })}
+              />
             </div>
 
-            {state.stagedFile ? (
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Documents <span className={styles.optional}>(optional, up to 5)</span></label>
+              {state.stagedFiles.length > 0 && (
+                <div className={styles.fileList}>
+                  {state.stagedFiles.map((f, i) => (
+                    <div key={i} className={styles.fileRow}>
+                      <span className={styles.fileName}>📎 {f.name}</span>
+                      <button type="button" className={styles.deleteBtn} onClick={() => removeFile(i)}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {state.stagedFiles.length < 5 && (
+                <label className={styles.uploadBtn}>
+                  {state.stagedFiles.length === 0 ? 'Choose file(s)' : 'Add another file'}
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,.txt,.md"
+                    multiple
+                    className={styles.fileInput}
+                    onChange={handleFilePick}
+                  />
+                </label>
+              )}
+              <p className={styles.fieldHint}>PDF, DOCX, TXT, or MD. Combined with video transcript as source material.</p>
+            </div>
+
+            {state.stagedFiles.length > 0 && state.videoUrl.trim() && (
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Course structure source</label>
+                <div className={styles.structureToggle}>
+                  <label className={`${styles.structureOption} ${state.structureSource === 'document' ? styles.structureOptionActive : ''}`}>
+                    <input
+                      type="radio"
+                      name="structureSource"
+                      value="document"
+                      checked={state.structureSource === 'document'}
+                      onChange={() => set({ structureSource: 'document' })}
+                      className={styles.srOnly}
+                    />
+                    <span className={styles.structureOptionTitle}>Document</span>
+                    <span className={styles.structureOptionHint}>Structure from doc · video clips as supplements</span>
+                  </label>
+                  <label className={`${styles.structureOption} ${state.structureSource === 'video' ? styles.structureOptionActive : ''}`}>
+                    <input
+                      type="radio"
+                      name="structureSource"
+                      value="video"
+                      checked={state.structureSource === 'video'}
+                      onChange={() => set({ structureSource: 'video' })}
+                      className={styles.srOnly}
+                    />
+                    <span className={styles.structureOptionTitle}>Video</span>
+                    <span className={styles.structureOptionHint}>Structure from chapters · doc text as supplements</span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {hasSources ? (
               <div className={styles.actions}>
-                <button className={styles.secondaryBtn} onClick={() => set({ stagedFile: null })}>
-                  Clear file
-                </button>
                 <button
                   className={styles.primaryBtn}
-                  onClick={handleAnalyzeDocument}
+                  onClick={handleAnalyzeSources}
                   disabled={state.status === 'loading'}
                 >
-                  Analyze document →
+                  Analyze sources →
                 </button>
               </div>
             ) : (
@@ -514,7 +603,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
                   onClick={handleManualContinue}
                   disabled={!state.title.trim()}
                 >
-                  Continue without document →
+                  Continue without sources →
                 </button>
               </>
             )}
@@ -526,8 +615,8 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
           <div className={styles.card}>
             <div className={styles.loadingCenter}>
               <div className={styles.spinner} />
-              <h2 className={styles.loadingTitle}>Analyzing document structure…</h2>
-              <p className={styles.loadingHint}>This takes about 30 seconds for large documents.</p>
+              <h2 className={styles.loadingTitle}>Analyzing sources…</h2>
+              <p className={styles.loadingHint}>Extracting content and generating course structure. This may take up to a minute for video.</p>
             </div>
           </div>
         )}
@@ -559,10 +648,23 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
 
             {/* Tree */}
             <div className={styles.tree}>
-              {state.courseTree.sections.map(section => (
+              {state.courseTree.sections.map(section => {
+                const sectionLessonIds = section.chapters.flatMap(c => c.lessons.map(l => l.localId))
+                const excludedInSection = sectionLessonIds.filter(id => state.excludedLessons.has(id)).length
+                const sectionAllExcluded = sectionLessonIds.length > 0 && excludedInSection === sectionLessonIds.length
+                const sectionIndeterminate = excludedInSection > 0 && !sectionAllExcluded
+
+                return (
                 <div key={section.localId} className={styles.sectionNode}>
                   <div className={styles.sectionRow}>
-                    <span className={styles.nodeIcon}>▸</span>
+                    <input
+                      type="checkbox"
+                      className={styles.lessonCheck}
+                      checked={!sectionAllExcluded}
+                      ref={el => { if (el) el.indeterminate = sectionIndeterminate }}
+                      onChange={e => toggleSection(section, e.target.checked)}
+                      title={sectionAllExcluded ? 'Include section' : 'Exclude section'}
+                    />
                     <input
                       className={styles.nodeInput}
                       value={section.title}
@@ -623,7 +725,8 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
                     + chapter
                   </button>
                 </div>
-              ))}
+              )
+              })}
 
               <button className={styles.addSectionBtn} onClick={addSection}>
                 + Add section

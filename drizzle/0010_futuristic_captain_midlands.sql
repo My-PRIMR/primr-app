@@ -1,0 +1,1 @@
+ALTER TABLE "chapter_lessons" ADD COLUMN "is_disabled" boolean DEFAULT false NOT NULL;

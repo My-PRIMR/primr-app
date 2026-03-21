@@ -75,7 +75,7 @@ export default async function CourseLearnPage({
     const chaptersWithLessons = []
     for (const chapter of chapters) {
       const cls = await db.select().from(chapterLessons)
-        .where(eq(chapterLessons.chapterId, chapter.id))
+        .where(and(eq(chapterLessons.chapterId, chapter.id), eq(chapterLessons.isDisabled, false)))
         .orderBy(asc(chapterLessons.position))
 
       // Load manifests for done lessons

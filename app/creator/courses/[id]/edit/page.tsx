@@ -75,6 +75,7 @@ export default async function CourseEditPage({ params }: { params: Promise<{ id:
               position: l.position,
               generationStatus: l.generationStatus as 'pending' | 'generating' | 'done' | 'failed',
               lessonId: l.lessonId,
+              isDisabled: l.isDisabled,
             })),
         })),
     })),

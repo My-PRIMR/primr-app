@@ -3,6 +3,7 @@ import { db } from '@/db'
 import { courses, courseSections, courseChapters, chapterLessons } from '@/db/schema'
 import { eq, asc } from 'drizzle-orm'
 import { getSession } from '@/session'
+import { cancelCourseGeneration } from '@/lib/course-gen'
 import type { FullCourseTree } from '@/types/course'
 
 // GET /api/courses/[id] — full course tree
@@ -79,6 +80,7 @@ export async function GET(
           position: lesson.position,
           generationStatus: lesson.generationStatus,
           lessonId: lesson.lessonId,
+          isDisabled: lesson.isDisabled,
         })),
       })),
     })),
@@ -128,6 +130,7 @@ export async function DELETE(
   if (!course) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (course.createdBy !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+  cancelCourseGeneration(id)
   await db.delete(courses).where(eq(courses.id, id))
   return NextResponse.json({ ok: true })
 }

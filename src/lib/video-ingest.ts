@@ -20,20 +20,24 @@ const anthropic = new Anthropic()
 const assemblyai = new AssemblyAI({ apiKey: process.env.ASSEMBLYAI_API_KEY! })
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface Chapter {
+export interface VideoChapter {
   title: string
   start_time: number  // seconds
   end_time: number    // seconds
 }
 
-interface YoutubeData {
+export interface YouTubeData {
   videoTitle: string
   durationSec: number
   audioUrl: string | null
-  chapters: Chapter[]
+  chapters: VideoChapter[]
   transcriptText: string                              // full, for outline
-  chapterTranscripts: Array<{ chapter: Chapter; text: string }>
+  chapterTranscripts: Array<{ chapter: VideoChapter; text: string }>
 }
+
+// Internal aliases kept for backward compatibility within this file
+type Chapter = VideoChapter
+type YoutubeData = YouTubeData
 
 
 // ── Prompts ───────────────────────────────────────────────────────────────────
@@ -461,7 +465,7 @@ async function transcribeYouTubeViaYtDlp(videoUrl: string): Promise<{ text: stri
 
 // ── YouTube data fetch via Innertube (no yt-dlp required) ────────────────────
 
-async function fetchYouTubeData(videoUrl: string): Promise<YoutubeData> {
+export async function fetchYouTubeData(videoUrl: string): Promise<YouTubeData> {
   const { Innertube } = await import('youtubei.js')
   const videoId = extractVideoId(videoUrl)
 

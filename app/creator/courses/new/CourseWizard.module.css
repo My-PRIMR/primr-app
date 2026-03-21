@@ -189,6 +189,48 @@
   cursor: pointer;
 }
 
+.uploadBtn {
+  display: inline-block;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--border-mid);
+  border-radius: 7px;
+  cursor: pointer;
+  color: var(--ink);
+  background: var(--surface);
+  margin-top: 0.5rem;
+}
+
+.uploadBtn:hover {
+  background: var(--surface-alt);
+}
+
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.fileRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--surface-alt);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.fileName {
+  flex: 1;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .fileInput {
   display: none;
 }

@@ -6,6 +6,9 @@ import VideoIngestForm from './components/VideoIngestForm'
 import '@primr/components/dist/style.css'
 import {
   HeroCard, NarrativeBlock, StepNavigator, Quiz, FlipCardDeck, FillInTheBlank, MediaBlock,
+  HotspotImage, DecisionTree, SortRank, CodeRunner, EquationRenderer, GraphPlotter,
+  ReactionBalancer, AnatomyLabeler, CircuitBuilder, ChartBuilder, ClickableMap,
+  SqlSandbox, AudioPronunciation, FinancialCalculator, StatuteAnnotator, PhysicsSimulator,
 } from '@primr/components'
 import type { WizardState, WizardAction, LessonOutline, BlockConfig } from '@/types/outline'
 import { DEFAULT_MODEL } from '@/lib/models'
@@ -19,6 +22,25 @@ const BLOCK_COMPONENTS: Record<string, React.ComponentType<any>> = {
   flashcard: FlipCardDeck,
   'fill-in-the-blank': FillInTheBlank,
   media: MediaBlock,
+  // Phase 1
+  'hotspot-image': HotspotImage,
+  'decision-tree': DecisionTree,
+  'sort-rank': SortRank,
+  'code-runner': CodeRunner,
+  'equation-renderer': EquationRenderer,
+  'graph-plotter': GraphPlotter,
+  // Phase 2
+  'reaction-balancer': ReactionBalancer,
+  'anatomy-labeler': AnatomyLabeler,
+  'circuit-builder': CircuitBuilder,
+  'chart-builder': ChartBuilder,
+  'clickable-map': ClickableMap,
+  // Phase 3
+  'sql-sandbox': SqlSandbox,
+  'audio-pronunciation': AudioPronunciation,
+  'financial-calculator': FinancialCalculator,
+  'statute-annotator': StatuteAnnotator,
+  'physics-simulator': PhysicsSimulator,
 }
 import StepIndicator from './components/StepIndicator'
 import Step1Form from './components/Step1Form'

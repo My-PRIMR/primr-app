@@ -4,20 +4,44 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import '@primr/components/dist/style.css'
 import {
   HeroCard, NarrativeBlock, StepNavigator, Quiz, FlipCardDeck, FillInTheBlank, MediaBlock,
+  HotspotImage, DecisionTree, SortRank, CodeRunner, EquationRenderer, GraphPlotter,
+  ReactionBalancer, AnatomyLabeler, CircuitBuilder, ChartBuilder, ClickableMap,
+  SqlSandbox, AudioPronunciation, FinancialCalculator, StatuteAnnotator, PhysicsSimulator,
 } from '@primr/components'
 import type { LessonManifest, BlockConfig, BlockType } from '@/types/outline'
 import BlockEditPanel from '../new/components/BlockEditPanel'
+import { PAGE_ARRAY_KEY } from '../lib/pageArrayKey'
 import styles from './LessonBlockEditor.module.css'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const BLOCK_COMPONENTS: Record<string, React.ComponentType<any>> = {
-  hero: HeroCard,
-  narrative: NarrativeBlock,
-  'step-navigator': StepNavigator,
-  quiz: Quiz,
-  flashcard: FlipCardDeck,
-  'fill-in-the-blank': FillInTheBlank,
-  media: MediaBlock,
+  // Core
+  'hero':                 HeroCard,
+  'narrative':            NarrativeBlock,
+  'step-navigator':       StepNavigator,
+  'quiz':                 Quiz,
+  'flashcard':            FlipCardDeck,
+  'fill-in-the-blank':    FillInTheBlank,
+  'media':                MediaBlock,
+  // Phase 1
+  'hotspot-image':        HotspotImage,
+  'decision-tree':        DecisionTree,
+  'sort-rank':            SortRank,
+  'code-runner':          CodeRunner,
+  'equation-renderer':    EquationRenderer,
+  'graph-plotter':        GraphPlotter,
+  // Phase 2
+  'reaction-balancer':    ReactionBalancer,
+  'anatomy-labeler':      AnatomyLabeler,
+  'circuit-builder':      CircuitBuilder,
+  'chart-builder':        ChartBuilder,
+  'clickable-map':        ClickableMap,
+  // Phase 3
+  'sql-sandbox':          SqlSandbox,
+  'audio-pronunciation':  AudioPronunciation,
+  'financial-calculator': FinancialCalculator,
+  'statute-annotator':    StatuteAnnotator,
+  'physics-simulator':    PhysicsSimulator,
 }
 
 export const INSERTABLE_TYPES: { type: BlockType; label: string; icon: string }[] = [
@@ -79,6 +103,7 @@ export default function LessonBlockEditor({
   const [disabledIds, setDisabledIds] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [activePage, setActivePage] = useState(0)
   const dotsRef = useRef<HTMLDivElement>(null)
 
   const blocks = manifest.blocks
@@ -93,6 +118,8 @@ export default function LessonBlockEditor({
     const dot = dotsRef.current?.children[currentBlock] as HTMLElement | undefined
     dot?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [currentBlock, useDotPaginator])
+
+  useEffect(() => { setActivePage(0) }, [block?.id])
 
   function goTo(idx: number) {
     setCurrentBlock(Math.max(0, Math.min(blocks.length - 1, idx)))
@@ -139,6 +166,10 @@ export default function LessonBlockEditor({
 
   const Component = block ? BLOCK_COMPONENTS[block.type] : null
 
+  const pageProps = block && PAGE_ARRAY_KEY[block.type]
+    ? { activePage, onPageChange: setActivePage }
+    : {}
+
   const dockToggle = panelMode === 'float' ? (
     <button
       className={`${styles.panelDockBtn} ${panelAnchored ? styles.panelDockBtnActive : ''}`}
@@ -155,6 +186,8 @@ export default function LessonBlockEditor({
       block={block}
       blockIndex={currentBlock}
       lessonTitle={manifest.title}
+      activePage={activePage}
+      onPageChange={setActivePage}
       onUpdate={handleBlockUpdate}
       onClose={() => setPanelOpen(false)}
       headerAction={dockToggle}
@@ -215,7 +248,11 @@ export default function LessonBlockEditor({
               {/* Block render */}
               <div className={`${styles.blockWrap} ${isDisabled ? styles.blockWrapDisabled : ''}`}>
                 {Component && !isDisabled && (
-                  <Component {...(block.props as Record<string, unknown>)} onComplete={() => {}} />
+                  <Component
+                    {...(block.props as Record<string, unknown>)}
+                    {...pageProps}
+                    onComplete={() => {}}
+                  />
                 )}
                 {isDisabled && (
                   <div className={styles.disabledPlaceholder}>

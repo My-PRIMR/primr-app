@@ -68,6 +68,8 @@ function PropsEditor({ blockType, props, onChange, activePage, onPageChange }: {
           }
 
           const locked = blockType === 'fill-in-the-blank' && key === 'answers'
+          const isPageArray = key === pageArrayKey
+          if (isPageArray) pageItemRefs.current = []
 
           return (
             <div key={key} className={styles.fieldGroup}>
@@ -76,7 +78,6 @@ function PropsEditor({ blockType, props, onChange, activePage, onPageChange }: {
                 {!locked && <TipButton cls={styles.arrayAddBtn} tip="Add a new item" onClick={addItem}>+ Add</TipButton>}
               </div>
               {arr.map((item: unknown, idx: number) => {
-                const isPageArray = key === pageArrayKey
                 return (
                   <div
                     key={idx}

@@ -93,7 +93,7 @@ async function generateOutline(params: {
     ? '\n\nIMPORTANT: Do NOT include a hero block. Start the lesson directly with a narrative or step-navigator block.'
     : ''
   const passiveOverride = params.passiveLesson
-    ? '\n\nIMPORTANT: This is an informational-only lesson. Use ONLY these block types: hero, narrative, step-navigator, media, flashcard. Do NOT include quiz or fill-in-the-blank blocks — those require correct answers and assess the learner. step-navigator (a slide-by-slide walkthrough) and flashcard (flip-to-reveal cards) are purely informational and must be used freely alongside narrative. Aim for a mix of narrative, step-navigator, and flashcard blocks.'
+    ? '\n\nIMPORTANT: This is an informational-only lesson. Use ONLY these block types: hero, narrative, step-navigator, media. Do NOT include quiz, flashcard, or fill-in-the-blank — all three gate progress and require learner action to complete. step-navigator is a slide-by-slide walkthrough with no gating or assessment and must be used freely alongside narrative.'
     : ''
 
   const videoLine = params.videoUrl
@@ -224,7 +224,7 @@ async function generateLesson(params: {
 
   let systemPrompt = OUTLINE_LESSON_SYSTEM_PROMPT
   if (params.passiveLesson) {
-    systemPrompt += '\n\nIMPORTANT: This is an informational-only lesson. Allowed block types: hero, narrative, step-navigator, media, flashcard. Forbidden block types: quiz, fill-in-the-blank — these assess the learner with right/wrong answers. step-navigator is a slide-by-slide walkthrough (informational, not interactive) and must be used wherever sequential or step-based content fits. flashcard is flip-to-reveal (no right/wrong, purely informational review) and should be used freely. Do not avoid step-navigator or flashcard — they are encouraged.'
+    systemPrompt += '\n\nIMPORTANT: This is an informational-only lesson. Allowed block types: hero, narrative, step-navigator, media. Forbidden block types: quiz, flashcard, fill-in-the-blank — all three gate progress and require the learner to complete an action. step-navigator is a slide-by-slide walkthrough with no gating or correct answers and must be used freely wherever sequential or step-based content fits. Do not avoid step-navigator — it is encouraged.'
   }
   if (params.skipHero) {
     systemPrompt += '\n\nIMPORTANT: Do NOT generate a hero block. The outline may list one — skip it. Start directly with the second block.'

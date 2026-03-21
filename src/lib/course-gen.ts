@@ -257,7 +257,8 @@ async function generateLesson(params: {
 
 // Max number of lessons to generate simultaneously. Each lesson makes 2 API
 // calls (outline + content), so this is effectively 2× the API concurrency.
-const GENERATION_CONCURRENCY = 5
+// Override via COURSE_GEN_CONCURRENCY env var.
+const GENERATION_CONCURRENCY = parseInt(process.env.COURSE_GEN_CONCURRENCY ?? '5', 10)
 
 // ── Main entry point ──────────────────────────────────────────────────────────
 

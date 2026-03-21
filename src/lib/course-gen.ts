@@ -93,7 +93,7 @@ async function generateOutline(params: {
     ? '\n\nIMPORTANT: Do NOT include a hero block. Start the lesson directly with a narrative or step-navigator block.'
     : ''
   const passiveOverride = params.passiveLesson
-    ? '\n\nIMPORTANT: Use ONLY informational block types (hero, narrative, step-navigator, media). Do NOT include any interactive blocks (quiz, flashcard, fill-in-the-blank). Every block must be a teaching block.'
+    ? '\n\nIMPORTANT: This is an informational-only lesson. Use ONLY these block types: hero, narrative, step-navigator, media, flashcard. Do NOT include quiz or fill-in-the-blank blocks — those require correct answers and assess the learner. step-navigator (a slide-by-slide walkthrough) and flashcard (flip-to-reveal cards) are purely informational and must be used freely alongside narrative. Aim for a mix of narrative, step-navigator, and flashcard blocks.'
     : ''
 
   const videoLine = params.videoUrl
@@ -224,7 +224,7 @@ async function generateLesson(params: {
 
   let systemPrompt = OUTLINE_LESSON_SYSTEM_PROMPT
   if (params.passiveLesson) {
-    systemPrompt += '\n\nIMPORTANT: Generate only informational content blocks (hero, narrative, step-navigator). Do not include any interactive or assessment blocks (quiz, flashcard, fill-in-the-blank, or similar). The lesson should be purely informational — no questions, no exercises.'
+    systemPrompt += '\n\nIMPORTANT: This is an informational-only lesson. Allowed block types: hero, narrative, step-navigator, media, flashcard. Forbidden block types: quiz, fill-in-the-blank — these assess the learner with right/wrong answers. step-navigator is a slide-by-slide walkthrough (informational, not interactive) and must be used wherever sequential or step-based content fits. flashcard is flip-to-reveal (no right/wrong, purely informational review) and should be used freely. Do not avoid step-navigator or flashcard — they are encouraged.'
   }
   if (params.skipHero) {
     systemPrompt += '\n\nIMPORTANT: Do NOT generate a hero block. The outline may list one — skip it. Start directly with the second block.'

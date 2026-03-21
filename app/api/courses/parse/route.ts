@@ -1,8 +1,15 @@
 /**
  * POST /api/courses/parse
- * Accepts: one or more document files + optional YouTube URL.
- * Extracts source text from all inputs, sends to Claude for course structure,
- * slices text into per-lesson chunks, returns enriched CourseTree.
+ * Accepts: one or more document files + optional YouTube URL + structureSource.
+ *
+ * structureSource = 'document' (default when docs present):
+ *   Course structure derived from the document. Claude also annotates each lesson
+ *   with the most relevant videoChapterIndex so video transcript is included as
+ *   supplementary sourceText.
+ *
+ * structureSource = 'video' (default when only URL present):
+ *   Course structure derived from video chapters. Claude annotates each lesson
+ *   with an optional docMarker so document text is included as supplementary.
  */
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
@@ -10,15 +17,25 @@ import { getSession } from '@/session'
 import { resolveModel, DEFAULT_MODEL, modelById } from '@/lib/models'
 import type { ParsedCourseTree, CourseTree } from '@/types/course'
 import { extractJSON } from '@/lib/extract-json'
-import { fetchYouTubeData, type VideoChapter } from '@/lib/video-ingest'
+import { fetchYouTubeData } from '@/lib/video-ingest'
 
 const client = new Anthropic()
 
-const PARSE_SYSTEM_PROMPT = `You are an expert curriculum designer. Analyze the provided source material and return a JSON course tree with 4 hierarchy levels: Course → Section → Chapter → Lesson.
+// ── System prompts ────────────────────────────────────────────────────────────
+
+function makeDocDrivesPrompt(hasVideo: boolean): string {
+  const videoAnnotation = hasVideo
+    ? `\n      "videoChapterIndex": number | null  — 0-based index of the most relevant video chapter for this lesson, or null if none`
+    : ''
+  const videoRule = hasVideo
+    ? `\n- For each lesson, set videoChapterIndex to the 0-based index of the video chapter whose content best supplements this lesson. Set null if no chapter is relevant.`
+    : ''
+
+  return `You are an expert curriculum designer. Analyze the provided document and return a JSON course tree derived from the document's structure.
 
 Return this exact structure:
 {
-  "title": "Course title (inferred from content)",
+  "title": "Course title",
   "description": "1-2 sentence course description",
   "sections": [
     {
@@ -30,7 +47,7 @@ Return this exact structure:
           "lessons": [
             {
               "title": "Lesson title",
-              "headingMarker": "Exact heading or chapter title from the source that starts this lesson's content"
+              "headingMarker": "Exact heading text from the document that starts this lesson's content"${videoAnnotation}
             }
           ]
         }
@@ -40,52 +57,86 @@ Return this exact structure:
 }
 
 Rules:
-- If the source only has 2-3 levels, synthesize the missing levels. For example, if there are only chapters, create one section called "General" or another appropriate name and set "inferred": true on it.
-- headingMarker must be an exact substring from the source text/chapter list that marks the beginning of that lesson's content.
-- Each lesson should cover a coherent sub-topic (not too granular, not too broad). Aim for 10-30 lessons total.
-- If video chapters are provided, use them as the primary structure — map each chapter to one or more lessons.
-- Tailor content structure to the specified audience and level.
-- If a Focus/Scope is provided, only include lessons relevant to that focus — omit anything outside it.
-- Return ONLY valid JSON. No markdown fences, no explanation, no preamble. Start your response with { and end with }.`
+- Base ALL structure on the document — do not invent topics not in the document.
+- headingMarker must be an exact substring from the document text.
+- If the document only has 2-3 levels, synthesize the missing levels (set "inferred": true).
+- Each lesson covers a coherent sub-topic. Aim for 10-30 lessons total.
+- Tailor to the specified audience and level.
+- If a Focus/Scope is provided, only include lessons relevant to that focus.${videoRule}
+- Return ONLY valid JSON. No markdown fences, no explanation. Start with { and end with }.`
+}
+
+function makeVideoDrivesPrompt(hasDoc: boolean): string {
+  const docAnnotation = hasDoc
+    ? `\n      "docMarker": string | null  — exact heading/substring from the document most relevant to this lesson, or null`
+    : ''
+  const docRule = hasDoc
+    ? `\n- For each lesson, set docMarker to an exact substring from the document that provides the most relevant supplementary content. Set null if nothing matches.`
+    : ''
+
+  return `You are an expert curriculum designer. Analyze the provided video chapters and return a JSON course tree derived from the video structure.
+
+Return this exact structure:
+{
+  "title": "Course title",
+  "description": "1-2 sentence course description",
+  "sections": [
+    {
+      "title": "Section title",
+      "inferred": false,
+      "chapters": [
+        {
+          "title": "Chapter title",
+          "lessons": [
+            {
+              "title": "Lesson title",
+              "headingMarker": "Exact video chapter title this lesson is derived from"${docAnnotation}
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+
+Rules:
+- Each video chapter should map to at least one lesson. Use the chapter title as the headingMarker.
+- If the video has no chapters, create one lesson per major topic from the transcript.
+- If the source only has 2-3 levels, synthesize the missing levels (set "inferred": true).
+- Aim for 10-30 lessons total.
+- Tailor to the specified audience and level.
+- If a Focus/Scope is provided, only include lessons relevant to that focus — skip chapters outside scope.${docRule}
+- Return ONLY valid JSON. No markdown fences, no explanation. Start with { and end with }.`
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function extractTextFromFile(file: File): Promise<string> {
   const name = file.name.toLowerCase()
   const bytes = await file.arrayBuffer()
   const buffer = Buffer.from(bytes)
-
   if (name.endsWith('.pdf')) {
     const { PDFParse } = await import('pdf-parse')
     const parser = new PDFParse({ data: buffer })
-    const data = await parser.getText()
-    return data.text
+    return (await parser.getText()).text
   } else if (name.endsWith('.docx')) {
     const mammoth = await import('mammoth')
-    const result = await mammoth.extractRawText({ buffer })
-    return result.value
+    return (await mammoth.extractRawText({ buffer })).value
   } else if (name.endsWith('.txt') || name.endsWith('.md')) {
     return buffer.toString('utf-8')
   }
   throw new Error(`Unsupported file type: ${file.name}. Use PDF, DOCX, TXT, or MD.`)
 }
 
-function sliceTextByMarkers(fullText: string, markers: string[]): string[] {
-  return markers.map((marker, i) => {
-    const nextMarker = markers[i + 1]
-    const startIdx = fullText.indexOf(marker)
-    if (startIdx === -1) return ''
-    const endIdx = nextMarker ? fullText.indexOf(nextMarker, startIdx + 1) : -1
-    const chunk = endIdx === -1 ? fullText.slice(startIdx) : fullText.slice(startIdx, endIdx)
-    return chunk.slice(0, 8000).trim()
-  })
+function sliceTextByMarker(fullText: string, marker: string, nextMarker: string | undefined): string {
+  const startIdx = fullText.indexOf(marker)
+  if (startIdx === -1) return ''
+  const endIdx = nextMarker ? fullText.indexOf(nextMarker, startIdx + 1) : -1
+  const chunk = endIdx === -1 ? fullText.slice(startIdx) : fullText.slice(startIdx, endIdx)
+  return chunk.slice(0, 8000).trim()
 }
 
-function sliceByChapters(chapters: VideoChapter[], chapterTranscripts: Array<{ chapter: VideoChapter; text: string }>): Map<string, string> {
-  const map = new Map<string, string>()
-  for (const ct of chapterTranscripts) {
-    map.set(ct.chapter.title, ct.text.slice(0, 8000).trim())
-  }
-  return map
-}
+// ── Route ─────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   const session = await getSession()
@@ -103,6 +154,7 @@ export async function POST(req: NextRequest) {
     const level = (formData.get('level') as string | null) || 'beginner'
     const focus = (formData.get('focus') as string | null) || ''
     const model = (formData.get('model') as string | null) || undefined
+    const structureSourceRaw = (formData.get('structureSource') as string | null) || 'auto'
 
     if (model) {
       const m = resolveModel(model, internalRole, productRole)
@@ -114,71 +166,88 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Provide at least one document or a YouTube URL.' }, { status: 400 })
     }
 
-    // ── Extract document text ─────────────────────────────────────────────────
+    // Determine structure source
+    const hasDoc = files.length > 0
+    const hasVideo = !!videoUrl
+    const structureSource: 'document' | 'video' =
+      structureSourceRaw === 'video' ? 'video'
+      : structureSourceRaw === 'document' ? 'document'
+      : hasDoc ? 'document'   // auto: prefer document when present
+      : 'video'
+
+    // ── Extract document text ────────────────────────────────────────────────
     let docText = ''
     for (const file of files) {
       try {
         const text = (await extractTextFromFile(file)).trim()
         docText += (docText ? '\n\n---\n\n' : '') + `[Document: ${file.name}]\n${text}`
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : `Failed to read ${file.name}.`
-        return NextResponse.json({ error: message }, { status: 400 })
+        return NextResponse.json({ error: err instanceof Error ? err.message : `Failed to read ${file.name}.` }, { status: 400 })
       }
     }
 
-    // ── Extract video transcript + chapters ───────────────────────────────────
+    // ── Extract video transcript + chapters ──────────────────────────────────
     let videoData: Awaited<ReturnType<typeof fetchYouTubeData>> | null = null
     if (videoUrl) {
       try {
         videoData = await fetchYouTubeData(videoUrl)
       } catch (err) {
-        console.error('[courses/parse] video fetch failed:', err)
-        return NextResponse.json({ error: `Could not fetch video transcript: ${err instanceof Error ? err.message : 'unknown error'}` }, { status: 422 })
+        return NextResponse.json({
+          error: `Could not fetch video transcript: ${err instanceof Error ? err.message : 'unknown error'}`
+        }, { status: 422 })
       }
     }
 
-    // ── Build source excerpt for Claude ──────────────────────────────────────
-    const MAX_EXCERPT = 12000
-    const parts: string[] = []
+    // ── Build Claude prompt ───────────────────────────────────────────────────
+    const systemPrompt = structureSource === 'document'
+      ? makeDocDrivesPrompt(hasVideo)
+      : makeVideoDrivesPrompt(hasDoc)
 
-    if (videoData) {
-      const chapterList = videoData.chapters.map((ch, i) => `  ${i + 1}. "${ch.title}" (${ch.start_time}s–${ch.end_time}s)`).join('\n')
-      parts.push(`[Video: ${videoData.videoTitle}]\nChapters:\n${chapterList}\n\nTranscript excerpt:\n${videoData.transcriptText.slice(0, 8000)}`)
+    const userParts: string[] = []
+
+    if (structureSource === 'document') {
+      userParts.push(`Document:\n"""\n${docText.slice(0, 10000)}\n"""`)
+      if (videoData) {
+        const chapterList = videoData.chapters.map((ch, i) => `  ${i}: "${ch.title}"`).join('\n')
+        userParts.push(`Video chapters (for videoChapterIndex annotation):\n${chapterList}`)
+      }
+    } else {
+      if (videoData) {
+        const chapterList = videoData.chapters.map((ch, i) => `  ${i}: "${ch.title}" (${ch.start_time}s–${ch.end_time}s)`).join('\n')
+        userParts.push(`Video: ${videoData.videoTitle}\nChapters:\n${chapterList}\n\nTranscript excerpt:\n${videoData.transcriptText.slice(0, 8000)}`)
+      }
+      if (docText) {
+        userParts.push(`Document (for docMarker annotation):\n"""\n${docText.slice(0, 4000)}\n"""`)
+      }
     }
 
-    if (docText) {
-      const remaining = MAX_EXCERPT - parts.join('\n\n').length
-      if (remaining > 500) parts.push(docText.slice(0, remaining))
-    }
+    userParts.push(
+      `Audience: ${audience}`,
+      `Level: ${level}`,
+      focus ? `Focus/Scope: ${focus}` : '',
+      'Respond with JSON only.',
+    )
 
-    const sourceExcerpt = parts.join('\n\n')
-    if (!sourceExcerpt.trim()) {
-      return NextResponse.json({ error: 'Could not extract any content from the provided sources.' }, { status: 422 })
-    }
-
-    // ── Ask Claude for course structure ───────────────────────────────────────
-    console.log(`[courses/parse] using model: ${resolvedModel.id}, video=${!!videoData}, docs=${files.length}`)
+    console.log(`[courses/parse] model=${resolvedModel.id} structureSource=${structureSource} video=${hasVideo} docs=${files.length}`)
     const t0 = Date.now()
     const message = await client.messages.create({
       model: resolvedModel.id,
       max_tokens: 16384,
-      system: PARSE_SYSTEM_PROMPT,
-      messages: [{
-        role: 'user',
-        content: [
-          `Source material:\n"""\n${sourceExcerpt}\n"""`,
-          `Audience: ${audience}`,
-          `Level: ${level}`,
-          focus ? `Focus/Scope: ${focus} — only include lessons relevant to this focus.` : '',
-          videoData ? `Use the video chapters listed above as the primary lesson structure. Each chapter should map to at least one lesson. Use the chapter title as the headingMarker for lessons derived from that chapter.` : '',
-          `Respond with JSON only.`,
-        ].filter(Boolean).join('\n'),
-      }],
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userParts.filter(Boolean).join('\n\n') }],
     })
     console.log(`[courses/parse] Claude responded in ${Date.now() - t0}ms`)
 
     const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-    let parsed: ParsedCourseTree
+    let parsed: ParsedCourseTree & {
+      sections: Array<{
+        title: string; inferred: boolean;
+        chapters: Array<{
+          title: string;
+          lessons: Array<{ title: string; headingMarker: string; videoChapterIndex?: number | null; docMarker?: string | null }>
+        }>
+      }>
+    }
     try {
       parsed = JSON.parse(extractJSON(raw))
     } catch {
@@ -186,19 +255,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'AI returned invalid JSON', raw }, { status: 500 })
     }
 
-    // ── Build per-lesson source text ──────────────────────────────────────────
-    const allMarkers = parsed.sections.flatMap(s => s.chapters.flatMap(c => c.lessons.map(l => l.headingMarker)))
+    // ── Build all heading markers list (for sliceTextByMarker next-marker lookup) ──
+    const allDocMarkers = parsed.sections.flatMap(s =>
+      s.chapters.flatMap(c =>
+        c.lessons.map(l => structureSource === 'document' ? l.headingMarker : (l.docMarker ?? null))
+      )
+    ).filter((m): m is string => !!m)
 
-    // For video: build chapter→transcript map for fast lookup
-    const chapterTranscriptMap = videoData
-      ? sliceByChapters(videoData.chapters, videoData.chapterTranscripts)
-      : new Map<string, string>()
-
-    // For docs: slice by heading markers
-    const docChunks = docText ? sliceTextByMarkers(docText, allMarkers) : allMarkers.map(() => '')
+    // ── Build video chapter transcript map ───────────────────────────────────
+    const chapterTranscripts = videoData?.chapterTranscripts ?? []
 
     // ── Build enriched CourseTree ─────────────────────────────────────────────
-    let markerIdx = 0
+    let lessonGlobalIdx = 0
     const courseTree: CourseTree = {
       title: parsed.title,
       description: parsed.description,
@@ -210,14 +278,34 @@ export async function POST(req: NextRequest) {
           localId: `s${si}c${ci}`,
           title: chapter.title,
           lessons: chapter.lessons.map((lesson, li) => {
-            const marker = lesson.headingMarker
-            // Prefer video chapter transcript if the marker matches a chapter title
-            const videoChunk = chapterTranscriptMap.get(marker) || ''
-            const docChunk = docChunks[markerIdx] || ''
-            markerIdx++
+            const idx = lessonGlobalIdx++
 
-            // Combine: video chapter transcript + doc slice (if both present)
-            const sourceText = [videoChunk, docChunk].filter(Boolean).join('\n\n---\n\n').slice(0, 10000)
+            let docChunk = ''
+            let videoChunk = ''
+
+            if (structureSource === 'document') {
+              // Primary: doc slice by headingMarker
+              const nextDocMarker = allDocMarkers[idx + 1]
+              docChunk = sliceTextByMarker(docText, lesson.headingMarker, nextDocMarker)
+
+              // Supplementary: video chapter by annotated index
+              const vci = lesson.videoChapterIndex
+              if (vci != null && chapterTranscripts[vci]) {
+                videoChunk = chapterTranscripts[vci].text.slice(0, 5000)
+              }
+            } else {
+              // Primary: video chapter transcript by headingMarker (= chapter title)
+              const ct = chapterTranscripts.find(c => c.chapter.title === lesson.headingMarker)
+              videoChunk = ct ? ct.text.slice(0, 6000) : ''
+
+              // Supplementary: doc slice by annotated docMarker
+              if (lesson.docMarker && docText) {
+                const nextDocMarker = allDocMarkers[allDocMarkers.indexOf(lesson.docMarker) + 1]
+                docChunk = sliceTextByMarker(docText, lesson.docMarker, nextDocMarker)
+              }
+            }
+
+            const sourceText = [docChunk, videoChunk].filter(Boolean).join('\n\n---\n\n').slice(0, 10000)
 
             return {
               localId: `s${si}c${ci}l${li}`,

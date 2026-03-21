@@ -21,6 +21,7 @@ interface WizardState {
   focus: string
   videoUrl: string
   stagedFiles: File[]
+  structureSource: 'document' | 'video'
   // Step 3: tree + exclusions
   courseTree: CourseTree | null
   excludedLessons: Set<string>  // localIds of lessons the creator wants to skip
@@ -41,6 +42,7 @@ const initialState: WizardState = {
   focus: '',
   videoUrl: '',
   stagedFiles: [],
+  structureSource: 'document',
   courseTree: null,
   excludedLessons: new Set(),
   courseId: null,
@@ -124,6 +126,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
     formData.append('audience', state.audience)
     formData.append('level', state.level)
     if (state.focus.trim()) formData.append('focus', state.focus.trim())
+    formData.append('structureSource', state.structureSource)
     formData.append('model', selectedModel)
 
     try {
@@ -517,6 +520,38 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
               )}
               <p className={styles.fieldHint}>PDF, DOCX, TXT, or MD. Combined with video transcript as source material.</p>
             </div>
+
+            {state.stagedFiles.length > 0 && state.videoUrl.trim() && (
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Course structure source</label>
+                <div className={styles.structureToggle}>
+                  <label className={`${styles.structureOption} ${state.structureSource === 'document' ? styles.structureOptionActive : ''}`}>
+                    <input
+                      type="radio"
+                      name="structureSource"
+                      value="document"
+                      checked={state.structureSource === 'document'}
+                      onChange={() => set({ structureSource: 'document' })}
+                      className={styles.srOnly}
+                    />
+                    <span className={styles.structureOptionTitle}>Document</span>
+                    <span className={styles.structureOptionHint}>Structure from doc · video clips as supplements</span>
+                  </label>
+                  <label className={`${styles.structureOption} ${state.structureSource === 'video' ? styles.structureOptionActive : ''}`}>
+                    <input
+                      type="radio"
+                      name="structureSource"
+                      value="video"
+                      checked={state.structureSource === 'video'}
+                      onChange={() => set({ structureSource: 'video' })}
+                      className={styles.srOnly}
+                    />
+                    <span className={styles.structureOptionTitle}>Video</span>
+                    <span className={styles.structureOptionHint}>Structure from chapters · doc text as supplements</span>
+                  </label>
+                </div>
+              </div>
+            )}
 
             {hasSources ? (
               <div className={styles.actions}>

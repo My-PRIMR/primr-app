@@ -82,6 +82,166 @@ export const BLOCK_DEFINITIONS: BlockDef[] = [
   hint?: string
   IMPORTANT: Each answer must be 1-2 words only, no punctuation.`,
   },
+  // ── Phase 1 — Foundation ────────────────────────────────────────────────────
+  {
+    type: 'hotspot-image',
+    isInteractive: true,
+    schema: `hotspot-image:
+  imageUrl: string (required) — URL of the diagram or photo
+  imageAlt?: string — alt text
+  hotspots: Array<{ id: string, label: string, description?: string, x: number, y: number }> — x/y are percentages (0–100) of image dimensions
+  badge?: string
+  title?: string`,
+  },
+  {
+    type: 'decision-tree',
+    isInteractive: true,
+    schema: `decision-tree:
+  rootId: string (required) — ID of the first node to display
+  nodes: Array<{ id: string, prompt: string, description?: string, choices?: Array<{ label: string, nextId: string }> }> — nodes with no choices are terminal outcomes
+  badge?: string
+  title?: string`,
+  },
+  {
+    type: 'sort-rank',
+    isInteractive: true,
+    schema: `sort-rank:
+  items: Array<{ id: string, label: string, correctPosition: number }> — correctPosition is 0-based index in the correct order
+  prompt?: string — instruction text
+  badge?: string
+  title?: string`,
+  },
+  {
+    type: 'code-runner',
+    isInteractive: true,
+    schema: `code-runner:
+  language?: "javascript" | "python" — default "javascript"
+  starterCode?: string — initial code in the editor
+  instructions?: string — text shown above the editor
+  badge?: string
+  title?: string`,
+  },
+  {
+    type: 'equation-renderer',
+    isInteractive: false,
+    schema: `equation-renderer:
+  equations: Array<{ latex: string, label?: string, explanation?: string, displayMode?: boolean }> — latex is a LaTeX expression string
+  badge?: string
+  title?: string`,
+  },
+  {
+    type: 'graph-plotter',
+    isInteractive: false,
+    schema: `graph-plotter:
+  functions: Array<{ expression: string, label?: string, color?: string }> — expression uses x as variable, supports sin/cos/sqrt/etc.
+  xMin?: number — default -10
+  xMax?: number — default 10
+  yMin?: number — default -10
+  yMax?: number — default 10
+  badge?: string
+  title?: string`,
+  },
+  // ── Phase 2 — STEM expansion ────────────────────────────────────────────────
+  {
+    type: 'reaction-balancer',
+    isInteractive: true,
+    schema: `reaction-balancer:
+  reactants: Array<{ id: string, formula: string, name?: string }> — left-side species, formula like "H2O"
+  products: Array<{ id: string, formula: string, name?: string }> — right-side species
+  badge?: string
+  title?: string`,
+  },
+  {
+    type: 'anatomy-labeler',
+    isInteractive: true,
+    schema: `anatomy-labeler:
+  imageUrl: string (required) — URL of the anatomical diagram
+  imageAlt?: string
+  regions: Array<{ id: string, label: string, x: number, y: number }> — x/y as percentages (0–100)
+  badge?: string
+  title?: string`,
+  },
+  {
+    type: 'circuit-builder',
+    isInteractive: true,
+    schema: `circuit-builder:
+  availableComponents: Array<{ type: string, label?: string }> — types: "battery", "resistor", "led", "bulb", "switch", "wire"
+  badge?: string
+  title?: string`,
+  },
+  {
+    type: 'chart-builder',
+    isInteractive: true,
+    schema: `chart-builder:
+  data: Array<{ label: string, value: number, color?: string }> — initial data points
+  chartType?: "bar" | "line" | "pie" — default "bar"
+  badge?: string
+  title?: string`,
+  },
+  {
+    type: 'clickable-map',
+    isInteractive: true,
+    schema: `clickable-map:
+  imageUrl: string (required) — URL of the map image
+  imageAlt?: string
+  regions: Array<{ id: string, label: string, description?: string, x: number, y: number, width?: number, height?: number }> — x/y/width/height as percentages (0–100)
+  mode?: "explore" | "identify" — default "explore"
+  badge?: string
+  title?: string`,
+  },
+  // ── Phase 3 — Professional & Creative ──────────────────────────────────────
+  {
+    type: 'sql-sandbox',
+    isInteractive: true,
+    schema: `sql-sandbox:
+  tables: Array<{ name: string, columns: Array<{ name: string, type: string }>, rows: Array<Record<string, string|number|null>> }>
+  starterQuery?: string — initial SQL shown in editor
+  badge?: string
+  title?: string`,
+  },
+  {
+    type: 'audio-pronunciation',
+    isInteractive: true,
+    schema: `audio-pronunciation:
+  words: Array<{ word: string, ipa?: string, translation?: string, example?: string, audioUrl?: string }>
+  language?: string — BCP-47 tag e.g. "en-US", "es-ES", "fr-FR" — default "en-US"
+  badge?: string
+  title?: string`,
+  },
+  {
+    type: 'financial-calculator',
+    isInteractive: false,
+    schema: `financial-calculator:
+  mode?: "compound" | "loan" | "roi" — default "compound"
+  defaultPrincipal?: number
+  defaultRate?: number — annual rate as percent, e.g. 7 for 7%
+  defaultYears?: number
+  defaultCompoundFreq?: number — default 12
+  defaultLoanAmount?: number
+  defaultLoanRate?: number
+  defaultLoanTermMonths?: number
+  defaultInvestment?: number
+  defaultGain?: number
+  badge?: string
+  title?: string`,
+  },
+  {
+    type: 'statute-annotator',
+    isInteractive: true,
+    schema: `statute-annotator:
+  text: string (required) — the full document or clause text to annotate
+  tags?: Array<{ id: string, label: string, color: string }> — annotation categories, defaults to: Obligation/Exception/Definition/Right/Penalty
+  badge?: string
+  title?: string`,
+  },
+  {
+    type: 'physics-simulator',
+    isInteractive: false,
+    schema: `physics-simulator:
+  simulation?: "projectile" | "pendulum" | "spring" — default "projectile"
+  badge?: string
+  title?: string`,
+  },
 ]
 
 // ── Derived constants ─────────────────────────────────────────────────────────

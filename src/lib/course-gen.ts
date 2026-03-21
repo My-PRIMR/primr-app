@@ -9,6 +9,7 @@ import { courses, chapterLessons, lessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { DEFAULT_MODEL } from '@/lib/models'
 import { sendEmail } from '@/lib/email'
+import { BLOCK_SCHEMAS, PASSIVE_LESSON_OVERRIDE, INFORMATIONAL_TYPES } from '@/lib/block-schemas'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline } from '@/types/outline'
 
@@ -92,9 +93,7 @@ async function generateOutline(params: {
   const heroOverride = params.skipHero
     ? '\n\nIMPORTANT: Do NOT include a hero block. Start the lesson directly with a narrative or step-navigator block.'
     : ''
-  const passiveOverride = params.passiveLesson
-    ? '\n\nIMPORTANT: This is an informational-only lesson. Use ONLY these block types: hero, narrative, step-navigator, media. Do NOT include quiz, flashcard, or fill-in-the-blank — all three gate progress and require learner action to complete. step-navigator is a slide-by-slide walkthrough with no gating or assessment and must be used freely alongside narrative.'
-    : ''
+  const passiveOverride = params.passiveLesson ? PASSIVE_LESSON_OVERRIDE : ''
 
   const videoLine = params.videoUrl
     ? `Video URL: ${params.videoUrl}${params.videoStartTime != null ? ` | Start: ${params.videoStartTime}s` : ''}${params.videoEndTime != null ? ` | End: ${params.videoEndTime}s` : ''} — you may use a "media" block with this URL as the teaching portion of a learning unit\n`
@@ -116,52 +115,6 @@ async function generateOutline(params: {
 }
 
 // ── Lesson generation ─────────────────────────────────────────────────────────
-
-const BLOCK_SCHEMAS = `Block prop schemas:
-
-hero:
-  title: string (required) — large serif title
-  tagline?: string — one sentence
-  meta?: Array<{ label: string, icon?: 'clock' | 'level' | 'tag' }>
-  cta?: string — CTA button label (default: "Start lesson")
-
-narrative:
-  body: string (required) — markdown text, comprehensive enough that learners can answer all follow-up interactive blocks from it alone
-  title?: string — serif heading
-  eyebrow?: string — small uppercase label
-
-step-navigator:
-  steps: Array<{ title: string, body: string, hint?: string }>
-  badge?: string — e.g. "Step walkthrough"
-  title?: string
-
-media:
-  url: string (required) — YouTube or Vimeo URL
-  title?: string — heading above the video
-  badge?: string — small label (default: "Video")
-  caption?: string — one-sentence description below the video
-  startTime?: number — start time in seconds
-  endTime?: number — end time in seconds
-  completeOn?: "mount" | "end" — "end" requires the learner to mark as watched (default), "mount" auto-completes
-
-quiz:
-  questions: Array<{ prompt: string, options: string[], correctIndex: number, explanation?: string }>
-  badge?: string
-  title?: string
-  passScore?: number — 0 to 1
-
-flashcard:
-  cards: Array<{ front: string, back: string }>
-  badge?: string
-  title?: string
-
-fill-in-the-blank:
-  prompt: string — text with {{blank}} placeholders
-  answers: Array<string | string[]> — one entry per blank, can be array of accepted answers
-  badge?: string
-  title?: string
-  hint?: string
-  IMPORTANT: Each answer must be 1-2 words only, no punctuation.`
 
 const OUTLINE_LESSON_SYSTEM_PROMPT = `You are an expert instructional designer. Generate a complete Primr lesson as JSON from the provided outline. Each block in the outline specifies a type, summary of what it should cover, and optionally an item count.
 
@@ -224,7 +177,7 @@ async function generateLesson(params: {
 
   let systemPrompt = OUTLINE_LESSON_SYSTEM_PROMPT
   if (params.passiveLesson) {
-    systemPrompt += '\n\nIMPORTANT: This is an informational-only lesson. Allowed block types: hero, narrative, step-navigator, media. Forbidden block types: quiz, flashcard, fill-in-the-blank — all three gate progress and require the learner to complete an action. step-navigator is a slide-by-slide walkthrough with no gating or correct answers and must be used freely wherever sequential or step-based content fits. Do not avoid step-navigator — it is encouraged.'
+    systemPrompt += PASSIVE_LESSON_OVERRIDE
   }
   if (params.skipHero) {
     systemPrompt += '\n\nIMPORTANT: Do NOT generate a hero block. The outline may list one — skip it. Start directly with the second block.'

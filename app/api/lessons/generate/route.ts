@@ -6,47 +6,11 @@ import { lessons } from '@/db/schema'
 import { getSession } from '@/session'
 import { resolveModel, DEFAULT_MODEL, modelById, canSelectModels } from '@/lib/models'
 import { checkCap, logUsage } from '@/lib/usage-cap'
+import { BLOCK_SCHEMAS } from '@/lib/block-schemas'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline } from '@/types/outline'
 
 const client = new Anthropic()
-
-const BLOCK_SCHEMAS = `Block prop schemas:
-
-hero:
-  title: string (required) — large serif title
-  tagline?: string — one sentence
-  meta?: Array<{ label: string, icon?: 'clock' | 'level' | 'tag' }>
-  cta?: string — CTA button label (default: "Start lesson")
-
-narrative:
-  body: string (required) — markdown text
-  title?: string — serif heading
-  eyebrow?: string — small uppercase label
-
-step-navigator:
-  steps: Array<{ title: string, body: string, hint?: string }>
-  badge?: string — e.g. "Step walkthrough"
-  title?: string
-
-quiz:
-  questions: Array<{ prompt: string, options: string[], correctIndex: number, explanation?: string }>
-  badge?: string
-  title?: string
-  passScore?: number — 0 to 1
-
-flashcard:
-  cards: Array<{ front: string, back: string }>
-  badge?: string
-  title?: string
-
-fill-in-the-blank:
-  prompt: string — text with {{blank}} placeholders
-  answers: Array<string | string[]> — one entry per blank, can be array of accepted answers
-  badge?: string
-  title?: string
-  hint?: string
-  IMPORTANT: Each answer must be 1-2 words only, no punctuation. Design blanks so short answers work (e.g. "The {{blank}} protocol uses port {{blank}}" → ["TCP", "80"]).`
 
 const LEGACY_SYSTEM_PROMPT = `You are an expert instructional designer. Given a topic, generate a complete Primr lesson as a JSON object.
 

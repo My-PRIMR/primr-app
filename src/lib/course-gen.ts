@@ -9,6 +9,7 @@ import { courses, chapterLessons, lessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { DEFAULT_MODEL } from '@/lib/models'
 import { sendEmail } from '@/lib/email'
+import { courseCompleteEmail } from '@/lib/email-templates'
 import { BLOCK_SCHEMAS, PASSIVE_LESSON_OVERRIDE, INFORMATIONAL_TYPES } from '@/lib/block-schemas'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline } from '@/types/outline'
@@ -361,24 +362,10 @@ export async function runCourseGeneration(
   if (creatorEmail && courseRecord) {
     const appBase = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? 'https://app.primr.me'
     const courseUrl = `${appBase}/creator/courses/${courseId}/edit`
-    const hasFailures = failedIds.size > 0
-    const subject = hasFailures
-      ? `Your course "${courseRecord.title}" finished with ${failedIds.size} failed lesson${failedIds.size !== 1 ? 's' : ''}`
-      : `Your course "${courseRecord.title}" is ready`
-
-    const html = hasFailures
-      ? `<p>Your Primr course <strong>${courseRecord.title}</strong> finished generating.</p>
-         <p>✅ ${doneCount} lesson${doneCount !== 1 ? 's' : ''} generated successfully<br>
-         ❌ ${failedIds.size} lesson${failedIds.size !== 1 ? 's' : ''} failed — you can retry them from the course editor.</p>
-         <p><a href="${courseUrl}">Open course editor →</a></p>`
-      : `<p>Your Primr course <strong>${courseRecord.title}</strong> is ready with ${doneCount} lesson${doneCount !== 1 ? 's' : ''}.</p>
-         <p><a href="${courseUrl}">Open course →</a></p>`
-
-    const text = hasFailures
-      ? `Your course "${courseRecord.title}" finished. ${doneCount} lessons done, ${failedIds.size} failed.\n\nOpen the course editor to retry failed lessons: ${courseUrl}`
-      : `Your course "${courseRecord.title}" is ready with ${doneCount} lessons.\n\n${courseUrl}`
-
-    const result = await sendEmail({ to: creatorEmail, subject, html, text })
+    const result = await sendEmail({
+      to: creatorEmail,
+      ...courseCompleteEmail({ courseTitle: courseRecord.title, courseUrl, doneCount, failedCount: failedIds.size }),
+    })
     if (!result.ok && !result.skipped) {
       console.error(`[course-gen] Failed to send completion email to ${creatorEmail}:`, result.error)
     }

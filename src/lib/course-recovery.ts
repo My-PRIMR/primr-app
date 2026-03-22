@@ -10,6 +10,7 @@ import { db } from '@/db'
 import { courses, courseSections, courseChapters, chapterLessons, users } from '@/db/schema'
 import { and, eq, inArray, ne } from 'drizzle-orm'
 import { sendEmail } from '@/lib/email'
+import { courseInterruptedEmail } from '@/lib/email-templates'
 
 export async function recoverStuckCourses(): Promise<void> {
   const stuckCourses = await db.query.courses.findMany({
@@ -76,16 +77,10 @@ export async function recoverStuckCourses(): Promise<void> {
         const appBase = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? 'https://app.primr.me'
         const courseUrl = `${appBase}/creator/courses/${course.id}/edit`
 
-        const subject = `Your course "${course.title}" was interrupted`
-        const html = `<p>Your Primr course <strong>${course.title}</strong> was interrupted when the server restarted.</p>
-          <p>
-            ${doneCount > 0 ? `✅ ${doneCount} lesson${doneCount !== 1 ? 's' : ''} completed successfully<br>` : ''}
-            ${failedCount > 0 ? `❌ ${failedCount} lesson${failedCount !== 1 ? 's' : ''} did not finish — you can retry them from the course editor.` : ''}
-          </p>
-          <p><a href="${courseUrl}">Open course editor →</a></p>`
-        const text = `Your course "${course.title}" was interrupted by a server restart.\n\n${doneCount > 0 ? `${doneCount} lesson${doneCount !== 1 ? 's' : ''} completed.\n` : ''}${failedCount > 0 ? `${failedCount} lesson${failedCount !== 1 ? 's' : ''} did not finish — retry from the course editor:\n${courseUrl}` : ''}`
-
-        const result = await sendEmail({ to: creator.email, subject, html, text })
+        const result = await sendEmail({
+          to: creator.email,
+          ...courseInterruptedEmail({ courseTitle: course.title, courseUrl, doneCount, failedCount }),
+        })
         if (!result.ok && !result.skipped) {
           console.error(`[course-recovery] Failed to email ${creator.email}:`, result.error)
         }

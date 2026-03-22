@@ -5,6 +5,7 @@ import { db } from '@/db'
 import { lessons, lessonInvitations, lessonInviteLinks } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { sendEmail } from '@/lib/email'
+import { lessonInviteEmail } from '@/lib/email-templates'
 
 async function verifyOwner(lessonId: string, userId: string) {
   const lesson = await db.query.lessons.findFirst({
@@ -58,9 +59,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   for (const row of results) {
     const emailResult = await sendEmail({
       to: row.email,
-      subject: `You're invited to a Primr lesson`,
-      html: `<p>You were invited to join a lesson on Primr${lesson.title ? `: <strong>${lesson.title}</strong>` : ''}.</p><p><a href="${inviteUrl}">Accept invite</a></p>`,
-      text: `You were invited to join a lesson on Primr${lesson.title ? `: ${lesson.title}` : ''}.\n\nAccept invite: ${inviteUrl}`,
+      ...lessonInviteEmail({ lessonTitle: lesson.title, inviteUrl }),
     })
     if (emailResult.ok) {
       emailed += 1

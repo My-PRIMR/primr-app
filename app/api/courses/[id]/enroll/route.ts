@@ -5,6 +5,7 @@ import { courses, courseEnrollments, courseInviteLinks } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { sendEmail } from '@/lib/email'
+import { courseInviteEmail } from '@/lib/email-templates'
 
 // GET /api/courses/[id]/enroll — list enrollments
 export async function GET(
@@ -61,9 +62,7 @@ export async function POST(
       const inviteUrl = `${appUrl}/api/course-invite/${token}`
       const emailResult = await sendEmail({
         to: normalizedEmail,
-        subject: `You're invited to a Primr course`,
-        html: `<p>You were invited to join a course on Primr${course.title ? `: <strong>${course.title}</strong>` : ''}.</p><p><a href="${inviteUrl}">Accept invite</a></p>`,
-        text: `You were invited to join a course on Primr${course.title ? `: ${course.title}` : ''}.\n\nAccept invite: ${inviteUrl}`,
+        ...courseInviteEmail({ courseTitle: course.title, inviteUrl }),
       })
 
       return NextResponse.json(

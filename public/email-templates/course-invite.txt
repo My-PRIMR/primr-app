@@ -1,0 +1,3 @@
+You've been invited to a course on Primr{{titleText}}.
+
+Accept invite: {{inviteUrl}}

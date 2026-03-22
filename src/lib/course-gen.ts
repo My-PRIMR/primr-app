@@ -364,7 +364,7 @@ export async function runCourseGeneration(
     const courseUrl = `${appBase}/creator/courses/${courseId}/edit`
     const result = await sendEmail({
       to: creatorEmail,
-      ...courseCompleteEmail({ courseTitle: courseRecord.title, courseUrl, doneCount, failedCount: failedIds.size }),
+      ...await courseCompleteEmail({ courseTitle: courseRecord.title, courseUrl, doneCount, failedCount: failedIds.size }),
     })
     if (!result.ok && !result.skipped) {
       console.error(`[course-gen] Failed to send completion email to ${creatorEmail}:`, result.error)

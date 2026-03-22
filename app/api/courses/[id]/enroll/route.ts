@@ -62,7 +62,7 @@ export async function POST(
       const inviteUrl = `${appUrl}/api/course-invite/${token}`
       const emailResult = await sendEmail({
         to: normalizedEmail,
-        ...courseInviteEmail({ courseTitle: course.title, inviteUrl }),
+        ...await courseInviteEmail({ courseTitle: course.title, inviteUrl }),
       })
 
       return NextResponse.json(

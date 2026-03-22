@@ -1,0 +1,5 @@
+Your course "{{courseTitle}}" was interrupted by a server restart.
+
+{{statusText}}
+
+{{courseUrl}}

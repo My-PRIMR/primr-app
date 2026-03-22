@@ -79,7 +79,7 @@ export async function recoverStuckCourses(): Promise<void> {
 
         const result = await sendEmail({
           to: creator.email,
-          ...courseInterruptedEmail({ courseTitle: course.title, courseUrl, doneCount, failedCount }),
+          ...await courseInterruptedEmail({ courseTitle: course.title, courseUrl, doneCount, failedCount }),
         })
         if (!result.ok && !result.skipped) {
           console.error(`[course-recovery] Failed to email ${creator.email}:`, result.error)

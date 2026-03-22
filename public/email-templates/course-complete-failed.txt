@@ -1,0 +1,4 @@
+Your course "{{courseTitle}}" finished. {{doneCount}} {{lessonWordDone}} done, {{failedCount}} {{lessonWordFailed}} failed.
+
+Open the course editor to retry failed lessons:
+{{courseUrl}}

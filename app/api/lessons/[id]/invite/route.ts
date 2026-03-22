@@ -59,7 +59,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   for (const row of results) {
     const emailResult = await sendEmail({
       to: row.email,
-      ...lessonInviteEmail({ lessonTitle: lesson.title, inviteUrl }),
+      ...await lessonInviteEmail({ lessonTitle: lesson.title, inviteUrl }),
     })
     if (emailResult.ok) {
       emailed += 1

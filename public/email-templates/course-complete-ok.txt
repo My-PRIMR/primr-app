@@ -1,0 +1,3 @@
+Your course "{{courseTitle}}" is ready with {{doneCount}} {{lessonWord}}.
+
+{{courseUrl}}

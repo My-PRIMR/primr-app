@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# generated email templates (built from src/email-templates/ at build time)
+/public/email-templates/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

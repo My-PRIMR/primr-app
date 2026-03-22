@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack",
-    "build": "next build --webpack",
+    "build:email-templates": "node scripts/build-email-templates.mjs",
+    "dev": "npm run build:email-templates && next dev --webpack",
+    "build": "npm run build:email-templates && next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",

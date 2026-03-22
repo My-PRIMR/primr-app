@@ -1,8 +1,8 @@
 'use client'
 
 import { useReducer, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import VideoIngestForm from './components/VideoIngestForm'
 import '@primr/components/dist/style.css'
 import {
   HeroCard, NarrativeBlock, StepNavigator, Quiz, FlipCardDeck, FillInTheBlank, MediaBlock,
@@ -55,6 +55,8 @@ const initialState: WizardState = {
   audience: '',
   level: 'beginner',
   scope: '',
+  videoUrl: '',
+  structureSource: 'document',
   documentText: '',
   documentName: '',
   outline: null,
@@ -89,28 +91,49 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
   }
 }
 
-type Mode = 'topic' | 'video'
-
 interface NewLessonWizardProps {
   internalRole: string | null
   productRole: string | null
 }
 
 export default function NewLessonWizard({ internalRole, productRole }: NewLessonWizardProps) {
-  const [mode, setMode] = useState<Mode>('topic')
+  const router = useRouter()
   const [state, dispatch] = useReducer(reducer, initialState)
   const [editingBlock, setEditingBlock] = useState<number | null>(null)
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL)
   const [passiveLesson, setPassiveLesson] = useState(false)
 
-  function switchMode(next: Mode) {
-    setMode(next)
-    dispatch({ type: 'SET_STEP', step: 1 })
-    setSelectedModel(DEFAULT_MODEL)
-    setPassiveLesson(false)
-  }
-
   async function generateOutline() {
+    // If a YouTube URL is provided, use the async video ingestion path
+    if (state.videoUrl.trim()) {
+      dispatch({ type: 'SET_STATUS', status: 'loading' })
+      try {
+        const res = await fetch('/api/lessons/ingest-video', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: state.videoUrl.trim(),
+            title: state.title.trim() || undefined,
+            audience: state.audience.trim() || undefined,
+            level: state.level,
+            scope: state.scope.trim() || undefined,
+            model: selectedModel,
+            passiveLesson,
+          }),
+        })
+        const data = await res.json() as { id?: string; error?: string }
+        if (!res.ok) {
+          dispatch({ type: 'SET_STATUS', status: 'error', error: data.error || 'Failed to start video generation.' })
+          return
+        }
+        router.push(`/creator/video-status/${data.id}`)
+      } catch {
+        dispatch({ type: 'SET_STATUS', status: 'error', error: 'Network error. Please try again.' })
+      }
+      return
+    }
+
+    // Otherwise use the synchronous outline path
     dispatch({ type: 'SET_STATUS', status: 'loading' })
     dispatch({ type: 'SET_STEP', step: 2 })
 
@@ -189,40 +212,13 @@ export default function NewLessonWizard({ internalRole, productRole }: NewLesson
         <Link href="/" className={styles.wordmark}>Primr</Link>
       </nav>
 
-      <div className={styles.tabBar}>
-        <button
-          className={[styles.tab, mode === 'topic' ? styles.tabActive : ''].join(' ')}
-          onClick={() => switchMode('topic')}
-        >
-          Topic / Document
-        </button>
-        <button
-          className={[styles.tab, mode === 'video' ? styles.tabActive : ''].join(' ')}
-          onClick={() => switchMode('video')}
-        >
-          Video
-        </button>
+      <div className={styles.stepBar}>
+        <StepIndicator current={state.step} />
       </div>
 
-      {mode === 'topic' && (
-        <div className={styles.stepBar}>
-          <StepIndicator current={state.step} />
-        </div>
-      )}
-
       <div className={styles.content}>
-        {/* Video ingestion mode */}
-        {mode === 'video' && (
-          <VideoIngestForm
-            internalRole={internalRole}
-            productRole={productRole}
-            selectedModel={selectedModel}
-            onModelChange={setSelectedModel}
-          />
-        )}
-
         {/* Step 1: Details form */}
-        {mode === 'topic' && state.step === 1 && (
+        {state.step === 1 && (
           <Step1Form
             state={state}
             onField={(field, value) => dispatch({ type: 'SET_FIELD', field: field as keyof WizardState, value })}
@@ -237,7 +233,7 @@ export default function NewLessonWizard({ internalRole, productRole }: NewLesson
         )}
 
         {/* Step 2: Loading outline */}
-        {mode === 'topic' && state.step === 2 && (
+        {state.step === 2 && (
           <div className={styles.loading}>
             <div className={styles.spinner} />
             <p className={styles.loadingText}>Generating outline…</p>
@@ -246,7 +242,7 @@ export default function NewLessonWizard({ internalRole, productRole }: NewLesson
         )}
 
         {/* Step 3: Outline editor */}
-        {mode === 'topic' && state.step === 3 && state.outline && (
+        {state.step === 3 && state.outline && (
           <OutlineEditor
             outline={state.outline}
             onUpdateBlocks={blocks => dispatch({ type: 'UPDATE_OUTLINE_BLOCKS', blocks })}
@@ -257,7 +253,7 @@ export default function NewLessonWizard({ internalRole, productRole }: NewLesson
         )}
 
         {/* Step 4: Loading full generation */}
-        {mode === 'topic' && state.step === 4 && (
+        {state.step === 4 && (
           <div className={styles.loading}>
             <div className={styles.spinner} />
             <p className={styles.loadingText}>Building your lesson…</p>
@@ -266,7 +262,7 @@ export default function NewLessonWizard({ internalRole, productRole }: NewLesson
         )}
 
         {/* Step 5: Preview + edit */}
-        {mode === 'topic' && state.step === 5 && state.manifest && (
+        {state.step === 5 && state.manifest && (
           <div className={styles.preview}>
             <div className={styles.previewActions}>
               <button className={styles.saveBtn} onClick={saveLesson} disabled={state.status === 'loading'}>

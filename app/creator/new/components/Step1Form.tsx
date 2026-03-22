@@ -3,6 +3,10 @@ import type { WizardState } from '@/types/outline'
 import styles from './Step1Form.module.css'
 import { MODELS, canSelectModels, canSelectOpus } from '@/lib/models'
 
+function isYouTubeUrl(val: string) {
+  return /youtu\.be\/|youtube\.com\/(watch|embed|shorts)/.test(val)
+}
+
 interface Props {
   state: WizardState
   onField: (field: string, value: string) => void
@@ -26,7 +30,10 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, prod
   const [extracting, setExtracting] = useState(false)
   const [extractError, setExtractError] = useState('')
 
-  const canSubmit = state.title.trim() && (state.topic.trim() || state.documentText)
+  const videoUrlValid = isYouTubeUrl(state.videoUrl.trim())
+  const hasSources = (state.videoUrl.trim() && videoUrlValid) || !!state.documentText
+  const canSubmit = state.title.trim() && (state.topic.trim() || hasSources)
+  const showStructureToggle = videoUrlValid && !!state.documentText
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -61,10 +68,14 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, prod
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  const submitLabel = videoUrlValid
+    ? 'Generate lesson →'
+    : 'Generate outline →'
+
   return (
     <div className={styles.form}>
       <h1 className={styles.heading}>Create a new lesson</h1>
-      <p className={styles.sub}>Fill in the basics and we'll generate an outline for you to review.</p>
+      <p className={styles.sub}>Add a YouTube video, a document, or both — we'll generate a lesson for you to review.</p>
 
       <label className={styles.label}>
         Lesson title
@@ -78,41 +89,15 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, prod
       </label>
 
       <label className={styles.label}>
-        What should this lesson teach? {state.documentName && <span className={styles.optional}>(optional with document)</span>}
+        What should this lesson teach? <span className={styles.optional}>{hasSources ? '(optional)' : ''}</span>
         <textarea
           className={styles.textarea}
-          placeholder={state.documentName ? 'Additional context or focus areas (optional)…' : "Describe the topic, key concepts to cover, and any specific examples you'd like to include..."}
+          placeholder={hasSources ? 'Additional context or focus areas (optional)…' : "Describe the topic, key concepts to cover, and any specific examples you'd like to include..."}
           value={state.topic}
           onChange={e => onField('topic', e.target.value)}
           rows={4}
         />
       </label>
-
-      <div className={styles.uploadSection}>
-        <span className={styles.uploadLabel}>Source document <span className={styles.optional}>(optional)</span></span>
-        <p className={styles.uploadHint}>Upload a PDF, DOCX, TXT, or MD file — the lesson will be grounded in its content.</p>
-
-        {state.documentName ? (
-          <div className={styles.uploadedFile}>
-            <span className={styles.uploadedName}>{state.documentName}</span>
-            <button type="button" className={styles.clearFile} onClick={clearDocument}>Remove</button>
-          </div>
-        ) : (
-          <label className={styles.uploadBtn}>
-            {extracting ? 'Reading file…' : 'Choose file'}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.docx,.txt,.md"
-              className={styles.fileInput}
-              onChange={handleFile}
-              disabled={extracting}
-            />
-          </label>
-        )}
-
-        {extractError && <p className={styles.error}>{extractError}</p>}
-      </div>
 
       <div className={styles.row}>
         <label className={styles.label}>
@@ -149,20 +134,6 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, prod
         />
       </label>
 
-      <div className={styles.examples}>
-        <span className={styles.examplesLabel}>Try an example:</span>
-        {EXAMPLES.map(ex => (
-          <button
-            key={ex.title}
-            type="button"
-            className={styles.exampleChip}
-            onClick={() => { onField('title', ex.title); onField('topic', ex.topic) }}
-          >
-            {ex.title}
-          </button>
-        ))}
-      </div>
-
       {canSelectModels(internalRole, productRole) && (
         <div className={styles.internalControls}>
           <label className={styles.label}>
@@ -192,6 +163,92 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, prod
         </div>
       )}
 
+      <label className={styles.label}>
+        YouTube URL <span className={styles.optional}>(optional)</span>
+        <input
+          className={styles.input}
+          type="url"
+          placeholder="https://www.youtube.com/watch?v=..."
+          value={state.videoUrl}
+          onChange={e => onField('videoUrl', e.target.value)}
+        />
+        {state.videoUrl.trim() && !videoUrlValid && (
+          <span className={styles.fieldError}>Please enter a valid YouTube URL</span>
+        )}
+      </label>
+
+      <div className={styles.uploadSection}>
+        <span className={styles.uploadLabel}>Source document <span className={styles.optional}>(optional)</span></span>
+        <p className={styles.uploadHint}>Upload a PDF, DOCX, TXT, or MD file — content will be used as source material.</p>
+
+        {state.documentName ? (
+          <div className={styles.uploadedFile}>
+            <span className={styles.uploadedName}>{state.documentName}</span>
+            <button type="button" className={styles.clearFile} onClick={clearDocument}>Remove</button>
+          </div>
+        ) : (
+          <label className={styles.uploadBtn}>
+            {extracting ? 'Reading file…' : 'Choose file'}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.docx,.txt,.md"
+              className={styles.fileInput}
+              onChange={handleFile}
+              disabled={extracting}
+            />
+          </label>
+        )}
+
+        {extractError && <p className={styles.error}>{extractError}</p>}
+      </div>
+
+      {showStructureToggle && (
+        <div className={styles.uploadSection}>
+          <span className={styles.uploadLabel}>Lesson structure source</span>
+          <div className={styles.structureToggle}>
+            <label className={`${styles.structureOption} ${state.structureSource === 'document' ? styles.structureOptionActive : ''}`}>
+              <input
+                type="radio"
+                name="structureSource"
+                value="document"
+                checked={state.structureSource === 'document'}
+                onChange={() => onField('structureSource', 'document')}
+                className={styles.srOnly}
+              />
+              <span className={styles.structureOptionTitle}>Document</span>
+              <span className={styles.structureOptionHint}>Structure from doc · video as supplement</span>
+            </label>
+            <label className={`${styles.structureOption} ${state.structureSource === 'video' ? styles.structureOptionActive : ''}`}>
+              <input
+                type="radio"
+                name="structureSource"
+                value="video"
+                checked={state.structureSource === 'video'}
+                onChange={() => onField('structureSource', 'video')}
+                className={styles.srOnly}
+              />
+              <span className={styles.structureOptionTitle}>Video</span>
+              <span className={styles.structureOptionHint}>Structure from video · doc text as supplement</span>
+            </label>
+          </div>
+        </div>
+      )}
+
+      <div className={styles.examples}>
+        <span className={styles.examplesLabel}>Try an example:</span>
+        {EXAMPLES.map(ex => (
+          <button
+            key={ex.title}
+            type="button"
+            className={styles.exampleChip}
+            onClick={() => { onField('title', ex.title); onField('topic', ex.topic) }}
+          >
+            {ex.title}
+          </button>
+        ))}
+      </div>
+
       {state.error && <p className={styles.error}>{state.error}</p>}
 
       <button
@@ -199,7 +256,7 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, prod
         disabled={!canSubmit}
         onClick={onSubmit}
       >
-        Generate outline →
+        {submitLabel}
       </button>
     </div>
   )

@@ -27,6 +27,8 @@ export interface WizardState {
   audience: string
   level: 'beginner' | 'intermediate' | 'advanced'
   scope: string
+  videoUrl: string
+  structureSource: 'document' | 'video'
   documentText: string
   documentName: string
   // Step 2-3 outline

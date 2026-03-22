@@ -207,6 +207,64 @@
 .submit:active:not(:disabled) { transform: scale(0.97); }
 .submit:disabled { opacity: 0.4; cursor: not-allowed; }
 
+.fieldError {
+  font-size: 12.5px;
+  color: #d94f4f;
+  margin-top: 2px;
+}
+
+/* ── Structure source toggle ── */
+.structureToggle {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.structureOption {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border-mid);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 150ms, background 150ms;
+}
+
+.structureOption:hover {
+  border-color: var(--accent);
+}
+
+.structureOptionActive {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.structureOptionTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.structureOptionHint {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  line-height: 1.4;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ── Internal admin controls ── */
 .internalControls {
   padding: 14px 16px;

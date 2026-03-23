@@ -7,8 +7,10 @@ import { eq } from 'drizzle-orm'
 // GET — resolve course invite token, enroll user, redirect to course
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const session = await getSession()
+  const appUrl = process.env.PRIMR_APP_URL ?? 'http://localhost:3000'
+
   if (!session?.user?.id || !session.user.email) {
-    return NextResponse.redirect(new URL('/login', _req.url))
+    return NextResponse.redirect(new URL('/login', appUrl))
   }
 
   const { token } = await params
@@ -29,5 +31,5 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
     })
     .onConflictDoNothing()
 
-  return NextResponse.redirect(new URL(`/learn/course/${link.courseId}`, _req.url))
+  return NextResponse.redirect(new URL(`/learn/course/${link.courseId}`, appUrl))
 }

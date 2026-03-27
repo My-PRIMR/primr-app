@@ -27,8 +27,8 @@ export async function POST(
   if (!course) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (course.createdBy !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const body = await req.json() as { tree: CourseTree, model?: string, passiveLesson?: boolean, skipHero?: boolean, notifyEmail?: boolean }
-  const { tree, model, passiveLesson, skipHero, notifyEmail } = body
+  const body = await req.json() as { tree: CourseTree, model?: string, passiveLesson?: boolean, skipHero?: boolean, notifyEmail?: boolean, includeImages?: boolean }
+  const { tree, model, passiveLesson, skipHero, notifyEmail, includeImages } = body
 
   if (!tree?.sections?.length) {
     return NextResponse.json({ error: 'tree with sections is required' }, { status: 400 })
@@ -113,7 +113,7 @@ export async function POST(
 
   // Fire and forget — background generation
   const userId = session.user.id
-  runCourseGeneration(courseId, lessonInputs, userId, resolvedModel.id, passiveLesson && canSelectModels(internalRole, productRole), creatorEmail, !!skipHero).catch(err => {
+  runCourseGeneration(courseId, lessonInputs, userId, resolvedModel.id, passiveLesson && canSelectModels(internalRole, productRole), creatorEmail, !!skipHero, includeImages && canSelectModels(internalRole, productRole)).catch(err => {
     console.error(`[generate] Unhandled error in course generation for ${courseId}:`, err)
   })
 

@@ -11,6 +11,7 @@ import { DEFAULT_MODEL } from '@/lib/models'
 import { sendEmail } from '@/lib/email'
 import { courseCompleteEmail } from '@/lib/email-templates'
 import { BLOCK_SCHEMAS, PASSIVE_LESSON_OVERRIDE, INFORMATIONAL_TYPES } from '@/lib/block-schemas'
+import { enrichWithPexelsImages, IMAGE_PROMPT_SNIPPET } from '@/lib/pexels'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline } from '@/types/outline'
 
@@ -158,6 +159,7 @@ async function generateLesson(params: {
   model?: string
   passiveLesson?: boolean
   skipHero?: boolean
+  includeImages?: boolean
   videoUrl?: string
   videoStartTime?: number
   videoEndTime?: number
@@ -183,6 +185,9 @@ async function generateLesson(params: {
   if (params.skipHero) {
     systemPrompt += '\n\nIMPORTANT: Do NOT generate a hero block. The outline may list one — skip it. Start directly with the second block.'
   }
+  if (params.includeImages) {
+    systemPrompt += IMAGE_PROMPT_SNIPPET
+  }
 
   const message = await client.messages.create({
     model: params.model ?? DEFAULT_MODEL,
@@ -193,6 +198,9 @@ async function generateLesson(params: {
 
   const raw = message.content[0].type === 'text' ? message.content[0].text : ''
   const manifest: LessonManifest = JSON.parse(extractJSON(raw))
+  if (params.includeImages) {
+    await enrichWithPexelsImages(manifest, process.env.PEXELS_API_KEY ?? '')
+  }
 
   const slug = `${slugify(manifest.slug || manifest.title)}-${Math.random().toString(36).slice(2, 7)}`
   manifest.slug = slug
@@ -236,6 +244,7 @@ export async function runCourseGeneration(
   passiveLesson?: boolean,
   creatorEmail?: string,
   skipHero?: boolean,
+  includeImages?: boolean,
 ): Promise<void> {
   console.log(`[course-gen] Starting generation for course ${courseId}, ${lessonInputs.length} lessons`)
 
@@ -303,6 +312,7 @@ export async function runCourseGeneration(
         model,
         passiveLesson,
         skipHero,
+        includeImages,
         videoUrl: input.videoUrl,
         videoStartTime: input.videoStartTime,
         videoEndTime: input.videoEndTime,

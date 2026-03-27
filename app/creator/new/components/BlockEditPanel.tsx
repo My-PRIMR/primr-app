@@ -14,15 +14,17 @@ interface Props {
   headerAction?: React.ReactNode
   activePage?: number
   onPageChange?: (index: number) => void
+  canPexels?: boolean
 }
 
 /** Render labeled form fields for a block's props based on its type */
-function PropsEditor({ blockType, props, onChange, activePage, onPageChange }: {
+function PropsEditor({ blockType, props, onChange, activePage, onPageChange, canPexels }: {
   blockType: string
   props: Record<string, unknown>
   onChange: (key: string, value: unknown) => void
   activePage?: number
   onPageChange?: (index: number) => void
+  canPexels?: boolean
 }) {
   const pageArrayKey = PAGE_ARRAY_KEY[blockType]
   const pageItemRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -231,7 +233,7 @@ function formatLabel(key: string): string {
     .trim()
 }
 
-export default function BlockEditPanel({ block, blockIndex, lessonTitle, activePage, onPageChange, onUpdate, onClose, headerAction }: Props) {
+export default function BlockEditPanel({ block, blockIndex, lessonTitle, activePage, onPageChange, onUpdate, onClose, headerAction, canPexels = false }: Props) {
   const [localProps, setLocalProps] = useState<Record<string, unknown>>(block.props as Record<string, unknown>)
   const [jsonOpen, setJsonOpen] = useState(false)
 
@@ -254,7 +256,7 @@ export default function BlockEditPanel({ block, blockIndex, lessonTitle, activeP
       </div>
 
       <div className={styles.scrollArea}>
-        <PropsEditor blockType={block.type} props={localProps} onChange={handleFieldChange} activePage={activePage} onPageChange={onPageChange} />
+        <PropsEditor blockType={block.type} props={localProps} onChange={handleFieldChange} activePage={activePage} onPageChange={onPageChange} canPexels={canPexels} />
 
         {/* AI rewrite — disabled for now */}
         <div className={styles.aiSection}>

@@ -17,6 +17,8 @@ interface Props {
   onModelChange?: (model: string) => void
   passiveLesson?: boolean
   onPassiveLessonChange?: (v: boolean) => void
+  includeImages?: boolean
+  onIncludeImagesChange?: (v: boolean) => void
 }
 
 const EXAMPLES = [
@@ -25,7 +27,7 @@ const EXAMPLES = [
   { title: 'Introduction to Git Branching', topic: 'Cover creating branches, merging, rebasing, and resolving merge conflicts in Git.' },
 ]
 
-export default function Step1Form({ state, onField, onSubmit, internalRole, productRole, selectedModel, onModelChange, passiveLesson, onPassiveLessonChange }: Props) {
+export default function Step1Form({ state, onField, onSubmit, internalRole, productRole, selectedModel, onModelChange, passiveLesson, onPassiveLessonChange, includeImages, onIncludeImagesChange }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [extracting, setExtracting] = useState(false)
   const [extractError, setExtractError] = useState('')
@@ -159,6 +161,16 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, prod
               className={styles.checkbox}
             />
             Informational only (no interactive content)
+          </label>
+
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={includeImages}
+              onChange={e => onIncludeImagesChange?.(e.target.checked)}
+              className={styles.checkbox}
+            />
+            Include images (Pexels)
           </label>
         </div>
       )}

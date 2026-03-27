@@ -102,6 +102,7 @@ export default function NewLessonWizard({ internalRole, productRole }: NewLesson
   const [editingBlock, setEditingBlock] = useState<number | null>(null)
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL)
   const [passiveLesson, setPassiveLesson] = useState(false)
+  const [includeImages, setIncludeImages] = useState(false)
 
   async function generateOutline() {
     // If a YouTube URL is provided, use the async video ingestion path
@@ -170,7 +171,7 @@ export default function NewLessonWizard({ internalRole, productRole }: NewLesson
     const res = await fetch('/api/lessons/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ outline: state.outline, documentText: state.documentText, topic: state.topic, model: selectedModel, passiveLesson }),
+      body: JSON.stringify({ outline: state.outline, documentText: state.documentText, topic: state.topic, model: selectedModel, passiveLesson, includeImages }),
     })
 
     if (!res.ok) {
@@ -229,6 +230,8 @@ export default function NewLessonWizard({ internalRole, productRole }: NewLesson
             onModelChange={setSelectedModel}
             passiveLesson={passiveLesson}
             onPassiveLessonChange={setPassiveLesson}
+            includeImages={includeImages}
+            onIncludeImagesChange={setIncludeImages}
           />
         )}
 

@@ -165,7 +165,7 @@
 
 .pickerError {
   font-size: 11px;
-  color: #d94f4f;
+  color: var(--color-coral, #d94f4f);
 }
 
 .pickerGrid {

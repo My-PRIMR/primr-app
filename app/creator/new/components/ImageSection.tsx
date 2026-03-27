@@ -10,6 +10,7 @@ export interface ImageValue {
   alt?: string
   caption?: string
   layout?: ImageLayout
+  photographer?: string
 }
 
 interface PexelsPhoto {
@@ -63,7 +64,7 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
 
   function selectPhoto(photo: PexelsPhoto) {
     const src = blockType === 'step-navigator' ? photo.medium : photo.large
-    onChange({ ...image, src, alt: searchQuery.trim() || image?.alt })
+    onChange({ ...image, src, alt: searchQuery.trim() || image?.alt, photographer: photo.photographer })
     setPickerOpen(false)
   }
 

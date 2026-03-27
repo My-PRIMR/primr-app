@@ -1,0 +1,338 @@
+/* ── Section wrapper ─────────────────────────────────────────────────────── */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sectionLabel {
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+
+/* ── Preview card ────────────────────────────────────────────────────────── */
+.card {
+  border: 1px solid var(--border-mid, rgba(15, 17, 23, 0.18));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.preview {
+  height: 80px;
+  background: var(--surface-alt, #F7F6F3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.previewImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.previewPlaceholder {
+  font-size: 12px;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+.urlRow {
+  background: var(--surface, #fff);
+  padding: 6px 8px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  border-top: 1px solid var(--border, rgba(15, 17, 23, 0.10));
+}
+
+.urlInput {
+  flex: 1;
+  background: var(--surface-alt, #F7F6F3);
+  border: 1px solid var(--border-mid, rgba(15, 17, 23, 0.18));
+  border-radius: 4px;
+  padding: 4px 7px;
+  color: var(--ink);
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  min-width: 0;
+}
+
+.urlInput::placeholder {
+  color: var(--ink-muted);
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+.urlInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.clearBtn {
+  background: none;
+  border: 1px solid var(--border-mid, rgba(15, 17, 23, 0.18));
+  border-radius: 4px;
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 1px 6px;
+  flex-shrink: 0;
+}
+
+.clearBtn:hover {
+  color: var(--ink);
+  border-color: var(--border-mid);
+}
+
+.searchBtn {
+  background: var(--surface-alt, #F7F6F3);
+  border: 1px solid var(--border-mid, rgba(15, 17, 23, 0.18));
+  border-radius: 4px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 3px 7px;
+  flex-shrink: 0;
+  transition: background 120ms, border-color 120ms;
+}
+
+.searchBtn:hover {
+  background: var(--accent-soft, #EAE7FB);
+  border-color: var(--accent);
+}
+
+.searchBtnActive {
+  background: var(--accent-soft, #EAE7FB);
+  border-color: var(--accent);
+}
+
+/* ── Pexels picker ───────────────────────────────────────────────────────── */
+.picker {
+  background: var(--surface-alt, #F7F6F3);
+  border: 1px solid var(--border-mid, rgba(15, 17, 23, 0.18));
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pickerSearchRow {
+  display: flex;
+  gap: 6px;
+}
+
+.pickerInput {
+  flex: 1;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-mid, rgba(15, 17, 23, 0.18));
+  border-radius: 5px;
+  padding: 5px 8px;
+  color: var(--ink);
+  font-size: 12px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+.pickerInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.pickerSearchBtn {
+  background: var(--accent);
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-weight: 500;
+  padding: 5px 12px;
+  flex-shrink: 0;
+  transition: opacity 120ms;
+}
+
+.pickerSearchBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.pickerError {
+  font-size: 11px;
+  color: #d94f4f;
+}
+
+.pickerGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.pickerPhoto {
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  overflow: hidden;
+  cursor: pointer;
+  background: none;
+  aspect-ratio: 16 / 10;
+  transition: border-color 100ms;
+}
+
+.pickerPhoto:hover {
+  border-color: var(--accent);
+}
+
+.pickerPhotoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pickerCredit {
+  font-size: 9px;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+/* ── Alt / caption fields ────────────────────────────────────────────────── */
+.imageFields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fieldLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+
+.fieldInput {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-mid, rgba(15, 17, 23, 0.18));
+  border-radius: 6px;
+  padding: 6px 9px;
+  outline: none;
+  transition: border-color 120ms;
+  width: 100%;
+}
+
+.fieldInput:focus {
+  border-color: var(--accent);
+}
+
+/* ── Layout selector ─────────────────────────────────────────────────────── */
+.layoutSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.layoutLabel {
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+
+.layoutButtons {
+  display: flex;
+  gap: 6px;
+}
+
+.layoutBtn {
+  flex: 1;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-mid, rgba(15, 17, 23, 0.18));
+  border-radius: 6px;
+  padding: 7px 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: background 100ms, border-color 100ms;
+}
+
+.layoutBtn:hover {
+  border-color: var(--accent);
+}
+
+.layoutBtnActive {
+  background: var(--accent-soft, #EAE7FB);
+  border-color: var(--accent);
+}
+
+.layoutBtnLabel {
+  font-size: 9px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: var(--ink-muted);
+}
+
+.layoutBtnActive .layoutBtnLabel {
+  color: var(--accent);
+}
+
+/* ── Layout icons ────────────────────────────────────────────────────────── */
+.layoutIcon {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.layoutIconCol {
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.layoutIconTextLines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.layoutIconLine {
+  width: 14px;
+  height: 2px;
+  background: var(--ink-muted);
+  border-radius: 1px;
+}
+
+.layoutIconLineShort {
+  width: 10px;
+}
+
+.layoutIconImg {
+  width: 14px;
+  height: 20px;
+  background: var(--accent);
+  border-radius: 2px;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.layoutIconImgWide {
+  width: 28px;
+  height: 10px;
+  background: var(--accent);
+  border-radius: 2px;
+  opacity: 0.5;
+}

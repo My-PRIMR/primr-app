@@ -58,3 +58,10 @@ export function canSelectOpus(
 ) {
   return hasAdminModelAccess(internalRole, productRole)
 }
+
+export function canUsePexels(
+  plan: string | null | undefined,
+  internalRole: string | null | undefined
+): boolean {
+  return plan === 'pro' || plan === 'enterprise' || internalRole !== null
+}

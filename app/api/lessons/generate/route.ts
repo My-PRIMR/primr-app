@@ -7,6 +7,7 @@ import { getSession } from '@/session'
 import { resolveModel, DEFAULT_MODEL, modelById, canSelectModels } from '@/lib/models'
 import { checkCap, logUsage } from '@/lib/usage-cap'
 import { BLOCK_SCHEMAS } from '@/lib/block-schemas'
+import { enrichWithPexelsImages, IMAGE_PROMPT_SNIPPET } from '@/lib/pexels'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline } from '@/types/outline'
 
@@ -73,6 +74,7 @@ export async function POST(req: NextRequest) {
   const documentText: string | undefined = body.documentText
   const model: string | undefined = body.model
   const passiveLesson: boolean | undefined = body.passiveLesson
+  const includeImages: boolean | undefined = body.includeImages
 
   if (!outline && !topic?.trim()) {
     return NextResponse.json({ error: 'outline or topic is required' }, { status: 400 })
@@ -101,6 +103,10 @@ export async function POST(req: NextRequest) {
 
   if (passiveLesson && canSelectModels(internalRole, productRole)) {
     systemPrompt += '\n\nIMPORTANT: Generate only informational content blocks (text, heading, narrative, step-navigator, hero, callout). Do not include any interactive or assessment blocks (quiz, flashcard, fill-in-the-blank, or similar). The lesson should be purely informational — no questions, no exercises.'
+  }
+
+  if (includeImages && canSelectModels(internalRole, productRole)) {
+    systemPrompt += IMAGE_PROMPT_SNIPPET
   }
 
   const userMessage = isOutlineBased
@@ -133,6 +139,10 @@ export async function POST(req: NextRequest) {
     console.error(`[generate] JSON parse failed:`, err)
     console.error(`[generate] full raw response:\n${raw}`)
     return NextResponse.json({ error: 'AI returned invalid JSON', raw }, { status: 500 })
+  }
+
+  if (includeImages) {
+    await enrichWithPexelsImages(manifest, process.env.PEXELS_API_KEY ?? '')
   }
 
   const slug = `${slugify(manifest.slug || manifest.title)}-${Math.random().toString(36).slice(2, 7)}`

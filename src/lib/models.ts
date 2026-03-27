@@ -63,5 +63,5 @@ export function canUsePexels(
   plan: string | null | undefined,
   internalRole: string | null | undefined
 ): boolean {
-  return plan === 'pro' || plan === 'enterprise' || internalRole !== null
+  return plan === 'pro' || plan === 'enterprise' || internalRole != null
 }

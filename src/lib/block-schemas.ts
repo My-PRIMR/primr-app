@@ -333,3 +333,4 @@ export const PASSIVE_LESSON_OVERRIDE =
   `Forbidden block types: ${INTERACTIVE_TYPES.join(', ')} — all gate progress and require learner action. ` +
   `step-navigator is a slide-by-slide walkthrough with no gating or correct answers and must be used freely wherever sequential or step-based content fits. ` +
   `Do not avoid step-navigator — it is encouraged.`
+  

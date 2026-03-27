@@ -24,13 +24,13 @@ export async function fetchPexelsPhoto(
   apiKey: string,
 ): Promise<{ src: string; alt: string } | null> {
   try {
-    const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=3&orientation=landscape`
+    const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`
     const res = await fetch(url, { headers: { Authorization: apiKey } })
     if (!res.ok) return null
     const data = (await res.json()) as PexelsSearchResponse
     const photo = data.photos?.[0]
     if (!photo) return null
-    return { src: photo.src.large, alt: photo.photographer }
+    return { src: photo.src.large, alt: query }
   } catch {
     return null
   }

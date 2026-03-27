@@ -4,6 +4,10 @@ import { useState, useRef, useEffect } from 'react'
 import type { BlockConfig } from '@/types/outline'
 import styles from './BlockEditPanel.module.css'
 import { PAGE_ARRAY_KEY } from '../../lib/pageArrayKey'
+import ImageSection from './ImageSection'
+import type { ImageValue } from './ImageSection'
+
+const IMAGE_BLOCKS = ['hero', 'narrative', 'step-navigator']
 
 interface Props {
   block: BlockConfig
@@ -36,9 +40,21 @@ function PropsEditor({ blockType, props, onChange, activePage, onPageChange, can
 
   return (
     <div className={styles.fields}>
+      {/* Dedicated image editor for hero and narrative */}
+      {(blockType === 'hero' || blockType === 'narrative') && (
+        <ImageSection
+          blockType={blockType as 'hero' | 'narrative'}
+          image={props.image as ImageValue | undefined}
+          canPexels={canPexels ?? false}
+          onChange={(newImage) => onChange('image', newImage)}
+        />
+      )}
+
       {Object.entries(props).map(([key, value]) => {
         // Skip callback props
         if (key === 'onComplete' || key === 'onCtaClick') return null
+        // Image for hero/narrative is handled above; image for step-navigator is per-step below
+        if (key === 'image' && IMAGE_BLOCKS.includes(blockType)) return null
 
         // Array fields: render sub-items with add/delete/reorder
         if (Array.isArray(value)) {
@@ -102,18 +118,34 @@ function PropsEditor({ blockType, props, onChange, activePage, onPageChange, can
                   </div>
                   {typeof item === 'object' && item !== null ? (
                     <div className={styles.subFields}>
-                      {Object.entries(item as Record<string, unknown>).map(([subKey, subVal]) => (
-                        <FieldInput
-                          key={subKey}
-                          label={formatLabel(subKey)}
-                          value={subVal}
-                          onChange={(newVal) => {
+                      {Object.entries(item as Record<string, unknown>).map(([subKey, subVal]) => {
+                        // image sub-key in steps is rendered via ImageSection below
+                        if (key === 'steps' && subKey === 'image') return null
+                        return (
+                          <FieldInput
+                            key={subKey}
+                            label={formatLabel(subKey)}
+                            value={subVal}
+                            onChange={(newVal) => {
+                              const newArr = [...arr]
+                              newArr[idx] = { ...newArr[idx], [subKey]: newVal }
+                              onChange(key, newArr)
+                            }}
+                          />
+                        )
+                      })}
+                      {key === 'steps' && (
+                        <ImageSection
+                          blockType="step-navigator"
+                          image={(item as Record<string, unknown>).image as ImageValue | undefined}
+                          canPexels={canPexels ?? false}
+                          onChange={(newImage) => {
                             const newArr = [...arr]
-                            newArr[idx] = { ...newArr[idx], [subKey]: newVal }
+                            newArr[idx] = { ...newArr[idx], image: newImage }
                             onChange(key, newArr)
                           }}
                         />
-                      ))}
+                      )}
                     </div>
                   ) : (
                     <FieldInput

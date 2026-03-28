@@ -120,7 +120,7 @@ function PropsEditor({ blockType, props, onChange, activePage, onPageChange, can
                     <div className={styles.subFields}>
                       {Object.entries(item as Record<string, unknown>).map(([subKey, subVal]) => {
                         // image sub-key in steps is rendered via ImageSection below
-                        if (key === 'steps' && subKey === 'image') return null
+                        if (key === 'steps' && blockType === 'step-navigator' && subKey === 'image') return null
                         return (
                           <FieldInput
                             key={subKey}
@@ -134,7 +134,7 @@ function PropsEditor({ blockType, props, onChange, activePage, onPageChange, can
                           />
                         )
                       })}
-                      {key === 'steps' && (
+                      {key === 'steps' && blockType === 'step-navigator' && (
                         <ImageSection
                           blockType="step-navigator"
                           image={(item as Record<string, unknown>).image as ImageValue | undefined}

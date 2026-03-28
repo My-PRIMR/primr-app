@@ -9,7 +9,7 @@ function isYouTubeUrl(val: string) {
 
 interface Props {
   state: WizardState
-  onField: (field: string, value: string) => void
+  onField: (field: string, value: unknown) => void
   onSubmit: () => void
   internalRole?: string | null
   productRole?: string | null
@@ -19,6 +19,10 @@ interface Props {
   onPassiveLessonChange?: (v: boolean) => void
   includeImages?: boolean
   onIncludeImagesChange?: (v: boolean) => void
+  /** Whether the current user may use enriched PDF ingestion (pro+). */
+  canRichIngest?: boolean
+  /** 'lesson' (default) shows lesson-specific copy; 'course' for future use. */
+  mode?: 'lesson' | 'course'
 }
 
 const EXAMPLES = [
@@ -27,7 +31,14 @@ const EXAMPLES = [
   { title: 'Introduction to Git Branching', topic: 'Cover creating branches, merging, rebasing, and resolving merge conflicts in Git.' },
 ]
 
-export default function Step1Form({ state, onField, onSubmit, internalRole, productRole, selectedModel, onModelChange, passiveLesson, onPassiveLessonChange, includeImages, onIncludeImagesChange }: Props) {
+export default function Step1Form({
+  state, onField, onSubmit, internalRole, productRole,
+  selectedModel, onModelChange,
+  passiveLesson, onPassiveLessonChange,
+  includeImages, onIncludeImagesChange,
+  canRichIngest = false,
+  mode = 'lesson',
+}: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [extracting, setExtracting] = useState(false)
   const [extractError, setExtractError] = useState('')
@@ -45,9 +56,14 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, prod
     setExtractError('')
     onField('documentText', '')
     onField('documentName', '')
+    onField('documentAssets', [])
 
     const form = new FormData()
     form.append('file', file)
+    if (canRichIngest && file.name.toLowerCase().endsWith('.pdf')) {
+      form.append('extractImages', String(state.extractImages))
+      form.append('decodeQr', String(state.decodeQr))
+    }
 
     const res = await fetch('/api/lessons/extract', { method: 'POST', body: form })
     const data = await res.json()
@@ -62,17 +78,17 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, prod
 
     onField('documentText', data.text)
     onField('documentName', file.name)
+    onField('documentAssets', data.assets ?? [])
   }
 
   function clearDocument() {
     onField('documentText', '')
     onField('documentName', '')
+    onField('documentAssets', [])
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const submitLabel = videoUrlValid
-    ? 'Generate lesson →'
-    : 'Generate outline →'
+  const submitLabel = mode === 'lesson' ? 'Generate lesson →' : 'Generate course →'
 
   return (
     <div className={styles.form}>
@@ -190,8 +206,44 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, prod
       </label>
 
       <div className={styles.uploadSection}>
-        <span className={styles.uploadLabel}>Source document <span className={styles.optional}>(optional)</span></span>
+        <span className={styles.uploadLabel}>
+          Source document <span className={styles.optional}>(optional)</span>
+        </span>
         <p className={styles.uploadHint}>Upload a PDF, DOCX, TXT, or MD file — content will be used as source material.</p>
+
+        {/* Enrichment options — only for PDFs, only shown before file is uploaded */}
+        {!state.documentName && canRichIngest && (
+          <div className={styles.enrichmentOptions}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={state.extractImages}
+                onChange={e => onField('extractImages', e.target.checked)}
+                className={styles.checkbox}
+              />
+              Extract images from PDF
+              <span className={styles.enrichmentNote}> — adds ~30–60s</span>
+            </label>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={state.decodeQr}
+                onChange={e => onField('decodeQr', e.target.checked)}
+                className={styles.checkbox}
+              />
+              Decode QR codes (e.g. embedded YouTube videos)
+              <span className={styles.enrichmentNote}> — adds ~10s</span>
+            </label>
+          </div>
+        )}
+
+        {/* Pro upsell — shown when user is not on pro */}
+        {!state.documentName && !canRichIngest && (
+          <p className={styles.proNote}>
+            <span className={styles.proBadge}>Pro</span>
+            {' '}Upgrade to extract images and QR-encoded videos from PDFs.
+          </p>
+        )}
 
         {state.documentName ? (
           <div className={styles.uploadedFile}>

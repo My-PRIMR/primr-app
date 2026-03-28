@@ -61,7 +61,7 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
         return
       }
       const data = await res.json()
-      setPhotos(prev => page === 1 ? data.photos : [...prev, ...data.photos])
+      setPhotos(data.photos)
       setHasMore(data.hasMore)
       setCurrentPage(page)
     } catch (err) {
@@ -72,9 +72,8 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
     }
   }
 
-  function loadMore() {
-    doSearch(currentPage + 1)
-  }
+  function prevPage() { doSearch(currentPage - 1) }
+  function nextPage() { doSearch(currentPage + 1) }
 
   function selectPhoto(photo: PexelsPhoto) {
     const src = blockType === 'step-navigator' ? photo.medium : photo.large
@@ -155,6 +154,11 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
           {searchError && <div className={styles.pickerError}>Search failed. Try again.</div>}
           {photos.length > 0 && (
             <>
+              {currentPage > 1 && (
+                <button type="button" className={styles.pickerPageBtn} onClick={prevPage} disabled={searching}>
+                  ↑
+                </button>
+              )}
               <div className={styles.pickerGrid}>
                 {photos.map((photo, i) => (
                   <button type="button" key={`${photo.id}-${i}`} className={styles.pickerPhoto} onClick={() => selectPhoto(photo)}>
@@ -163,8 +167,8 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
                 ))}
               </div>
               {hasMore && (
-                <button type="button" className={styles.pickerLoadMore} onClick={loadMore} disabled={searching}>
-                  {searching ? 'Loading…' : 'Load more'}
+                <button type="button" className={styles.pickerPageBtn} onClick={nextPage} disabled={searching}>
+                  ↓
                 </button>
               )}
               <div className={styles.pickerCredit}>Click an image to use it · Photos from Pexels</div>

@@ -4,7 +4,7 @@ import { extractJSON } from '@/lib/extract-json'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { getSession } from '@/session'
-import { resolveModel, DEFAULT_MODEL, modelById, canSelectModels } from '@/lib/models'
+import { resolveModel, DEFAULT_MODEL, modelById, canSelectModels, canUseRichIngest, canUsePexels } from '@/lib/models'
 import { checkCap, logUsage } from '@/lib/usage-cap'
 import { BLOCK_SCHEMAS } from '@/lib/block-schemas'
 import { enrichWithPexelsImages, IMAGE_PROMPT_SNIPPET } from '@/lib/pexels'
@@ -97,6 +97,12 @@ export async function POST(req: NextRequest) {
 
   const internalRole = session?.user?.internalRole ?? null
   const productRole = session?.user?.productRole ?? null
+  const plan = session?.user?.plan ?? null
+
+  if (documentAssets?.length && !canUseRichIngest(plan, internalRole)) {
+    return NextResponse.json({ error: 'Document asset ingestion requires Creator Pro or higher.' }, { status: 403 })
+  }
+
   let resolvedModel = modelById(DEFAULT_MODEL)!
   if (model) {
     const m = resolveModel(model, internalRole, productRole)
@@ -157,7 +163,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'AI returned invalid JSON', raw }, { status: 500 })
   }
 
-  if (includeImages) {
+  if (includeImages && canUsePexels(plan, internalRole)) {
     await enrichWithPexelsImages(manifest, process.env.PEXELS_API_KEY ?? '')
   }
 

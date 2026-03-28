@@ -100,7 +100,6 @@ export default function NewLessonWizard({ internalRole, productRole, plan }: New
       }
     }
 
-    dispatch({ type: 'SET_STATUS', status: 'loading' })
     dispatch({ type: 'SET_STEP', step: 2 })
 
     const res = await fetch('/api/lessons/generate', {

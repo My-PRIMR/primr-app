@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
       // Always extract hyperlinked YouTube URLs from text (free, no plan check needed)
       const ytUrls = extractYouTubeUrls(text)
-      assets.push(...ytUrls.map((url, i): DocumentAsset => ({ type: 'video', url, page: i + 1 })))
+      assets.push(...ytUrls.map((url): DocumentAsset => ({ type: 'video', url, page: 0 })))
 
       // Enrichment: images and/or QR decoding
       if (wantEnrichment) {

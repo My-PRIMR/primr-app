@@ -24,7 +24,7 @@ export function extractYouTubeUrls(text: string): string[] {
 }
 
 /**
- * Generate a deterministic Cloudinary public_id for a document image asset.
+ * Generate a unique Cloudinary public_id for a document image asset.
  * Format: {slug}_p{page}_i{index}_{timestamp}
  */
 export function buildPublicId(slug: string, page: number, index: number): string {
@@ -50,16 +50,10 @@ export async function enrichPdf(
   const { LiteParse } = await import('@llamaindex/liteparse')
   const parser = new LiteParse({ ocrEnabled: false })
 
-  // Get page count from parse result
-  const parseResult = await parser.parse(pdfBuffer)
-  const pageCount = parseResult.pages?.length ?? 1
-  const pagesToCapture = Array.from(
-    { length: Math.min(pageCount, MAX_SCREENSHOT_PAGES) },
-    (_, i) => i + 1
-  )
-
-  // Get page screenshots — returns Array<{ pageNum, imageBuffer, width, height }>
-  const screenshots = await parser.screenshot(pdfBuffer, pagesToCapture)
+  // Screenshot up to MAX_SCREENSHOT_PAGES pages (1-indexed).
+  // We don't know total page count upfront, so pass a page range and let LiteParse cap it.
+  const pageRange = Array.from({ length: MAX_SCREENSHOT_PAGES }, (_, i) => i + 1)
+  const screenshots = await parser.screenshot(pdfBuffer, pageRange)
 
   let imageIndex = 0
   for (const shot of screenshots) {

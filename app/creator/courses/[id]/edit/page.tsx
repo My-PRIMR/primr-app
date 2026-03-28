@@ -81,5 +81,11 @@ export default async function CourseEditPage({ params }: { params: Promise<{ id:
     })),
   }
 
-  return <CourseEditClient course={tree} />
+  return (
+    <CourseEditClient
+      course={tree}
+      plan={session.user.plan ?? 'free'}
+      internalRole={session.user.internalRole ?? null}
+    />
+  )
 }

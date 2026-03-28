@@ -65,3 +65,10 @@ export function canUsePexels(
 ): boolean {
   return plan === 'pro' || plan === 'enterprise' || internalRole != null
 }
+
+export function canUseRichIngest(
+  plan: string | null | undefined,
+  internalRole: string | null | undefined
+): boolean {
+  return plan === 'pro' || plan === 'enterprise' || internalRole != null
+}

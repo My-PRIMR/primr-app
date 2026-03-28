@@ -35,31 +35,39 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
   const [photos, setPhotos] = useState<PexelsPhoto[]>([])
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
 
   // Sync URL input when image.src changes externally (e.g. after Pexels pick)
   useEffect(() => {
     setUrlValue(image?.src ?? '')
   }, [image?.src])
 
-  async function doSearch() {
+  async function doSearch(page = 1) {
     const q = searchQuery.trim()
     if (!q) return
     setSearching(true)
-    setSearchError(false)
+    if (page === 1) setSearchError(false)
     try {
       const res = await fetch('/api/pexels/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: q }),
+        body: JSON.stringify({ query: q, page }),
       })
       if (!res.ok) { setSearchError(true); return }
       const data = await res.json()
-      setPhotos(data.photos)
+      setPhotos(prev => page === 1 ? data.photos : [...prev, ...data.photos])
+      setHasMore(data.hasMore)
+      setCurrentPage(page)
     } catch {
       setSearchError(true)
     } finally {
       setSearching(false)
     }
+  }
+
+  function loadMore() {
+    doSearch(currentPage + 1)
   }
 
   function selectPhoto(photo: PexelsPhoto) {
@@ -148,6 +156,11 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
                   </button>
                 ))}
               </div>
+              {hasMore && (
+                <button type="button" className={styles.pickerLoadMore} onClick={loadMore} disabled={searching}>
+                  {searching ? 'Loading…' : 'Load more'}
+                </button>
+              )}
               <div className={styles.pickerCredit}>Click an image to use it · Photos from Pexels</div>
             </>
           )}

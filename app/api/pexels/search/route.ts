@@ -10,6 +10,7 @@ interface PexelsPhoto {
 
 interface PexelsResponse {
   photos: PexelsPhoto[]
+  next_page?: string
 }
 
 export async function POST(req: NextRequest) {
@@ -31,13 +32,14 @@ export async function POST(req: NextRequest) {
   if (query.length > 200) {
     return NextResponse.json({ error: 'query too long' }, { status: 400 })
   }
+  const page = typeof body.page === 'number' && body.page >= 1 ? Math.floor(body.page) : 1
 
   const apiKey = process.env.PEXELS_API_KEY
   if (!apiKey) {
     return NextResponse.json({ error: 'Pexels not configured' }, { status: 503 })
   }
 
-  const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=15&orientation=landscape`
+  const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=15&orientation=landscape&page=${page}`
   const res = await fetch(url, { headers: { Authorization: apiKey } })
 
   if (!res.ok) {
@@ -53,5 +55,5 @@ export async function POST(req: NextRequest) {
     photographer: p.photographer,
   }))
 
-  return NextResponse.json({ photos })
+  return NextResponse.json({ photos, hasMore: !!data.next_page })
 }

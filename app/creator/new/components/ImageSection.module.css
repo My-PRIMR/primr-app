@@ -196,6 +196,29 @@
   display: block;
 }
 
+.pickerLoadMore {
+  display: block;
+  width: 100%;
+  padding: 0.35rem 0;
+  margin-top: 0.5rem;
+  background: none;
+  border: 1px solid var(--border-mid, rgba(15, 17, 23, 0.18));
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.pickerLoadMore:hover:not(:disabled) {
+  background: var(--surface-raised, rgba(15, 17, 23, 0.04));
+  color: var(--ink);
+}
+
+.pickerLoadMore:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .pickerCredit {
   font-size: 9px;
   color: var(--ink-muted);

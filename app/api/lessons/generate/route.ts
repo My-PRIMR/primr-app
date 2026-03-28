@@ -4,11 +4,13 @@ import { extractJSON } from '@/lib/extract-json'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { getSession } from '@/session'
-import { resolveModel, DEFAULT_MODEL, modelById, canSelectModels } from '@/lib/models'
+import { resolveModel, DEFAULT_MODEL, modelById, canSelectModels, canUseRichIngest, canUsePexels } from '@/lib/models'
 import { checkCap, logUsage } from '@/lib/usage-cap'
 import { BLOCK_SCHEMAS } from '@/lib/block-schemas'
+import { enrichWithPexelsImages, IMAGE_PROMPT_SNIPPET } from '@/lib/pexels'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline } from '@/types/outline'
+import type { DocumentAsset } from '@/types/outline'
 
 const client = new Anthropic()
 
@@ -63,6 +65,19 @@ function slugify(text: string): string {
     .replace(/-+/g, '-')
 }
 
+function buildAssetPromptSection(assets: DocumentAsset[]): string {
+  if (!assets.length) return ''
+  const lines = assets.map(a => {
+    if (a.type === 'video') return `- [video] Page ${a.page}: ${a.url} — YouTube video found in document`
+    if (a.type === 'image') return `- [image] Page ${a.page}: ${a.url} — visual content extracted from page`
+    return `- [link] Page ${a.page}: ${a.url} — hyperlink found in document`
+  })
+  return `\n\nDocument assets — incorporate these into the lesson where contextually appropriate:\n` +
+    `For video assets, create a 'media' block with the url field set to the YouTube URL.\n` +
+    `For image assets, use the URL as the 'src' in a hero or narrative block's image field.\n` +
+    lines.join('\n')
+}
+
 export async function POST(req: NextRequest) {
   const session = await getSession()
   const userId = session?.user?.id ?? null
@@ -73,13 +88,21 @@ export async function POST(req: NextRequest) {
   const documentText: string | undefined = body.documentText
   const model: string | undefined = body.model
   const passiveLesson: boolean | undefined = body.passiveLesson
+  const includeImages: boolean | undefined = body.includeImages
+  const documentAssets: DocumentAsset[] | undefined = body.documentAssets
 
-  if (!outline && !topic?.trim()) {
-    return NextResponse.json({ error: 'outline or topic is required' }, { status: 400 })
+  if (!outline && !topic?.trim() && !documentText?.trim()) {
+    return NextResponse.json({ error: 'A topic or source document is required.' }, { status: 400 })
   }
 
   const internalRole = session?.user?.internalRole ?? null
   const productRole = session?.user?.productRole ?? null
+  const plan = session?.user?.plan ?? null
+
+  if (documentAssets?.length && !canUseRichIngest(plan, internalRole)) {
+    return NextResponse.json({ error: 'Document asset ingestion requires Creator Pro or higher.' }, { status: 403 })
+  }
+
   let resolvedModel = modelById(DEFAULT_MODEL)!
   if (model) {
     const m = resolveModel(model, internalRole, productRole)
@@ -103,13 +126,22 @@ export async function POST(req: NextRequest) {
     systemPrompt += '\n\nIMPORTANT: Generate only informational content blocks (text, heading, narrative, step-navigator, hero, callout). Do not include any interactive or assessment blocks (quiz, flashcard, fill-in-the-blank, or similar). The lesson should be purely informational — no questions, no exercises.'
   }
 
+  if (includeImages && canSelectModels(internalRole, productRole)) {
+    systemPrompt += IMAGE_PROMPT_SNIPPET
+  }
+
   const userMessage = isOutlineBased
     ? [
         topic?.trim() ? `Creator's intent: ${topic}\n` : '',
         `Generate a Primr lesson from this outline:\n\n${JSON.stringify(outline, null, 2)}`,
         documentText?.trim() ? `\n\nSource document (use this as the primary source for all content, facts, and questions — do not invent material not present in this document):\n"""\n${documentText}\n"""` : '',
+        documentAssets?.length ? buildAssetPromptSection(documentAssets) : '',
       ].join('')
-    : `Create a Primr lesson about: ${topic}`
+    : [
+        topic?.trim() ? `Create a Primr lesson about: ${topic}` : 'Create a Primr lesson from the provided source document.',
+        documentText?.trim() ? `\n\nSource document (use this as the primary source for all content, facts, and questions — do not invent material not present in this document):\n"""\n${documentText}\n"""` : '',
+        documentAssets?.length ? buildAssetPromptSection(documentAssets) : '',
+      ].join('')
 
   console.log(`[generate] mode: ${isOutlineBased ? 'outline' : 'legacy'}`)
   const t0 = Date.now()
@@ -133,6 +165,10 @@ export async function POST(req: NextRequest) {
     console.error(`[generate] JSON parse failed:`, err)
     console.error(`[generate] full raw response:\n${raw}`)
     return NextResponse.json({ error: 'AI returned invalid JSON', raw }, { status: 500 })
+  }
+
+  if (includeImages && canUsePexels(plan, internalRole)) {
+    await enrichWithPexelsImages(manifest, process.env.PEXELS_API_KEY ?? '')
   }
 
   const slug = `${slugify(manifest.slug || manifest.title)}-${Math.random().toString(36).slice(2, 7)}`

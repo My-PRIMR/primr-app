@@ -87,6 +87,8 @@ interface LessonBlockEditorProps {
   rightPanelExtra?: React.ReactNode
   /** Left px offset for the fixed paginator bar (use sidebar width when a sidebar is present). */
   paginatorLeft?: number
+  /** Whether the current user can use Pexels image search. */
+  canPexels?: boolean
 }
 
 export default function LessonBlockEditor({
@@ -95,6 +97,7 @@ export default function LessonBlockEditor({
   panelMode = 'float',
   rightPanelExtra,
   paginatorLeft = 0,
+  canPexels = false,
 }: LessonBlockEditorProps) {
   const [manifest, setManifest] = useState(initialManifest)
   const [currentBlock, setCurrentBlock] = useState(0)
@@ -191,6 +194,7 @@ export default function LessonBlockEditor({
       onUpdate={handleBlockUpdate}
       onClose={() => setPanelOpen(false)}
       headerAction={dockToggle}
+      canPexels={canPexels}
     />
   ) : null
 

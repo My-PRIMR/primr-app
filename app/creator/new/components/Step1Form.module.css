@@ -291,3 +291,33 @@
   cursor: pointer;
   accent-color: var(--accent, #6B5CE7);
 }
+
+.enrichmentOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.enrichmentNote {
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.proNote {
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin-bottom: 10px;
+}
+
+.proBadge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 4px;
+  padding: 1px 6px;
+  vertical-align: middle;
+}

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { LessonManifest } from '@/types/outline'
 import type { FullCourseTree } from '@/types/course'
 import LessonBlockEditor from '../../../components/LessonBlockEditor'
+import { canUsePexels } from '@/lib/models'
 import styles from './CourseEditClient.module.css'
 
 type LessonStatus = { generationStatus: string; lessonId: string | null }
@@ -37,7 +38,8 @@ function statusIcon(status: string): StatusIcon {
   }
 }
 
-export default function CourseEditClient({ course }: { course: FullCourseTree }) {
+export default function CourseEditClient({ course, plan, internalRole }: { course: FullCourseTree; plan: string; internalRole: string | null }) {
+  const canPexels = canUsePexels(plan, internalRole)
   // ── Course title editing ───────────────────────────────────────────────────
   const [courseTitle, setCourseTitle] = useState(course.title)
 
@@ -377,6 +379,7 @@ export default function CourseEditClient({ course }: { course: FullCourseTree })
             initialManifest={manifest}
             panelMode="dock"
             paginatorLeft={240}
+            canPexels={canPexels}
           />
         )}
       </div>

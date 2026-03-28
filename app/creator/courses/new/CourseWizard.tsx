@@ -69,6 +69,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL)
   const [passiveLesson, setPassiveLesson] = useState(false)
   const [skipHero, setSkipHero] = useState(false)
+  const [includeImages, setIncludeImages] = useState(false)
   const [notifyEmail, setNotifyEmail] = useState(true)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -222,7 +223,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
       const genRes = await fetch(`/api/courses/${courseId}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tree: filteredTree, model: selectedModel, passiveLesson, skipHero, notifyEmail }),
+        body: JSON.stringify({ tree: filteredTree, model: selectedModel, passiveLesson, skipHero, notifyEmail, includeImages }),
       })
       const genData = await genRes.json()
       if (!genRes.ok) {
@@ -511,6 +512,15 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
                     className={styles.checkbox}
                   />
                   Informational only (no interactive content)
+                </label>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={includeImages}
+                    onChange={e => setIncludeImages(e.target.checked)}
+                    className={styles.checkbox}
+                  />
+                  Include images (Pexels)
                 </label>
               </div>
             )}

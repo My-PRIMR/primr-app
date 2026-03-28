@@ -3,9 +3,7 @@ import styles from './StepIndicator.module.css'
 
 const STEPS: { label: string }[] = [
   { label: 'Details' },
-  { label: 'Outline' },
-  { label: 'Review' },
-  { label: 'Generate' },
+  { label: 'Generating' },
   { label: 'Preview' },
 ]
 

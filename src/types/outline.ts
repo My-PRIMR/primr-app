@@ -17,7 +17,17 @@ export interface LessonOutline {
   blocks: OutlineBlock[]
 }
 
-export type WizardStep = 1 | 2 | 3 | 4 | 5
+/** An asset extracted from a source document during ingestion */
+export interface DocumentAsset {
+  /** 'image' = uploaded to Cloudinary; 'video' = YouTube URL; 'link' = other hyperlink */
+  type: 'image' | 'video' | 'link'
+  url: string
+  /** 1-based page number where the asset was found */
+  page: number
+}
+
+/** Lesson wizard is now 3 steps: 1=form, 2=loading, 3=editor */
+export type WizardStep = 1 | 2 | 3
 
 export interface WizardState {
   step: WizardStep
@@ -31,9 +41,10 @@ export interface WizardState {
   structureSource: 'document' | 'video'
   documentText: string
   documentName: string
-  // Step 2-3 outline
-  outline: LessonOutline | null
-  // Step 4-5 result
+  documentAssets: DocumentAsset[]
+  extractImages: boolean
+  decodeQr: boolean
+  // Result
   lessonId: string | null
   manifest: LessonManifest | null
   // UI state
@@ -44,8 +55,6 @@ export interface WizardState {
 export type WizardAction =
   | { type: 'SET_FIELD'; field: keyof WizardState; value: unknown }
   | { type: 'SET_STEP'; step: WizardStep }
-  | { type: 'SET_OUTLINE'; outline: LessonOutline }
-  | { type: 'UPDATE_OUTLINE_BLOCKS'; blocks: OutlineBlock[] }
   | { type: 'SET_MANIFEST'; manifest: LessonManifest; lessonId: string }
   | { type: 'UPDATE_BLOCK'; index: number; block: BlockConfig }
   | { type: 'SET_STATUS'; status: WizardState['status']; error?: string }

@@ -54,12 +54,18 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: q, page }),
       })
-      if (!res.ok) { setSearchError(true); return }
+      if (!res.ok) {
+        const text = await res.text().catch(() => '')
+        console.error('[ImageSection] Pexels search error', res.status, text)
+        setSearchError(true)
+        return
+      }
       const data = await res.json()
       setPhotos(prev => page === 1 ? data.photos : [...prev, ...data.photos])
       setHasMore(data.hasMore)
       setCurrentPage(page)
-    } catch {
+    } catch (err) {
+      console.error('[ImageSection] Pexels fetch exception', err)
       setSearchError(true)
     } finally {
       setSearching(false)
@@ -142,7 +148,7 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
               // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
             />
-            <button type="button" className={styles.pickerSearchBtn} onClick={doSearch} disabled={searching}>
+            <button type="button" className={styles.pickerSearchBtn} onClick={() => doSearch()} disabled={searching}>
               {searching ? '…' : 'Search'}
             </button>
           </div>

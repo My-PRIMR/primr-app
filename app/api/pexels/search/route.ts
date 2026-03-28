@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
   const res = await fetch(url, { headers: { Authorization: apiKey } })
 
   if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    console.error('[pexels/search] Pexels API error', res.status, body)
     return NextResponse.json({ error: 'Pexels search failed' }, { status: 502 })
   }
 

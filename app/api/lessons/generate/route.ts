@@ -10,6 +10,7 @@ import { BLOCK_SCHEMAS } from '@/lib/block-schemas'
 import { enrichWithPexelsImages, IMAGE_PROMPT_SNIPPET } from '@/lib/pexels'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline } from '@/types/outline'
+import type { DocumentAsset } from '@/types/outline'
 
 const client = new Anthropic()
 
@@ -64,6 +65,19 @@ function slugify(text: string): string {
     .replace(/-+/g, '-')
 }
 
+function buildAssetPromptSection(assets: DocumentAsset[]): string {
+  if (!assets.length) return ''
+  const lines = assets.map(a => {
+    if (a.type === 'video') return `- [video] Page ${a.page}: ${a.url} — YouTube video found in document`
+    if (a.type === 'image') return `- [image] Page ${a.page}: ${a.url} — visual content extracted from page`
+    return `- [link] Page ${a.page}: ${a.url} — hyperlink found in document`
+  })
+  return `\n\nDocument assets — incorporate these into the lesson where contextually appropriate:\n` +
+    `For video assets, create a 'media' block with the url field set to the YouTube URL.\n` +
+    `For image assets, use the URL as the 'src' in a hero or narrative block's image field.\n` +
+    lines.join('\n')
+}
+
 export async function POST(req: NextRequest) {
   const session = await getSession()
   const userId = session?.user?.id ?? null
@@ -75,6 +89,7 @@ export async function POST(req: NextRequest) {
   const model: string | undefined = body.model
   const passiveLesson: boolean | undefined = body.passiveLesson
   const includeImages: boolean | undefined = body.includeImages
+  const documentAssets: DocumentAsset[] | undefined = body.documentAssets
 
   if (!outline && !topic?.trim()) {
     return NextResponse.json({ error: 'outline or topic is required' }, { status: 400 })
@@ -114,6 +129,7 @@ export async function POST(req: NextRequest) {
         topic?.trim() ? `Creator's intent: ${topic}\n` : '',
         `Generate a Primr lesson from this outline:\n\n${JSON.stringify(outline, null, 2)}`,
         documentText?.trim() ? `\n\nSource document (use this as the primary source for all content, facts, and questions — do not invent material not present in this document):\n"""\n${documentText}\n"""` : '',
+        documentAssets?.length ? buildAssetPromptSection(documentAssets) : '',
       ].join('')
     : `Create a Primr lesson about: ${topic}`
 

@@ -107,10 +107,11 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
             onBlur={handleUrlBlur}
           />
           {image?.src && (
-            <button className={styles.clearBtn} onClick={clearImage} title="Remove image">×</button>
+            <button type="button" className={styles.clearBtn} onClick={clearImage} title="Remove image">×</button>
           )}
           {canPexels && (
             <button
+              type="button"
               className={`${styles.searchBtn} ${pickerOpen ? styles.searchBtnActive : ''}`}
               onClick={() => setPickerOpen(v => !v)}
               title="Search Pexels"
@@ -133,7 +134,7 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
               // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
             />
-            <button className={styles.pickerSearchBtn} onClick={doSearch} disabled={searching}>
+            <button type="button" className={styles.pickerSearchBtn} onClick={doSearch} disabled={searching}>
               {searching ? '…' : 'Search'}
             </button>
           </div>
@@ -142,7 +143,7 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
             <>
               <div className={styles.pickerGrid}>
                 {photos.map(photo => (
-                  <button key={photo.id} className={styles.pickerPhoto} onClick={() => selectPhoto(photo)}>
+                  <button type="button" key={photo.id} className={styles.pickerPhoto} onClick={() => selectPhoto(photo)}>
                     <img src={photo.tiny} alt="" className={styles.pickerPhotoImg} />
                   </button>
                 ))}
@@ -187,6 +188,7 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
               <div className={styles.layoutButtons}>
                 {(['beside', 'above', 'below'] as ImageLayout[]).map(layout => (
                   <button
+                    type="button"
                     key={layout}
                     className={`${styles.layoutBtn} ${(image.layout ?? 'beside') === layout ? styles.layoutBtnActive : ''}`}
                     onClick={() => onChange({ ...image, layout })}

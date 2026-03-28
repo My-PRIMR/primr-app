@@ -28,6 +28,9 @@ export async function POST(req: NextRequest) {
   if (!query) {
     return NextResponse.json({ error: 'query is required' }, { status: 400 })
   }
+  if (query.length > 200) {
+    return NextResponse.json({ error: 'query too long' }, { status: 400 })
+  }
 
   const apiKey = process.env.PEXELS_API_KEY
   if (!apiKey) {

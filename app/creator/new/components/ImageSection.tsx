@@ -156,8 +156,8 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
           {photos.length > 0 && (
             <>
               <div className={styles.pickerGrid}>
-                {photos.map(photo => (
-                  <button type="button" key={photo.id} className={styles.pickerPhoto} onClick={() => selectPhoto(photo)}>
+                {photos.map((photo, i) => (
+                  <button type="button" key={`${photo.id}-${i}`} className={styles.pickerPhoto} onClick={() => selectPhoto(photo)}>
                     <img src={photo.tiny} alt="" className={styles.pickerPhotoImg} />
                   </button>
                 ))}

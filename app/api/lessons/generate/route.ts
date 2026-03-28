@@ -91,8 +91,8 @@ export async function POST(req: NextRequest) {
   const includeImages: boolean | undefined = body.includeImages
   const documentAssets: DocumentAsset[] | undefined = body.documentAssets
 
-  if (!outline && !topic?.trim()) {
-    return NextResponse.json({ error: 'outline or topic is required' }, { status: 400 })
+  if (!outline && !topic?.trim() && !documentText?.trim()) {
+    return NextResponse.json({ error: 'A topic or source document is required.' }, { status: 400 })
   }
 
   const internalRole = session?.user?.internalRole ?? null
@@ -137,7 +137,11 @@ export async function POST(req: NextRequest) {
         documentText?.trim() ? `\n\nSource document (use this as the primary source for all content, facts, and questions — do not invent material not present in this document):\n"""\n${documentText}\n"""` : '',
         documentAssets?.length ? buildAssetPromptSection(documentAssets) : '',
       ].join('')
-    : `Create a Primr lesson about: ${topic}`
+    : [
+        topic?.trim() ? `Create a Primr lesson about: ${topic}` : 'Create a Primr lesson from the provided source document.',
+        documentText?.trim() ? `\n\nSource document (use this as the primary source for all content, facts, and questions — do not invent material not present in this document):\n"""\n${documentText}\n"""` : '',
+        documentAssets?.length ? buildAssetPromptSection(documentAssets) : '',
+      ].join('')
 
   console.log(`[generate] mode: ${isOutlineBased ? 'outline' : 'legacy'}`)
   const t0 = Date.now()

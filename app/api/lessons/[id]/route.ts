@@ -17,6 +17,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     sourceVideoUrl: lesson.sourceVideoUrl,
     publishedAt: lesson.publishedAt,
     examEnforced: lesson.examEnforced,
+    showcase: lesson.showcase,
     createdAt: lesson.createdAt,
     updatedAt: lesson.updatedAt,
   })
@@ -28,9 +29,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params
   const body = await req.json()
-  const { manifest, examEnforced } = body
+  const { manifest, examEnforced, showcase } = body
 
-  if (!manifest && examEnforced === undefined) {
+  if (!manifest && examEnforced === undefined && showcase === undefined) {
     return NextResponse.json({ error: 'nothing to update' }, { status: 400 })
   }
 
@@ -46,6 +47,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const updateFields: Record<string, any> = { updatedAt: new Date() }
   if (manifest) { updateFields.manifest = manifest; updateFields.title = manifest.title }
   if (examEnforced !== undefined) updateFields.examEnforced = examEnforced
+  if (showcase !== undefined) updateFields.showcase = showcase
 
   const [updated] = await db.update(lessons)
     .set(updateFields)

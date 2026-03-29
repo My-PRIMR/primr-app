@@ -52,6 +52,8 @@ export const lessons = pgTable('lessons', {
   publishedAt:      timestamp('published_at'),
   /** When true and the lesson has an exam block, only exam score counts toward the final score */
   examEnforced:     boolean('exam_enforced').notNull().default(true),
+  /** When true, lesson is publicly accessible without authentication and renders without chrome */
+  showcase:         boolean('showcase').notNull().default(false),
   createdAt:        timestamp('created_at').notNull().defaultNow(),
   updatedAt:        timestamp('updated_at').notNull().defaultNow(),
 })

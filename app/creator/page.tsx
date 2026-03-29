@@ -53,6 +53,7 @@ export default async function DashboardPage() {
         updatedAt: lessons.updatedAt,
         publishedAt: lessons.publishedAt,
         examEnforced: lessons.examEnforced,
+        showcase: lessons.showcase,
       })
         .from(lessons)
         .leftJoin(chapterLessons, eq(chapterLessons.lessonId, lessons.id))
@@ -190,6 +191,7 @@ export default async function DashboardPage() {
                 updatedAt: l.updatedAt.toISOString(),
                 publishedAt: l.publishedAt?.toISOString() ?? null,
                 examEnforced: l.examEnforced,
+                showcase: l.showcase,
               }))}
               learner={{
                 courses: enrolledCourses,

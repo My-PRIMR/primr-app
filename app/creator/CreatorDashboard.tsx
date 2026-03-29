@@ -30,6 +30,7 @@ export type LessonItem = {
   updatedAt: string
   publishedAt: string | null
   examEnforced: boolean
+  showcase: boolean
 }
 
 type Tab = 'courses' | 'lessons' | 'learning'
@@ -116,6 +117,15 @@ export default function CreatorDashboard({
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ examEnforced: !current }),
+    })
+    router.refresh()
+  }
+
+  async function toggleShowcase(id: string, newValue: boolean) {
+    await fetch(`/api/lessons/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ showcase: newValue }),
     })
     router.refresh()
   }
@@ -329,13 +339,22 @@ export default function CreatorDashboard({
                     </button>
                   )}
                   {lesson.publishedAt && (
-                    <button
-                      className={lesson.examEnforced ? styles.examOnBtn : styles.examOffBtn}
-                      onClick={() => toggleExamEnforced(lesson.id, lesson.examEnforced)}
-                      title={lesson.examEnforced ? 'Exam is enforced — click to make it optional' : 'Exam is optional — click to enforce'}
-                    >
-                      {lesson.examEnforced ? 'Exam: on' : 'Exam: off'}
-                    </button>
+                    <>
+                      <button
+                        className={lesson.examEnforced ? styles.examOnBtn : styles.examOffBtn}
+                        onClick={() => toggleExamEnforced(lesson.id, lesson.examEnforced)}
+                        title={lesson.examEnforced ? 'Exam is enforced — click to make it optional' : 'Exam is optional — click to enforce'}
+                      >
+                        {lesson.examEnforced ? 'Exam: on' : 'Exam: off'}
+                      </button>
+                      <button
+                        className={lesson.showcase ? 'px-3 py-1 rounded-md text-sm bg-teal-100 text-teal-800' : 'px-3 py-1 rounded-md text-sm bg-gray-100 text-gray-600'}
+                        onClick={() => toggleShowcase(lesson.id, !lesson.showcase)}
+                        title={lesson.showcase ? 'Lesson is showcase-only — click to make it normal' : 'Lesson is normal — click to make it showcase-only'}
+                      >
+                        {lesson.showcase ? 'Showcase Only' : 'Normal'}
+                      </button>
+                    </>
                   )}
                   <InvitePanel type="lesson" id={lesson.id} />
                   <button className={styles.deleteBtn} onClick={() => deleteOne(lesson.id, 'lesson')}>Delete</button>
@@ -389,13 +408,22 @@ export default function CreatorDashboard({
                         </button>
                       )}
                       {lesson.publishedAt && (
-                        <button
-                          className={lesson.examEnforced ? styles.examOnBtn : styles.examOffBtn}
-                          onClick={() => toggleExamEnforced(lesson.id, lesson.examEnforced)}
-                          title={lesson.examEnforced ? 'Exam is enforced — click to make it optional' : 'Exam is optional — click to enforce'}
-                        >
-                          {lesson.examEnforced ? 'Exam: on' : 'Exam: off'}
-                        </button>
+                        <>
+                          <button
+                            className={lesson.examEnforced ? styles.examOnBtn : styles.examOffBtn}
+                            onClick={() => toggleExamEnforced(lesson.id, lesson.examEnforced)}
+                            title={lesson.examEnforced ? 'Exam is enforced — click to make it optional' : 'Exam is optional — click to enforce'}
+                          >
+                            {lesson.examEnforced ? 'Exam: on' : 'Exam: off'}
+                          </button>
+                          <button
+                            className={lesson.showcase ? 'px-3 py-1 rounded-md text-sm bg-teal-100 text-teal-800' : 'px-3 py-1 rounded-md text-sm bg-gray-100 text-gray-600'}
+                            onClick={() => toggleShowcase(lesson.id, !lesson.showcase)}
+                            title={lesson.showcase ? 'Lesson is showcase-only — click to make it normal' : 'Lesson is normal — click to make it showcase-only'}
+                          >
+                            {lesson.showcase ? 'Showcase Only' : 'Normal'}
+                          </button>
+                        </>
                       )}
                       <button className={styles.deleteBtn} onClick={() => deleteOne(lesson.id, 'lesson')}>Delete</button>
                     </div>

@@ -37,4 +37,5 @@ function redirectToLogin(req: NextRequest) {
 
 export const config = {
   matcher: ['/creator/:path*', '/my-primr/:path*', '/learn/:path*', '/api/invite/:path*', '/api/course-invite/:path*', '/api/pexels/:path*'],
+  // Note: /lesson is NOT protected — public showcase route
 }

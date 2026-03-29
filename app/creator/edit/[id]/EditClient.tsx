@@ -5,8 +5,20 @@ import Link from 'next/link'
 import type { LessonManifest } from '@/types/outline'
 import LessonBlockEditor from '../../components/LessonBlockEditor'
 import styles from './EditClient.module.css'
+import { canUsePexels } from '@/lib/models'
 
-export default function EditClient({ lessonId, manifest }: { lessonId: string; manifest: LessonManifest }) {
+export default function EditClient({
+  lessonId,
+  manifest,
+  plan,
+  internalRole,
+}: {
+  lessonId: string
+  manifest: LessonManifest
+  plan: string
+  internalRole: string | null
+}) {
+  const canPexels = canUsePexels(plan, internalRole)
   const [inviteEmails, setInviteEmails] = useState('')
   const [invitedList, setInvitedList] = useState<{ id: string; email: string }[]>([])
   const [inviteLink, setInviteLink] = useState<string | null>(null)
@@ -110,6 +122,7 @@ export default function EditClient({ lessonId, manifest }: { lessonId: string; m
           initialManifest={manifest}
           panelMode="float"
           rightPanelExtra={sharePanel}
+          canPexels={canPexels}
         />
       </div>
     </div>

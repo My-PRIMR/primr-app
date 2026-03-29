@@ -15,6 +15,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     manifest: lesson.manifest,
     generationStatus: lesson.generationStatus,
     sourceVideoUrl: lesson.sourceVideoUrl,
+    publishedAt: lesson.publishedAt,
+    examEnforced: lesson.examEnforced,
     createdAt: lesson.createdAt,
     updatedAt: lesson.updatedAt,
   })
@@ -25,10 +27,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  const { manifest } = await req.json()
+  const body = await req.json()
+  const { manifest, examEnforced } = body
 
-  if (!manifest) {
-    return NextResponse.json({ error: 'manifest is required' }, { status: 400 })
+  if (!manifest && examEnforced === undefined) {
+    return NextResponse.json({ error: 'nothing to update' }, { status: 400 })
   }
 
   const [existing] = await db.select().from(lessons).where(eq(lessons.id, id)).limit(1)
@@ -39,8 +42,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updateFields: Record<string, any> = { updatedAt: new Date() }
+  if (manifest) { updateFields.manifest = manifest; updateFields.title = manifest.title }
+  if (examEnforced !== undefined) updateFields.examEnforced = examEnforced
+
   const [updated] = await db.update(lessons)
-    .set({ manifest, title: manifest.title, updatedAt: new Date() })
+    .set(updateFields)
     .where(eq(lessons.id, id))
     .returning()
 

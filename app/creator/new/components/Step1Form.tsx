@@ -9,7 +9,7 @@ function isYouTubeUrl(val: string) {
 
 interface Props {
   state: WizardState
-  onField: (field: string, value: string) => void
+  onField: (field: string, value: unknown) => void
   onSubmit: () => void
   internalRole?: string | null
   productRole?: string | null
@@ -17,6 +17,12 @@ interface Props {
   onModelChange?: (model: string) => void
   passiveLesson?: boolean
   onPassiveLessonChange?: (v: boolean) => void
+  includeImages?: boolean
+  onIncludeImagesChange?: (v: boolean) => void
+  /** Whether the current user may use enriched PDF ingestion (pro+). */
+  canRichIngest?: boolean
+  /** 'lesson' (default) shows lesson-specific copy; 'course' for future use. */
+  mode?: 'lesson' | 'course'
 }
 
 const EXAMPLES = [
@@ -25,14 +31,21 @@ const EXAMPLES = [
   { title: 'Introduction to Git Branching', topic: 'Cover creating branches, merging, rebasing, and resolving merge conflicts in Git.' },
 ]
 
-export default function Step1Form({ state, onField, onSubmit, internalRole, productRole, selectedModel, onModelChange, passiveLesson, onPassiveLessonChange }: Props) {
+export default function Step1Form({
+  state, onField, onSubmit, internalRole, productRole,
+  selectedModel, onModelChange,
+  passiveLesson, onPassiveLessonChange,
+  includeImages, onIncludeImagesChange,
+  canRichIngest = false,
+  mode = 'lesson',
+}: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [extracting, setExtracting] = useState(false)
   const [extractError, setExtractError] = useState('')
 
   const videoUrlValid = isYouTubeUrl(state.videoUrl.trim())
   const hasSources = (state.videoUrl.trim() && videoUrlValid) || !!state.documentText
-  const canSubmit = state.title.trim() && (state.topic.trim() || hasSources)
+  const canSubmit = state.topic.trim() || hasSources
   const showStructureToggle = videoUrlValid && !!state.documentText
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -43,9 +56,14 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, prod
     setExtractError('')
     onField('documentText', '')
     onField('documentName', '')
+    onField('documentAssets', [])
 
     const form = new FormData()
     form.append('file', file)
+    if (canRichIngest && file.name.toLowerCase().endsWith('.pdf')) {
+      form.append('extractImages', String(state.extractImages))
+      form.append('decodeQr', String(state.decodeQr))
+    }
 
     const res = await fetch('/api/lessons/extract', { method: 'POST', body: form })
     const data = await res.json()
@@ -60,126 +78,59 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, prod
 
     onField('documentText', data.text)
     onField('documentName', file.name)
+    onField('documentAssets', data.assets ?? [])
   }
 
   function clearDocument() {
     onField('documentText', '')
     onField('documentName', '')
+    onField('documentAssets', [])
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const submitLabel = videoUrlValid
-    ? 'Generate lesson →'
-    : 'Generate outline →'
+  const submitLabel = mode === 'lesson' ? 'Generate lesson →' : 'Generate course →'
 
   return (
     <div className={styles.form}>
       <h1 className={styles.heading}>Create a new lesson</h1>
-      <p className={styles.sub}>Add a YouTube video, a document, or both — we'll generate a lesson for you to review.</p>
+      <p className={styles.sub}>Upload a document or add a YouTube video — we'll generate a lesson for you to review.</p>
 
-      <label className={styles.label}>
-        Lesson title
-        <input
-          className={styles.input}
-          placeholder="e.g. How TCP/IP Handshakes Work"
-          value={state.title}
-          onChange={e => onField('title', e.target.value)}
-          autoFocus
-        />
-      </label>
-
-      <label className={styles.label}>
-        What should this lesson teach? <span className={styles.optional}>{hasSources ? '(optional)' : ''}</span>
-        <textarea
-          className={styles.textarea}
-          placeholder={hasSources ? 'Additional context or focus areas (optional)…' : "Describe the topic, key concepts to cover, and any specific examples you'd like to include..."}
-          value={state.topic}
-          onChange={e => onField('topic', e.target.value)}
-          rows={4}
-        />
-      </label>
-
-      <div className={styles.row}>
-        <label className={styles.label}>
-          Audience
-          <input
-            className={styles.input}
-            placeholder="e.g. Junior developers"
-            value={state.audience}
-            onChange={e => onField('audience', e.target.value)}
-          />
-        </label>
-
-        <label className={styles.label}>
-          Level
-          <select
-            className={styles.select}
-            value={state.level}
-            onChange={e => onField('level', e.target.value)}
-          >
-            <option value="beginner">Beginner</option>
-            <option value="intermediate">Intermediate</option>
-            <option value="advanced">Advanced</option>
-          </select>
-        </label>
-      </div>
-
-      <label className={styles.label}>
-        Scope / focus <span className={styles.optional}>(optional)</span>
-        <input
-          className={styles.input}
-          placeholder="e.g. Focus on practical examples, skip theory"
-          value={state.scope}
-          onChange={e => onField('scope', e.target.value)}
-        />
-      </label>
-
-      {canSelectModels(internalRole, productRole) && (
-        <div className={styles.internalControls}>
-          <label className={styles.label}>
-            Model
-            <select
-              className={styles.select}
-              value={selectedModel}
-              onChange={e => onModelChange?.(e.target.value)}
-            >
-              <option value={MODELS.haiku.id}>Haiku (fast)</option>
-              <option value={MODELS.sonnet.id}>Sonnet (better)</option>
-              {canSelectOpus(internalRole, productRole) && (
-                <option value={MODELS.opus.id}>Opus (best)</option>
-              )}
-            </select>
-          </label>
-
-          <label className={styles.checkboxLabel}>
-            <input
-              type="checkbox"
-              checked={passiveLesson}
-              onChange={e => onPassiveLessonChange?.(e.target.checked)}
-              className={styles.checkbox}
-            />
-            Informational only (no interactive content)
-          </label>
-        </div>
-      )}
-
-      <label className={styles.label}>
-        YouTube URL <span className={styles.optional}>(optional)</span>
-        <input
-          className={styles.input}
-          type="url"
-          placeholder="https://www.youtube.com/watch?v=..."
-          value={state.videoUrl}
-          onChange={e => onField('videoUrl', e.target.value)}
-        />
-        {state.videoUrl.trim() && !videoUrlValid && (
-          <span className={styles.fieldError}>Please enter a valid YouTube URL</span>
-        )}
-      </label>
-
+      {/* ── Source document ── */}
       <div className={styles.uploadSection}>
         <span className={styles.uploadLabel}>Source document <span className={styles.optional}>(optional)</span></span>
         <p className={styles.uploadHint}>Upload a PDF, DOCX, TXT, or MD file — content will be used as source material.</p>
+
+        {!state.documentName && canRichIngest && (
+          <div className={styles.enrichmentOptions}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={state.extractImages}
+                onChange={e => onField('extractImages', e.target.checked)}
+                className={styles.checkbox}
+              />
+              Extract images from PDF
+              <span className={styles.enrichmentNote}> — adds ~30–60s</span>
+            </label>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={state.decodeQr}
+                onChange={e => onField('decodeQr', e.target.checked)}
+                className={styles.checkbox}
+              />
+              Decode QR codes (e.g. embedded YouTube videos)
+              <span className={styles.enrichmentNote}> — adds ~10s</span>
+            </label>
+          </div>
+        )}
+
+        {!state.documentName && !canRichIngest && (
+          <p className={styles.proNote}>
+            <span className={styles.proBadge}>Pro</span>
+            {' '}Upgrade to extract images and QR-encoded videos from PDFs.
+          </p>
+        )}
 
         {state.documentName ? (
           <div className={styles.uploadedFile}>
@@ -203,6 +154,22 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, prod
         {extractError && <p className={styles.error}>{extractError}</p>}
       </div>
 
+      {/* ── YouTube URL ── */}
+      <label className={styles.label}>
+        YouTube URL <span className={styles.optional}>(optional)</span>
+        <input
+          className={styles.input}
+          type="url"
+          placeholder="https://www.youtube.com/watch?v=..."
+          value={state.videoUrl}
+          onChange={e => onField('videoUrl', e.target.value)}
+        />
+        {state.videoUrl.trim() && !videoUrlValid && (
+          <span className={styles.fieldError}>Please enter a valid YouTube URL</span>
+        )}
+      </label>
+
+      {/* ── Structure source toggle (when both doc + video present) ── */}
       {showStructureToggle && (
         <div className={styles.uploadSection}>
           <span className={styles.uploadLabel}>Lesson structure source</span>
@@ -235,6 +202,107 @@ export default function Step1Form({ state, onField, onSubmit, internalRole, prod
         </div>
       )}
 
+      {/* ── Title ── */}
+      <label className={styles.label}>
+        Lesson title <span className={styles.optional}>(optional — inferred from content if blank)</span>
+        <input
+          className={styles.input}
+          placeholder="e.g. How TCP/IP Handshakes Work"
+          value={state.title}
+          onChange={e => onField('title', e.target.value)}
+        />
+      </label>
+
+      {/* ── Topic ── */}
+      <label className={styles.label}>
+        What should this lesson teach? <span className={styles.optional}>(optional)</span>
+        <textarea
+          className={styles.textarea}
+          placeholder={hasSources ? 'Additional context or focus areas…' : "Describe the topic, key concepts to cover, and any specific examples you'd like to include..."}
+          value={state.topic}
+          onChange={e => onField('topic', e.target.value)}
+          rows={4}
+        />
+      </label>
+
+      {/* ── Audience + Level ── */}
+      <div className={styles.row}>
+        <label className={styles.label}>
+          Audience <span className={styles.optional}>(optional)</span>
+          <input
+            className={styles.input}
+            placeholder="e.g. Junior developers"
+            value={state.audience}
+            onChange={e => onField('audience', e.target.value)}
+          />
+        </label>
+
+        <label className={styles.label}>
+          Level
+          <select
+            className={styles.select}
+            value={state.level}
+            onChange={e => onField('level', e.target.value)}
+          >
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </label>
+      </div>
+
+      {/* ── Scope ── */}
+      <label className={styles.label}>
+        Scope / focus <span className={styles.optional}>(optional)</span>
+        <input
+          className={styles.input}
+          placeholder="e.g. Focus on practical examples, skip theory"
+          value={state.scope}
+          onChange={e => onField('scope', e.target.value)}
+        />
+      </label>
+
+      {/* ── Internal controls ── */}
+      {canSelectModels(internalRole, productRole) && (
+        <div className={styles.internalControls}>
+          <label className={styles.label}>
+            Model
+            <select
+              className={styles.select}
+              value={selectedModel}
+              onChange={e => onModelChange?.(e.target.value)}
+            >
+              <option value={MODELS.haiku.id}>Haiku (fast)</option>
+              <option value={MODELS.sonnet.id}>Sonnet (better)</option>
+              {canSelectOpus(internalRole, productRole) && (
+                <option value={MODELS.opus.id}>Opus (best)</option>
+              )}
+            </select>
+          </label>
+
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={passiveLesson}
+              onChange={e => onPassiveLessonChange?.(e.target.checked)}
+              className={styles.checkbox}
+            />
+            Informational only (no interactive content)
+          </label>
+
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={includeImages}
+              onChange={e => onIncludeImagesChange?.(e.target.checked)}
+              className={styles.checkbox}
+            />
+            Include images (Pexels)
+          </label>
+        </div>
+      )}
+
+      {/* ── Examples ── */}
       <div className={styles.examples}>
         <span className={styles.examplesLabel}>Try an example:</span>
         {EXAMPLES.map(ex => (

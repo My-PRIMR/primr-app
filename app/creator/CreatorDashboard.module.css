@@ -1,0 +1,335 @@
+/* ── Tabs ────────────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  border-bottom: 1.5px solid var(--border);
+  margin-bottom: 1.25rem;
+}
+
+.tab {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 20px;
+  margin-bottom: -1.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: color 150ms, border-color 150ms;
+}
+.tab:hover { color: var(--ink-soft); }
+.tabActive {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+.tabBadge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 1px 7px;
+  line-height: 1.4;
+}
+.tabActive .tabBadge {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 36px;
+  margin-bottom: 0.75rem;
+}
+
+.toolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.deleteBulkBtn {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  background: #c0392b;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: opacity 150ms;
+}
+.deleteBulkBtn:hover:not(:disabled) { opacity: 0.88; }
+.deleteBulkBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.viewToggle {
+  display: flex;
+  gap: 3px;
+}
+
+.viewBtn {
+  font-size: 16px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-mid);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: background 120ms, color 120ms, border-color 120ms;
+}
+.viewBtn:hover { background: var(--surface-alt); color: var(--ink-soft); }
+.viewBtnActive {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ── Card grid ───────────────────────────────────────────────────────────── */
+.cardGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  transition: border-color 120ms, background 120ms;
+}
+.card:hover { border-color: var(--border-mid); }
+.cardSelected {
+  border-color: var(--accent) !important;
+  background: var(--accent-soft);
+}
+
+.checkWrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.check {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.cardBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardTitle {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardMeta {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  margin: 4px 0 0;
+}
+
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* ── List / table ────────────────────────────────────────────────────────── */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead th {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1.5px solid var(--border);
+}
+
+.thCheck { width: 40px; padding-left: 2px !important; }
+.thMeta { white-space: nowrap; }
+.thActions { text-align: right !important; padding-right: 0 !important; }
+
+.row { border-bottom: 1px solid var(--border); }
+.row:hover { background: var(--surface-alt); }
+.rowSelected { background: var(--accent-soft); }
+
+.tdCheck {
+  width: 40px;
+  padding: 12px 12px 12px 2px;
+  vertical-align: middle;
+}
+.tdCheck input { display: block; accent-color: var(--accent); }
+
+.tdTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  padding: 12px;
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.tdMeta {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  padding: 12px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.tdActions {
+  padding: 12px 0 12px 12px;
+  vertical-align: middle;
+}
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* ── Shared link / button styles ─────────────────────────────────────────── */
+.editLink {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+}
+.editLink:hover { opacity: 0.8; }
+
+.previewLink {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  text-decoration: none;
+}
+.previewLink:hover { color: var(--ink-soft); }
+
+.deleteBtn {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #c0392b;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.deleteBtn:hover { color: #a93226; }
+
+.publishBtn {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 5px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: opacity 150ms;
+  white-space: nowrap;
+}
+.publishBtn:hover:not(:disabled) { opacity: 0.85; }
+.publishBtn:disabled { opacity: 0.5; cursor: default; }
+
+.examOnBtn, .examOffBtn {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 5px;
+  padding: 4px 9px;
+  cursor: pointer;
+  transition: opacity 150ms;
+  white-space: nowrap;
+  border: 1px solid;
+}
+.examOnBtn {
+  color: var(--teal);
+  background: var(--teal-soft, #E0F5F1);
+  border-color: var(--teal);
+}
+.examOffBtn {
+  color: var(--ink-muted);
+  background: var(--surface-alt);
+  border-color: var(--border-mid);
+}
+.examOnBtn:hover, .examOffBtn:hover { opacity: 0.75; }
+
+.draftBadge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 7px;
+  vertical-align: middle;
+  letter-spacing: 0.02em;
+}
+
+/* ── Learning section label ──────────────────────────────────────────────── */
+.learningSection {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  margin: 1rem 0 0.25rem;
+}
+.learningSection:first-child { margin-top: 0; }
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.empty {
+  font-size: 15px;
+  color: var(--ink-muted);
+}
+
+.link {
+  color: var(--accent);
+  font-weight: 500;
+  text-decoration: none;
+}

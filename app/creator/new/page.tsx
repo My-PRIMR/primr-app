@@ -7,6 +7,7 @@ export default async function NewLessonPage() {
     <NewLessonWizard
       internalRole={session?.user?.internalRole ?? null}
       productRole={session?.user?.productRole ?? null}
+      plan={session?.user?.plan ?? null}
     />
   )
 }

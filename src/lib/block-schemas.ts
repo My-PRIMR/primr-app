@@ -83,6 +83,7 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
       body:    { type: 'string', required: true, description: 'markdown text, comprehensive enough that learners can answer all follow-up interactive blocks from it alone' },
       title:   { type: 'string', description: 'serif heading' },
       eyebrow: { type: 'string', description: 'small uppercase label' },
+      image:   { type: '{ src: string, alt?: string, caption?: string }', description: 'optional image rendered between title and body' },
     },
   },
   {
@@ -134,6 +135,24 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
       ...common,
     },
     notes: ['IMPORTANT: Each answer must be 1-2 words only, no punctuation.'],
+  },
+  {
+    type: 'exam',
+    isInteractive: true,
+    props: {
+      questions: {
+        type: 'Array<{ prompt: string, options: string[], correctIndex: number, explanation?: string }>',
+        required: true,
+        description: '5–12 comprehensive questions covering the full lesson. No immediate feedback — all revealed on submission.',
+      },
+      summary: { type: 'string', description: 'Brief 2–4 sentence recap of the lesson shown before questions begin' },
+      ...common,
+    },
+    notes: [
+      'IMPORTANT: Always place the exam block as the LAST block in the lesson.',
+      'Questions should span the full lesson content, not just recent sections.',
+      'Use 5–10 questions for short lessons, up to 12 for longer lessons.',
+    ],
   },
   // ── Phase 1 — Foundation ────────────────────────────────────────────────────
   {
@@ -333,3 +352,4 @@ export const PASSIVE_LESSON_OVERRIDE =
   `Forbidden block types: ${INTERACTIVE_TYPES.join(', ')} — all gate progress and require learner action. ` +
   `step-navigator is a slide-by-slide walkthrough with no gating or correct answers and must be used freely wherever sequential or step-based content fits. ` +
   `Do not avoid step-navigator — it is encouraged.`
+  

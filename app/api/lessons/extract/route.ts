@@ -1,14 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getSession } from '@/session'
+import { canUseRichIngest } from '@/lib/models'
+import { extractTextWithLiteParse, extractYouTubeUrls, enrichPdf } from './pipeline'
+import type { DocumentAsset } from '@/types/outline'
 
-const MAX_CHARS = 20000
+const MAX_CHARS = 20_000
 
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
     const file = formData.get('file') as File | null
+    if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+    const extractImages = formData.get('extractImages') === 'true'
+    const decodeQr = formData.get('decodeQr') === 'true'
+    const wantEnrichment = extractImages || decodeQr
+
+    // Auth-gate enrichment options
+    if (wantEnrichment) {
+      const session = await getSession()
+      const plan = session?.user?.plan ?? null
+      const internalRole = session?.user?.internalRole ?? null
+      if (!canUseRichIngest(plan, internalRole)) {
+        return NextResponse.json({ error: 'Rich ingestion requires Creator Pro or higher.' }, { status: 403 })
+      }
     }
 
     const name = file.name.toLowerCase()
@@ -16,12 +31,21 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(bytes)
 
     let text = ''
+    let assets: DocumentAsset[] = []
 
     if (name.endsWith('.pdf')) {
-      const { PDFParse } = await import('pdf-parse')
-      const parser = new PDFParse({ data: buffer })
-      const data = await parser.getText()
-      text = data.text
+      text = await extractTextWithLiteParse(buffer)
+
+      // Always extract hyperlinked YouTube URLs from text (free, no plan check needed)
+      const ytUrls = extractYouTubeUrls(text)
+      assets.push(...ytUrls.map((url): DocumentAsset => ({ type: 'video', url, page: 0 })))
+
+      // Enrichment: images and/or QR decoding
+      if (wantEnrichment) {
+        const slug = file.name.replace(/\.pdf$/i, '').replace(/\s+/g, '-').toLowerCase().slice(0, 40)
+        const enriched = await enrichPdf(buffer, { extractImages, decodeQr, slug })
+        assets.push(...enriched)
+      }
     } else if (name.endsWith('.docx')) {
       const mammoth = await import('mammoth')
       const result = await mammoth.extractRawText({ buffer })
@@ -37,7 +61,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Could not extract any text from the file.' }, { status: 422 })
     }
 
-    return NextResponse.json({ text: trimmed.slice(0, MAX_CHARS) })
+    return NextResponse.json({ text: trimmed.slice(0, MAX_CHARS), assets })
   } catch (err) {
     console.error('[extract] error:', err)
     return NextResponse.json({ error: 'Failed to process file.' }, { status: 500 })

@@ -32,7 +32,12 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
 
     const sendHeight = () => {
       if (contentRef.current) {
-        window.parent.postMessage({ type: 'lesson-height', height: contentRef.current.scrollHeight }, '*')
+        const height = contentRef.current.scrollHeight
+        // Only send if height changed by more than 10px
+        if (Math.abs(height - lastSentHeightRef.current) > 10) {
+          lastSentHeightRef.current = height
+          window.parent.postMessage({ type: 'lesson-height', height }, '*')
+        }
       }
     }
 

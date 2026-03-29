@@ -10,6 +10,7 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
   const [error, setError] = useState('')
   const [mode, setMode] = useState<LessonMode>('interactive')
   const submitted = useRef(false)
+  const contentRef = useRef<HTMLDivElement>(null)
 
   // Start a new attempt on mount
   useEffect(() => {
@@ -21,6 +22,21 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
       })
       .catch(() => setError('Could not start lesson.'))
   }, [lessonId])
+
+  // Send content height to parent iframe (for embedding in marketing site)
+  useEffect(() => {
+    if (!contentRef.current) return
+
+    const observer = new ResizeObserver(() => {
+      if (contentRef.current) {
+        const height = contentRef.current.scrollHeight
+        window.parent.postMessage({ type: 'lesson-height', height }, '*')
+      }
+    })
+
+    observer.observe(contentRef.current)
+    return () => observer.disconnect()
+  }, [])
 
   async function handleLessonComplete(payload: LessonCompletePayload) {
     if (!attemptId || submitted.current) return
@@ -42,7 +58,7 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
   }
 
   return (
-    <>
+    <div ref={contentRef}>
       {adminMode && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0.5rem 1.5rem 0', gap: '0.5rem' }}>
           <button
@@ -70,6 +86,6 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
         examEnforced={examEnforced}
         onLessonComplete={mode === 'interactive' ? handleLessonComplete : undefined}
       />
-    </>
+    </div>
   )
 }

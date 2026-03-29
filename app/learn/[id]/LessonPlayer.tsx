@@ -27,39 +27,32 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
   useEffect(() => {
     if (!contentRef.current) return
 
-    // Send height after content has rendered (using MutationObserver to detect when lesson is ready)
-    let lastHeight = 0
-    let debounceTimeout: NodeJS.Timeout
-
     const sendHeight = () => {
       if (contentRef.current) {
-        const height = contentRef.current.scrollHeight
-        if (height !== lastHeight && height > 0) {
-          lastHeight = height
-          window.parent.postMessage({ type: 'lesson-height', height }, '*')
-        }
+        window.parent.postMessage({ type: 'lesson-height', height: contentRef.current.scrollHeight }, '*')
       }
     }
 
-    // Send initial height after a short delay to let content render
-    const initialTimeout = setTimeout(sendHeight, 500)
-
-    // Watch for DOM changes (new blocks, images loading, etc.)
-    const observer = new MutationObserver(() => {
-      clearTimeout(debounceTimeout)
-      debounceTimeout = setTimeout(sendHeight, 200)
-    })
-
-    observer.observe(contentRef.current, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-    })
-
-    return () => {
-      clearTimeout(initialTimeout)
-      clearTimeout(debounceTimeout)
-      observer.disconnect()
+    // Wait for images to load before sending height
+    const images = contentRef.current.querySelectorAll('img')
+    if (images.length === 0) {
+      // No images, send height after a short delay
+      setTimeout(sendHeight, 100)
+    } else {
+      // Wait for all images to load
+      Promise.all(Array.from(images).map(img => {
+        return new Promise(resolve => {
+          if (img.complete) {
+            resolve(true)
+          } else {
+            img.addEventListener('load', () => resolve(true), { once: true })
+            img.addEventListener('error', () => resolve(false), { once: true })
+          }
+        })
+      })).then(() => {
+        // All images loaded, send height
+        setTimeout(sendHeight, 50)
+      })
     }
   }, [])
 

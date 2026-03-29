@@ -56,12 +56,12 @@ export default function PublicShowcaseLesson({
     })()
   }, [id, showParam])
 
-  if (!id || showParam !== 'true') {
-    notFound()
-  }
-
   if (loading) {
     return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading lesson...</div>
+  }
+
+  if (!id || showParam !== 'true') {
+    notFound()
   }
 
   if (error) {

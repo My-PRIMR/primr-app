@@ -27,15 +27,27 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
   useEffect(() => {
     if (!contentRef.current) return
 
+    let lastHeight = 0
+    let debounceTimeout: NodeJS.Timeout
+
     const observer = new ResizeObserver(() => {
       if (contentRef.current) {
-        const height = contentRef.current.scrollHeight
-        window.parent.postMessage({ type: 'lesson-height', height }, '*')
+        clearTimeout(debounceTimeout)
+        debounceTimeout = setTimeout(() => {
+          const height = contentRef.current!.scrollHeight
+          if (height !== lastHeight && height > 0) {
+            lastHeight = height
+            window.parent.postMessage({ type: 'lesson-height', height }, '*')
+          }
+        }, 100)
       }
     })
 
     observer.observe(contentRef.current)
-    return () => observer.disconnect()
+    return () => {
+      clearTimeout(debounceTimeout)
+      observer.disconnect()
+    }
   }, [])
 
   async function handleLessonComplete(payload: LessonCompletePayload) {

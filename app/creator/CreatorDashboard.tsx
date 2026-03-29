@@ -347,13 +347,14 @@ export default function CreatorDashboard({
                       >
                         {lesson.examEnforced ? 'Exam: on' : 'Exam: off'}
                       </button>
-                      <button
+                      {/* TODO: re-enable showcase toggle */}
+                      {/* <button
                         className={lesson.showcase ? styles.examOnBtn : styles.examOffBtn}
                         onClick={() => toggleShowcase(lesson.id, !lesson.showcase)}
                         title={lesson.showcase ? 'Lesson is showcase-only — click to make it normal' : 'Lesson is normal — click to make it showcase-only'}
                       >
                         {lesson.showcase ? 'Showcase Only' : 'Normal'}
-                      </button>
+                      </button> */}
                     </>
                   )}
                   <InvitePanel type="lesson" id={lesson.id} />
@@ -416,13 +417,14 @@ export default function CreatorDashboard({
                           >
                             {lesson.examEnforced ? 'Exam: on' : 'Exam: off'}
                           </button>
-                          <button
+                          {/* TODO: re-enable showcase toggle */}
+                          {/* <button
                             className={lesson.showcase ? styles.examOnBtn : styles.examOffBtn}
                             onClick={() => toggleShowcase(lesson.id, !lesson.showcase)}
                             title={lesson.showcase ? 'Lesson is showcase-only — click to make it normal' : 'Lesson is normal — click to make it showcase-only'}
                           >
                             {lesson.showcase ? 'Showcase Only' : 'Normal'}
-                          </button>
+                          </button> */}
                         </>
                       )}
                       <button className={styles.deleteBtn} onClick={() => deleteOne(lesson.id, 'lesson')}>Delete</button>

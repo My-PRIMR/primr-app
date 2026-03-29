@@ -11,7 +11,6 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
   const [mode, setMode] = useState<LessonMode>('interactive')
   const submitted = useRef(false)
   const contentRef = useRef<HTMLDivElement>(null)
-  const lastSentHeightRef = useRef(0)
 
   // Start a new attempt on mount
   useEffect(() => {
@@ -24,84 +23,6 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
       .catch(() => setError('Could not start lesson.'))
   }, [lessonId])
 
-  // Send content height to parent iframe (for embedding in marketing site)
-  useEffect(() => {
-    if (!contentRef.current) return
-
-    let debounceTimeout: NodeJS.Timeout
-
-    const sendHeight = () => {
-      if (contentRef.current) {
-        const height = contentRef.current.scrollHeight
-        // Only send if height changed by more than 10px
-        if (Math.abs(height - lastSentHeightRef.current) > 10) {
-          lastSentHeightRef.current = height
-          window.parent.postMessage({ type: 'lesson-height', height }, '*')
-        }
-      }
-    }
-
-    const debouncedSendHeight = () => {
-      clearTimeout(debounceTimeout)
-      debounceTimeout = setTimeout(sendHeight, 500)
-    }
-
-    // Send initial height after images load
-    const images = contentRef.current.querySelectorAll('img')
-    if (images.length === 0) {
-      setTimeout(sendHeight, 100)
-    } else {
-      Promise.all(Array.from(images).map(img => {
-        return new Promise(resolve => {
-          if (img.complete) {
-            resolve(true)
-          } else {
-            img.addEventListener('load', () => resolve(true), { once: true })
-            img.addEventListener('error', () => resolve(false), { once: true })
-          }
-        })
-      })).then(() => {
-        setTimeout(sendHeight, 50)
-      })
-    }
-
-    // Watch for block transitions and DOM changes (new images, content updates)
-    const observer = new MutationObserver(() => {
-      debouncedSendHeight()
-    })
-
-    observer.observe(contentRef.current, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      characterData: true,
-    })
-
-    // Also watch for image loads that happen after initial render
-    const imageObserver = new MutationObserver((mutations) => {
-      mutations.forEach(mutation => {
-        if (mutation.addedNodes.length) {
-          Array.from(mutation.addedNodes).forEach(node => {
-            if (node instanceof HTMLImageElement) {
-              node.addEventListener('load', debouncedSendHeight, { once: true })
-              node.addEventListener('error', debouncedSendHeight, { once: true })
-            }
-          })
-        }
-      })
-    })
-
-    imageObserver.observe(contentRef.current, {
-      childList: true,
-      subtree: true,
-    })
-
-    return () => {
-      clearTimeout(debounceTimeout)
-      observer.disconnect()
-      imageObserver.disconnect()
-    }
-  }, [])
 
   async function handleLessonComplete(payload: LessonCompletePayload) {
     if (!attemptId || submitted.current) return

@@ -14,7 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: `
           (function(){
             try {
-              var t = localStorage.getItem('primr-theme');
+              var t = localStorage.getItem('primr_theme_preference');
               if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
             } catch(e) {}
           })();

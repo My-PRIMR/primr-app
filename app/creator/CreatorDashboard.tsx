@@ -348,7 +348,7 @@ export default function CreatorDashboard({
                         {lesson.examEnforced ? 'Exam: on' : 'Exam: off'}
                       </button>
                       <button
-                        className={lesson.showcase ? 'px-3 py-1 rounded-md text-sm bg-teal-100 text-teal-800' : 'px-3 py-1 rounded-md text-sm bg-gray-100 text-gray-600'}
+                        className={lesson.showcase ? styles.examOnBtn : styles.examOffBtn}
                         onClick={() => toggleShowcase(lesson.id, !lesson.showcase)}
                         title={lesson.showcase ? 'Lesson is showcase-only — click to make it normal' : 'Lesson is normal — click to make it showcase-only'}
                       >
@@ -417,7 +417,7 @@ export default function CreatorDashboard({
                             {lesson.examEnforced ? 'Exam: on' : 'Exam: off'}
                           </button>
                           <button
-                            className={lesson.showcase ? 'px-3 py-1 rounded-md text-sm bg-teal-100 text-teal-800' : 'px-3 py-1 rounded-md text-sm bg-gray-100 text-gray-600'}
+                            className={lesson.showcase ? styles.examOnBtn : styles.examOffBtn}
                             onClick={() => toggleShowcase(lesson.id, !lesson.showcase)}
                             title={lesson.showcase ? 'Lesson is showcase-only — click to make it normal' : 'Lesson is normal — click to make it showcase-only'}
                           >

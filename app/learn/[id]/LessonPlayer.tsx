@@ -11,6 +11,7 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
   const [mode, setMode] = useState<LessonMode>('interactive')
   const submitted = useRef(false)
   const contentRef = useRef<HTMLDivElement>(null)
+  const lastSentHeightRef = useRef(0)
 
   // Start a new attempt on mount
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
 
     const debouncedSendHeight = () => {
       clearTimeout(debounceTimeout)
-      debounceTimeout = setTimeout(sendHeight, 100)
+      debounceTimeout = setTimeout(sendHeight, 500)
     }
 
     // Send initial height after images load

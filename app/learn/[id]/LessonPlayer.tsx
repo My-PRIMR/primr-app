@@ -116,6 +116,9 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
         blockResults: payload.blockResults,
       }),
     })
+
+    // Notify parent page (for embedded showcase lessons) that lesson is complete
+    window.parent.postMessage({ type: 'lesson-complete', score: payload.score }, '*')
   }
 
   if (error) {

@@ -27,24 +27,37 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
   useEffect(() => {
     if (!contentRef.current) return
 
+    // Send height after content has rendered (using MutationObserver to detect when lesson is ready)
     let lastHeight = 0
     let debounceTimeout: NodeJS.Timeout
 
-    const observer = new ResizeObserver(() => {
+    const sendHeight = () => {
       if (contentRef.current) {
-        clearTimeout(debounceTimeout)
-        debounceTimeout = setTimeout(() => {
-          const height = contentRef.current!.scrollHeight
-          if (height !== lastHeight && height > 0) {
-            lastHeight = height
-            window.parent.postMessage({ type: 'lesson-height', height }, '*')
-          }
-        }, 100)
+        const height = contentRef.current.scrollHeight
+        if (height !== lastHeight && height > 0) {
+          lastHeight = height
+          window.parent.postMessage({ type: 'lesson-height', height }, '*')
+        }
       }
+    }
+
+    // Send initial height after a short delay to let content render
+    const initialTimeout = setTimeout(sendHeight, 500)
+
+    // Watch for DOM changes (new blocks, images loading, etc.)
+    const observer = new MutationObserver(() => {
+      clearTimeout(debounceTimeout)
+      debounceTimeout = setTimeout(sendHeight, 200)
     })
 
-    observer.observe(contentRef.current)
+    observer.observe(contentRef.current, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+    })
+
     return () => {
+      clearTimeout(initialTimeout)
       clearTimeout(debounceTimeout)
       observer.disconnect()
     }

@@ -67,7 +67,7 @@ export const attemptStatusEnum = pgEnum('attempt_status', ['in_progress', 'compl
 export const lessonAttempts = pgTable('lesson_attempts', {
   id:          uuid('id').primaryKey().defaultRandom(),
   userId:      uuid('user_id').notNull().references(() => users.id),
-  lessonId:    uuid('lesson_id').notNull().references(() => lessons.id),
+  lessonId:    uuid('lesson_id').notNull().references(() => lessons.id, { onDelete: 'cascade' }),
   status:      attemptStatusEnum('status').notNull().default('in_progress'),
   score:       real('score'),
   totalBlocks: integer('total_blocks').notNull(),
@@ -83,7 +83,7 @@ export type NewLessonAttempt = typeof lessonAttempts.$inferInsert
 // ── Lesson Invitations ────────────────────────────────────────────────────
 export const lessonInvitations = pgTable('lesson_invitations', {
   id:        uuid('id').primaryKey().defaultRandom(),
-  lessonId:  uuid('lesson_id').notNull().references(() => lessons.id),
+  lessonId:  uuid('lesson_id').notNull().references(() => lessons.id, { onDelete: 'cascade' }),
   email:     text('email').notNull(),
   invitedBy: uuid('invited_by').notNull().references(() => users.id),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -97,7 +97,7 @@ export type NewLessonInvitation = typeof lessonInvitations.$inferInsert
 // ── Lesson Invite Links ───────────────────────────────────────────────────
 export const lessonInviteLinks = pgTable('lesson_invite_links', {
   id:        uuid('id').primaryKey().defaultRandom(),
-  lessonId:  uuid('lesson_id').notNull().references(() => lessons.id).unique(),
+  lessonId:  uuid('lesson_id').notNull().references(() => lessons.id, { onDelete: 'cascade' }).unique(),
   token:     text('token').notNull().unique(),
   createdBy: uuid('created_by').notNull().references(() => users.id),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -155,7 +155,7 @@ export const generationStatusEnum = pgEnum('generation_status', ['pending', 'gen
 export const chapterLessons = pgTable('chapter_lessons', {
   id:               uuid('id').primaryKey().defaultRandom(),
   chapterId:        uuid('chapter_id').notNull().references(() => courseChapters.id, { onDelete: 'cascade' }),
-  lessonId:         uuid('lesson_id').references(() => lessons.id),
+  lessonId:         uuid('lesson_id').references(() => lessons.id, { onDelete: 'cascade' }),
   title:            text('title').notNull(),
   position:         integer('position').notNull(),
   generationStatus: generationStatusEnum('generation_status').notNull().default('pending'),

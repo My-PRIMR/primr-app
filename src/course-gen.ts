@@ -3,7 +3,7 @@
  * Runs sequentially through all chapter_lessons, generating outline + lesson for each.
  */
 import Anthropic from '@anthropic-ai/sdk'
-import { extractJSON } from './extract-json'
+import { extractJSON } from './lib/extract-json'
 import { db } from '@/db'
 import { courses, chapterLessons, lessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'

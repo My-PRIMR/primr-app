@@ -405,12 +405,88 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
           <div className={styles.card}>
             <h1 className={styles.heading}>Create a course</h1>
 
-            <p className={styles.subheading}>Add a YouTube video, documents, or both — we'll extract the content and generate the course structure for you to review.</p>
+            <p className={styles.subheading}>Upload documents or add a YouTube video — we'll extract the content and generate the course structure for you to review.</p>
 
             {state.errorMessage && <div className={styles.error}>{state.errorMessage}</div>}
 
+            {/* ── Documents (primary) ── */}
             <div className={styles.formGroup}>
-              <label className={styles.label}>Course title</label>
+              <label className={styles.label}>Documents <span className={styles.optional}>(optional, up to 5)</span></label>
+              {state.stagedFiles.length > 0 && (
+                <div className={styles.fileList}>
+                  {state.stagedFiles.map((f, i) => (
+                    <div key={i} className={styles.fileRow}>
+                      <span className={styles.fileName}>📎 {f.name}</span>
+                      <button type="button" className={styles.deleteBtn} onClick={() => removeFile(i)}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {state.stagedFiles.length < 5 && (
+                <label className={styles.uploadBtn}>
+                  {state.stagedFiles.length === 0 ? 'Choose file(s)' : 'Add another file'}
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,.txt,.md"
+                    multiple
+                    className={styles.fileInput}
+                    onChange={handleFilePick}
+                  />
+                </label>
+              )}
+              <p className={styles.fieldHint}>PDF, DOCX, TXT, or MD. Combined with video transcript as source material.</p>
+            </div>
+
+            {/* ── YouTube URL ── */}
+            <div className={styles.formGroup}>
+              <label className={styles.label}>YouTube URL <span className={styles.optional}>(optional)</span></label>
+              <input
+                className={styles.input}
+                type="url"
+                placeholder="https://www.youtube.com/watch?v=..."
+                value={state.videoUrl}
+                onChange={e => set({ videoUrl: e.target.value, errorMessage: '' })}
+              />
+            </div>
+
+            {/* ── Structure source toggle ── */}
+            {state.stagedFiles.length > 0 && state.videoUrl.trim() && (
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Course structure source</label>
+                <div className={styles.structureToggle}>
+                  <label className={`${styles.structureOption} ${state.structureSource === 'document' ? styles.structureOptionActive : ''}`}>
+                    <input
+                      type="radio"
+                      name="structureSource"
+                      value="document"
+                      checked={state.structureSource === 'document'}
+                      onChange={() => set({ structureSource: 'document' })}
+                      className={styles.srOnly}
+                    />
+                    <span className={styles.structureOptionTitle}>Document</span>
+                    <span className={styles.structureOptionHint}>Structure from doc · video clips as supplements</span>
+                  </label>
+                  <label className={`${styles.structureOption} ${state.structureSource === 'video' ? styles.structureOptionActive : ''}`}>
+                    <input
+                      type="radio"
+                      name="structureSource"
+                      value="video"
+                      checked={state.structureSource === 'video'}
+                      onChange={() => set({ structureSource: 'video' })}
+                      className={styles.srOnly}
+                    />
+                    <span className={styles.structureOptionTitle}>Video</span>
+                    <span className={styles.structureOptionHint}>Structure from chapters · doc text as supplements</span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* ── Title ── */}
+            <div className={styles.formGroup}>
+              <label className={styles.label}>
+                Course title{hasSources && <span className={styles.optional}> (optional — inferred from sources if blank)</span>}
+              </label>
               <input
                 className={styles.input}
                 value={state.title}
@@ -419,6 +495,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
               />
             </div>
 
+            {/* ── Description ── */}
             <div className={styles.formGroup}>
               <label className={styles.label}>Description <span className={styles.optional}>(optional)</span></label>
               <textarea
@@ -430,9 +507,10 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
               />
             </div>
 
+            {/* ── Audience + Level ── */}
             <div className={styles.row}>
               <div className={styles.formGroup}>
-                <label className={styles.label}>Audience</label>
+                <label className={styles.label}>Audience <span className={styles.optional}>(optional)</span></label>
                 <input
                   className={styles.input}
                   value={state.audience}
@@ -454,6 +532,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
               </div>
             </div>
 
+            {/* ── Scope / Focus ── */}
             <div className={styles.formGroup}>
               <label className={styles.label}>
                 Scope / Focus <span className={styles.optional}>(optional)</span>
@@ -467,6 +546,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
               <p className={styles.fieldHint}>Narrows what Claude covers when structuring and generating lessons.</p>
             </div>
 
+            {/* ── Options ── */}
             <div className={styles.formGroup} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label className={styles.checkboxLabel}>
                 <input
@@ -522,76 +602,6 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
                   />
                   Include images (Pexels)
                 </label>
-              </div>
-            )}
-
-            <div className={styles.formGroup}>
-              <label className={styles.label}>YouTube URL <span className={styles.optional}>(optional)</span></label>
-              <input
-                className={styles.input}
-                type="url"
-                placeholder="https://www.youtube.com/watch?v=..."
-                value={state.videoUrl}
-                onChange={e => set({ videoUrl: e.target.value, errorMessage: '' })}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Documents <span className={styles.optional}>(optional, up to 5)</span></label>
-              {state.stagedFiles.length > 0 && (
-                <div className={styles.fileList}>
-                  {state.stagedFiles.map((f, i) => (
-                    <div key={i} className={styles.fileRow}>
-                      <span className={styles.fileName}>📎 {f.name}</span>
-                      <button type="button" className={styles.deleteBtn} onClick={() => removeFile(i)}>✕</button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {state.stagedFiles.length < 5 && (
-                <label className={styles.uploadBtn}>
-                  {state.stagedFiles.length === 0 ? 'Choose file(s)' : 'Add another file'}
-                  <input
-                    type="file"
-                    accept=".pdf,.docx,.txt,.md"
-                    multiple
-                    className={styles.fileInput}
-                    onChange={handleFilePick}
-                  />
-                </label>
-              )}
-              <p className={styles.fieldHint}>PDF, DOCX, TXT, or MD. Combined with video transcript as source material.</p>
-            </div>
-
-            {state.stagedFiles.length > 0 && state.videoUrl.trim() && (
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Course structure source</label>
-                <div className={styles.structureToggle}>
-                  <label className={`${styles.structureOption} ${state.structureSource === 'document' ? styles.structureOptionActive : ''}`}>
-                    <input
-                      type="radio"
-                      name="structureSource"
-                      value="document"
-                      checked={state.structureSource === 'document'}
-                      onChange={() => set({ structureSource: 'document' })}
-                      className={styles.srOnly}
-                    />
-                    <span className={styles.structureOptionTitle}>Document</span>
-                    <span className={styles.structureOptionHint}>Structure from doc · video clips as supplements</span>
-                  </label>
-                  <label className={`${styles.structureOption} ${state.structureSource === 'video' ? styles.structureOptionActive : ''}`}>
-                    <input
-                      type="radio"
-                      name="structureSource"
-                      value="video"
-                      checked={state.structureSource === 'video'}
-                      onChange={() => set({ structureSource: 'video' })}
-                      className={styles.srOnly}
-                    />
-                    <span className={styles.structureOptionTitle}>Video</span>
-                    <span className={styles.structureOptionHint}>Structure from chapters · doc text as supplements</span>
-                  </label>
-                </div>
               </div>
             )}
 

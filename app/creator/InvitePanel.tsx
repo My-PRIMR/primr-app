@@ -19,6 +19,7 @@ export function InvitePanel({ type, id }: InvitePanelProps) {
   const [invitees, setInvitees] = useState<Invitee[]>([])
   const [loading, setLoading] = useState(false)
   const [inviting, setInviting] = useState(false)
+  const [inviteError, setInviteError] = useState('')
   const [copied, setCopied] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
@@ -56,13 +57,20 @@ export function InvitePanel({ type, id }: InvitePanelProps) {
     const emails = emailInput.split(/[,\n\s]+/).map(e => e.trim()).filter(Boolean)
     if (emails.length === 0) return
     setInviting(true)
+    setInviteError('')
 
     if (type === 'lesson') {
-      await fetch(apiBase, {
+      const res = await fetch(apiBase, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ emails }),
       })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setInviteError(data.error ?? 'Failed to invite.')
+        setInviting(false)
+        return
+      }
     } else {
       for (const email of emails) {
         await fetch(apiBase, {
@@ -132,6 +140,8 @@ export function InvitePanel({ type, id }: InvitePanelProps) {
             <LinkIcon />
             {copied ? 'Copied!' : 'Copy invite link'}
           </button>
+
+          {inviteError && <p className={styles.error}>{inviteError}</p>}
 
           {loading ? (
             <p className={styles.empty}>Loading…</p>

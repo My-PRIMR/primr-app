@@ -5,7 +5,7 @@ import '@primr/components/dist/style.css'
 import { LessonRenderer } from '@primr/components'
 import type { LessonManifest, LessonCompletePayload, LessonMode } from '@primr/components'
 
-export default function LessonPlayer({ lessonId, manifest, adminMode }: { lessonId: string; manifest: LessonManifest; adminMode?: boolean }) {
+export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforced = true }: { lessonId: string; manifest: LessonManifest; adminMode?: boolean; examEnforced?: boolean }) {
   const [attemptId, setAttemptId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [mode, setMode] = useState<LessonMode>('interactive')
@@ -67,6 +67,7 @@ export default function LessonPlayer({ lessonId, manifest, adminMode }: { lesson
         manifest={manifest}
         adminMode={adminMode}
         mode={mode}
+        examEnforced={examEnforced}
         onLessonComplete={mode === 'interactive' ? handleLessonComplete : undefined}
       />
     </>

@@ -45,7 +45,7 @@ export default function Step1Form({
 
   const videoUrlValid = isYouTubeUrl(state.videoUrl.trim())
   const hasSources = (state.videoUrl.trim() && videoUrlValid) || !!state.documentText
-  const canSubmit = state.title.trim() && (state.topic.trim() || hasSources)
+  const canSubmit = state.topic.trim() || hasSources
   const showStructureToggle = videoUrlValid && !!state.documentText
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -93,33 +93,142 @@ export default function Step1Form({
   return (
     <div className={styles.form}>
       <h1 className={styles.heading}>Create a new lesson</h1>
-      <p className={styles.sub}>Add a YouTube video, a document, or both — we'll generate a lesson for you to review.</p>
+      <p className={styles.sub}>Upload a document or add a YouTube video — we'll generate a lesson for you to review.</p>
 
+      {/* ── Source document ── */}
+      <div className={styles.uploadSection}>
+        <span className={styles.uploadLabel}>Source document <span className={styles.optional}>(optional)</span></span>
+        <p className={styles.uploadHint}>Upload a PDF, DOCX, TXT, or MD file — content will be used as source material.</p>
+
+        {!state.documentName && canRichIngest && (
+          <div className={styles.enrichmentOptions}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={state.extractImages}
+                onChange={e => onField('extractImages', e.target.checked)}
+                className={styles.checkbox}
+              />
+              Extract images from PDF
+              <span className={styles.enrichmentNote}> — adds ~30–60s</span>
+            </label>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={state.decodeQr}
+                onChange={e => onField('decodeQr', e.target.checked)}
+                className={styles.checkbox}
+              />
+              Decode QR codes (e.g. embedded YouTube videos)
+              <span className={styles.enrichmentNote}> — adds ~10s</span>
+            </label>
+          </div>
+        )}
+
+        {!state.documentName && !canRichIngest && (
+          <p className={styles.proNote}>
+            <span className={styles.proBadge}>Pro</span>
+            {' '}Upgrade to extract images and QR-encoded videos from PDFs.
+          </p>
+        )}
+
+        {state.documentName ? (
+          <div className={styles.uploadedFile}>
+            <span className={styles.uploadedName}>{state.documentName}</span>
+            <button type="button" className={styles.clearFile} onClick={clearDocument}>Remove</button>
+          </div>
+        ) : (
+          <label className={styles.uploadBtn}>
+            {extracting ? 'Reading file…' : 'Choose file'}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.docx,.txt,.md"
+              className={styles.fileInput}
+              onChange={handleFile}
+              disabled={extracting}
+            />
+          </label>
+        )}
+
+        {extractError && <p className={styles.error}>{extractError}</p>}
+      </div>
+
+      {/* ── YouTube URL ── */}
       <label className={styles.label}>
-        Lesson title
+        YouTube URL <span className={styles.optional}>(optional)</span>
+        <input
+          className={styles.input}
+          type="url"
+          placeholder="https://www.youtube.com/watch?v=..."
+          value={state.videoUrl}
+          onChange={e => onField('videoUrl', e.target.value)}
+        />
+        {state.videoUrl.trim() && !videoUrlValid && (
+          <span className={styles.fieldError}>Please enter a valid YouTube URL</span>
+        )}
+      </label>
+
+      {/* ── Structure source toggle (when both doc + video present) ── */}
+      {showStructureToggle && (
+        <div className={styles.uploadSection}>
+          <span className={styles.uploadLabel}>Lesson structure source</span>
+          <div className={styles.structureToggle}>
+            <label className={`${styles.structureOption} ${state.structureSource === 'document' ? styles.structureOptionActive : ''}`}>
+              <input
+                type="radio"
+                name="structureSource"
+                value="document"
+                checked={state.structureSource === 'document'}
+                onChange={() => onField('structureSource', 'document')}
+                className={styles.srOnly}
+              />
+              <span className={styles.structureOptionTitle}>Document</span>
+              <span className={styles.structureOptionHint}>Structure from doc · video as supplement</span>
+            </label>
+            <label className={`${styles.structureOption} ${state.structureSource === 'video' ? styles.structureOptionActive : ''}`}>
+              <input
+                type="radio"
+                name="structureSource"
+                value="video"
+                checked={state.structureSource === 'video'}
+                onChange={() => onField('structureSource', 'video')}
+                className={styles.srOnly}
+              />
+              <span className={styles.structureOptionTitle}>Video</span>
+              <span className={styles.structureOptionHint}>Structure from video · doc text as supplement</span>
+            </label>
+          </div>
+        </div>
+      )}
+
+      {/* ── Title ── */}
+      <label className={styles.label}>
+        Lesson title <span className={styles.optional}>(optional — inferred from content if blank)</span>
         <input
           className={styles.input}
           placeholder="e.g. How TCP/IP Handshakes Work"
           value={state.title}
           onChange={e => onField('title', e.target.value)}
-          autoFocus
         />
       </label>
 
+      {/* ── Topic ── */}
       <label className={styles.label}>
-        What should this lesson teach? <span className={styles.optional}>{hasSources ? '(optional)' : ''}</span>
+        What should this lesson teach? <span className={styles.optional}>(optional)</span>
         <textarea
           className={styles.textarea}
-          placeholder={hasSources ? 'Additional context or focus areas (optional)…' : "Describe the topic, key concepts to cover, and any specific examples you'd like to include..."}
+          placeholder={hasSources ? 'Additional context or focus areas…' : "Describe the topic, key concepts to cover, and any specific examples you'd like to include..."}
           value={state.topic}
           onChange={e => onField('topic', e.target.value)}
           rows={4}
         />
       </label>
 
+      {/* ── Audience + Level ── */}
       <div className={styles.row}>
         <label className={styles.label}>
-          Audience
+          Audience <span className={styles.optional}>(optional)</span>
           <input
             className={styles.input}
             placeholder="e.g. Junior developers"
@@ -142,6 +251,7 @@ export default function Step1Form({
         </label>
       </div>
 
+      {/* ── Scope ── */}
       <label className={styles.label}>
         Scope / focus <span className={styles.optional}>(optional)</span>
         <input
@@ -152,6 +262,7 @@ export default function Step1Form({
         />
       </label>
 
+      {/* ── Internal controls ── */}
       {canSelectModels(internalRole, productRole) && (
         <div className={styles.internalControls}>
           <label className={styles.label}>
@@ -191,114 +302,7 @@ export default function Step1Form({
         </div>
       )}
 
-      <label className={styles.label}>
-        YouTube URL <span className={styles.optional}>(optional)</span>
-        <input
-          className={styles.input}
-          type="url"
-          placeholder="https://www.youtube.com/watch?v=..."
-          value={state.videoUrl}
-          onChange={e => onField('videoUrl', e.target.value)}
-        />
-        {state.videoUrl.trim() && !videoUrlValid && (
-          <span className={styles.fieldError}>Please enter a valid YouTube URL</span>
-        )}
-      </label>
-
-      <div className={styles.uploadSection}>
-        <span className={styles.uploadLabel}>
-          Source document <span className={styles.optional}>(optional)</span>
-        </span>
-        <p className={styles.uploadHint}>Upload a PDF, DOCX, TXT, or MD file — content will be used as source material.</p>
-
-        {/* Enrichment options — only for PDFs, only shown before file is uploaded */}
-        {!state.documentName && canRichIngest && (
-          <div className={styles.enrichmentOptions}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={state.extractImages}
-                onChange={e => onField('extractImages', e.target.checked)}
-                className={styles.checkbox}
-              />
-              Extract images from PDF
-              <span className={styles.enrichmentNote}> — adds ~30–60s</span>
-            </label>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={state.decodeQr}
-                onChange={e => onField('decodeQr', e.target.checked)}
-                className={styles.checkbox}
-              />
-              Decode QR codes (e.g. embedded YouTube videos)
-              <span className={styles.enrichmentNote}> — adds ~10s</span>
-            </label>
-          </div>
-        )}
-
-        {/* Pro upsell — shown when user is not on pro */}
-        {!state.documentName && !canRichIngest && (
-          <p className={styles.proNote}>
-            <span className={styles.proBadge}>Pro</span>
-            {' '}Upgrade to extract images and QR-encoded videos from PDFs.
-          </p>
-        )}
-
-        {state.documentName ? (
-          <div className={styles.uploadedFile}>
-            <span className={styles.uploadedName}>{state.documentName}</span>
-            <button type="button" className={styles.clearFile} onClick={clearDocument}>Remove</button>
-          </div>
-        ) : (
-          <label className={styles.uploadBtn}>
-            {extracting ? 'Reading file…' : 'Choose file'}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.docx,.txt,.md"
-              className={styles.fileInput}
-              onChange={handleFile}
-              disabled={extracting}
-            />
-          </label>
-        )}
-
-        {extractError && <p className={styles.error}>{extractError}</p>}
-      </div>
-
-      {showStructureToggle && (
-        <div className={styles.uploadSection}>
-          <span className={styles.uploadLabel}>Lesson structure source</span>
-          <div className={styles.structureToggle}>
-            <label className={`${styles.structureOption} ${state.structureSource === 'document' ? styles.structureOptionActive : ''}`}>
-              <input
-                type="radio"
-                name="structureSource"
-                value="document"
-                checked={state.structureSource === 'document'}
-                onChange={() => onField('structureSource', 'document')}
-                className={styles.srOnly}
-              />
-              <span className={styles.structureOptionTitle}>Document</span>
-              <span className={styles.structureOptionHint}>Structure from doc · video as supplement</span>
-            </label>
-            <label className={`${styles.structureOption} ${state.structureSource === 'video' ? styles.structureOptionActive : ''}`}>
-              <input
-                type="radio"
-                name="structureSource"
-                value="video"
-                checked={state.structureSource === 'video'}
-                onChange={() => onField('structureSource', 'video')}
-                className={styles.srOnly}
-              />
-              <span className={styles.structureOptionTitle}>Video</span>
-              <span className={styles.structureOptionHint}>Structure from video · doc text as supplement</span>
-            </label>
-          </div>
-        </div>
-      )}
-
+      {/* ── Examples ── */}
       <div className={styles.examples}>
         <span className={styles.examplesLabel}>Try an example:</span>
         {EXAMPLES.map(ex => (

@@ -106,6 +106,7 @@ export default function NewLessonWizard({ internalRole, productRole, plan }: New
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        title: state.title.trim() || undefined,
         topic: state.topic || undefined,
         documentText: state.documentText || undefined,
         documentAssets: state.documentAssets.length ? state.documentAssets : undefined,
@@ -116,8 +117,12 @@ export default function NewLessonWizard({ internalRole, productRole, plan }: New
     })
 
     if (!res.ok) {
-      const data = await res.json()
-      dispatch({ type: 'SET_STATUS', status: 'error', error: data.error || 'Failed to generate lesson.' })
+      let errorMsg = 'Failed to generate lesson.'
+      try {
+        const data = await res.json()
+        errorMsg = data.error || errorMsg
+      } catch {}
+      dispatch({ type: 'SET_STATUS', status: 'error', error: errorMsg })
       dispatch({ type: 'SET_STEP', step: 1 })
       return
     }

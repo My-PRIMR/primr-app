@@ -7,6 +7,7 @@ import {
   HotspotImage, DecisionTree, SortRank, CodeRunner, EquationRenderer, GraphPlotter,
   ReactionBalancer, AnatomyLabeler, CircuitBuilder, ChartBuilder, ClickableMap,
   SqlSandbox, AudioPronunciation, FinancialCalculator, StatuteAnnotator, PhysicsSimulator,
+  Exam,
 } from '@primr/components'
 import type { LessonManifest, BlockConfig, BlockType } from '@/types/outline'
 import BlockEditPanel from '../new/components/BlockEditPanel'
@@ -42,6 +43,7 @@ const BLOCK_COMPONENTS: Record<string, React.ComponentType<any>> = {
   'financial-calculator': FinancialCalculator,
   'statute-annotator':    StatuteAnnotator,
   'physics-simulator':    PhysicsSimulator,
+  'exam':                 Exam,
 }
 
 export const INSERTABLE_TYPES: { type: BlockType; label: string; icon: string }[] = [
@@ -65,7 +67,7 @@ export const EMPTY_PROPS: Record<BlockType, Record<string, unknown>> = {
 
 const BLOCK_LABEL: Record<string, string> = {
   hero: 'Hero', narrative: 'Narrative', 'step-navigator': 'Steps',
-  quiz: 'Quiz', flashcard: 'Cards', 'fill-in-the-blank': 'Fill', media: 'Video',
+  quiz: 'Quiz', flashcard: 'Cards', 'fill-in-the-blank': 'Fill', media: 'Video', exam: 'Exam',
 }
 
 function getBlockTitle(block: BlockConfig, index: number): string {
@@ -78,6 +80,8 @@ function getBlockTitle(block: BlockConfig, index: number): string {
 interface LessonBlockEditorProps {
   lessonId: string
   initialManifest: LessonManifest
+  /** ISO string if lesson is published, null/undefined if draft. */
+  initialPublishedAt?: string | null
   /**
    * 'float' (default) — panel appears as a floating overlay with a dock/undock toggle.
    * 'dock'            — panel is always a fixed right column.
@@ -94,6 +98,7 @@ interface LessonBlockEditorProps {
 export default function LessonBlockEditor({
   lessonId,
   initialManifest,
+  initialPublishedAt = null,
   panelMode = 'float',
   rightPanelExtra,
   paginatorLeft = 0,
@@ -106,6 +111,9 @@ export default function LessonBlockEditor({
   const [disabledIds, setDisabledIds] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [publishedAt, setPublishedAt] = useState<string | null>(initialPublishedAt)
+  const [publishing, setPublishing] = useState(false)
+  const [publishError, setPublishError] = useState('')
   const [activePage, setActivePage] = useState(0)
   const dotsRef = useRef<HTMLDivElement>(null)
 
@@ -165,6 +173,36 @@ export default function LessonBlockEditor({
     })
     setSaving(false)
     if (res.ok) setSaved(true)
+  }
+
+  async function publishLesson() {
+    setPublishing(true)
+    setPublishError('')
+    // Save current edits first, then publish
+    await saveLesson()
+    const res = await fetch(`/api/lessons/${lessonId}/publish`, { method: 'POST' })
+    const data = await res.json()
+    setPublishing(false)
+    if (!res.ok) {
+      setPublishError(data.error ?? 'Failed to publish lesson.')
+      return
+    }
+    setPublishedAt(data.publishedAt)
+    // Reload manifest so any local image URLs are replaced with Cloudinary URLs
+    const lessonRes = await fetch(`/api/lessons/${lessonId}`)
+    if (lessonRes.ok) {
+      const { manifest: updated } = await lessonRes.json()
+      setManifest(updated)
+    }
+  }
+
+  async function unpublishLesson() {
+    setPublishing(true)
+    setPublishError('')
+    const res = await fetch(`/api/lessons/${lessonId}/publish`, { method: 'DELETE' })
+    setPublishing(false)
+    if (res.ok) setPublishedAt(null)
+    else setPublishError('Failed to unpublish lesson.')
   }
 
   const Component = block ? BLOCK_COMPONENTS[block.type] : null
@@ -243,10 +281,30 @@ export default function LessonBlockEditor({
                 <button
                   className={`${styles.saveBtn} ${saved ? styles.saveBtnSaved : ''}`}
                   onClick={saveLesson}
-                  disabled={saving}
+                  disabled={saving || publishing}
                 >
                   {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save'}
                 </button>
+                {publishedAt ? (
+                  <button
+                    className={styles.unpublishBtn}
+                    onClick={unpublishLesson}
+                    disabled={publishing}
+                    title="Revert to draft — learners will no longer be able to access this lesson"
+                  >
+                    {publishing ? '…' : 'Unpublish'}
+                  </button>
+                ) : (
+                  <button
+                    className={styles.publishBtn}
+                    onClick={publishLesson}
+                    disabled={publishing}
+                    title="Save and publish — learners with access can view this lesson"
+                  >
+                    {publishing ? 'Publishing…' : 'Publish'}
+                  </button>
+                )}
+                {publishError && <span className={styles.publishError}>{publishError}</span>}
               </div>
 
               {/* Block render */}

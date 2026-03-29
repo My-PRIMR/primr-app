@@ -1,7 +1,7 @@
 import Link from 'next/link'
-import { InvitePanel } from './InvitePanel'
-import { DeleteItemButton } from './DeleteItemButton'
 import { UserMenu } from '../components/UserMenu'
+import CreatorDashboard from './CreatorDashboard'
+import LearnerDashboard from './LearnerDashboard'
 import { db } from '@/db'
 import {
   lessons, lessonInvitations, lessonAttempts,
@@ -51,6 +51,8 @@ export default async function DashboardPage() {
         slug: lessons.slug,
         createdAt: lessons.createdAt,
         updatedAt: lessons.updatedAt,
+        publishedAt: lessons.publishedAt,
+        examEnforced: lessons.examEnforced,
       })
         .from(lessons)
         .leftJoin(chapterLessons, eq(chapterLessons.lessonId, lessons.id))
@@ -133,20 +135,6 @@ export default async function DashboardPage() {
     statsMap = new Map(stats.map(s => [s.lessonId, s]))
   }
 
-  // ── Helpers ─────────────────────────────────────────────────────────────────
-  function creatorCourseLabel(status: string, doneCount: number, lessonCount: number) {
-    if (status === 'generating') return `Generating… ${doneCount}/${lessonCount} lessons`
-    if (status === 'ready' || status === 'published') return `${lessonCount} lessons`
-    return 'Draft'
-  }
-
-  function enrolledCourseLabel(doneCount: number, completedCount: number) {
-    if (doneCount === 0) return 'Not yet available'
-    if (completedCount === 0) return `${doneCount} lessons · Not started`
-    if (completedCount >= doneCount) return `${doneCount} lessons · Complete ✓`
-    return `${doneCount} lessons · ${completedCount} done`
-  }
-
   // ── Lesson history: all lessons the user has attempted ──────────────────────
   const lessonHistory = await db
     .select({
@@ -181,163 +169,61 @@ export default async function DashboardPage() {
 
       <div className={styles.content}>
 
-        {/* ── Creator: courses they made ── */}
+        {/* ── Creator: courses / lessons / learning tabs ── */}
         {isCreator && (
           <>
-            <h1 className={styles.heading}>Your courses</h1>
-            {createdCourses.length === 0 ? (
-              <p className={styles.empty}>
-                No courses yet. <Link href="/creator/courses/new" className={styles.link}>Create your first course →</Link>
-              </p>
-            ) : (
-              <div className={styles.list}>
-                {createdCourses.map(course => (
-                  <div key={course.id} className={styles.card}>
-                    <div className={styles.cardBody}>
-                      <h2 className={styles.cardTitle}>{course.title}</h2>
-                      <p className={styles.cardMeta}>
-                        {creatorCourseLabel(course.status, course.doneCount, course.lessonCount)}
-                        {' · '}
-                        Created {course.createdAt.toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className={styles.cardActions}>
-                      {course.status === 'generating' ? (
-                        <Link href={`/creator/courses/${course.id}/edit`} className={styles.editLink}>
-                          View progress →
-                        </Link>
-                      ) : (
-                        <>
-                          <Link href={`/creator/courses/${course.id}/edit`} className={styles.editLink}>Edit</Link>
-                          <Link href={`/learn/course/${course.id}`} className={styles.previewLink}>
-                            Preview as learner
-                          </Link>
-                          <InvitePanel type="course" id={course.id} />
-                          <DeleteItemButton kind="course" id={course.id} />
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <h1 className={styles.heading}>Your content</h1>
+            <CreatorDashboard
+              courses={createdCourses.map(c => ({
+                id: c.id,
+                title: c.title,
+                status: c.status,
+                createdAt: c.createdAt.toISOString(),
+                lessonCount: c.lessonCount,
+                doneCount: c.doneCount,
+              }))}
+              lessons={createdLessons.map(l => ({
+                id: l.id,
+                title: l.title,
+                slug: l.slug,
+                createdAt: l.createdAt.toISOString(),
+                updatedAt: l.updatedAt.toISOString(),
+                publishedAt: l.publishedAt?.toISOString() ?? null,
+                examEnforced: l.examEnforced,
+              }))}
+              learner={{
+                courses: enrolledCourses,
+                lessons: invitedLessons.map(l => ({
+                  id: l.id,
+                  title: l.title,
+                  slug: l.slug,
+                  attemptCount: statsMap.get(l.id)?.attemptCount ?? 0,
+                  bestScore: statsMap.get(l.id)?.bestScore ?? null,
+                  lastAttempt: statsMap.get(l.id)?.lastAttempt ?? null,
+                })),
+                history: lessonHistory,
+              }}
+            />
           </>
         )}
 
-        {/* ── Creator: standalone lessons ── */}
-        {isCreator && (
+        {/* ── Pure learner: enrolled courses, assigned lessons, history ── */}
+        {!isCreator && (enrolledCourses.length > 0 || invitedLessons.length > 0 || lessonHistory.length > 0) && (
           <>
-            <h1 className={styles.heading} style={createdCourses.length > 0 ? { marginTop: '2.5rem' } : undefined}>
-              Your lessons
-            </h1>
-            {createdLessons.length === 0 ? (
-              <p className={styles.empty}>
-                No lessons yet. <Link href="/creator/new" className={styles.link}>Create your first one →</Link>
-              </p>
-            ) : (
-              <div className={styles.list}>
-                {createdLessons.map(lesson => (
-                  <div key={lesson.id} className={styles.card}>
-                    <div className={styles.cardBody}>
-                      <h2 className={styles.cardTitle}>{lesson.title}</h2>
-                      <p className={styles.cardMeta}>
-                        Created {lesson.createdAt.toLocaleDateString()} · Updated {lesson.updatedAt.toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className={styles.cardActions}>
-                      <Link href={`/creator/edit/${lesson.id}`} className={styles.editLink}>Edit</Link>
-                      <Link href={`/creator/preview/${lesson.id}`} className={styles.previewLink}>Preview</Link>
-                      <Link href={`/learn/${lesson.id}`} className={styles.previewLink}>Take lesson</Link>
-                      <InvitePanel type="lesson" id={lesson.id} />
-                      <DeleteItemButton kind="lesson" id={lesson.id} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* ── Learner: enrolled courses ── */}
-        {enrolledCourses.length > 0 && (
-          <>
-            <h1 className={styles.heading} style={isCreator ? { marginTop: '2.5rem' } : undefined}>
-              {isCreator ? 'Courses assigned to you' : 'Your courses'}
-            </h1>
-            <div className={styles.list}>
-              {enrolledCourses.map(course => {
-                const allDone = course.doneCount > 0 && course.completedCount >= course.doneCount
-                const started = course.completedCount > 0
-                return (
-                  <div key={course.id} className={styles.card}>
-                    <div className={styles.cardBody}>
-                      <h2 className={styles.cardTitle}>{course.title}</h2>
-                      <p className={styles.cardMeta}>{enrolledCourseLabel(course.doneCount, course.completedCount)}</p>
-                    </div>
-                    <div className={styles.cardActions}>
-                      <Link href={`/learn/course/${course.id}`} className={styles.editLink}>
-                        {allDone ? 'Review' : started ? 'Continue' : 'Start'}
-                      </Link>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </>
-        )}
-
-        {/* ── Learner: individually assigned lessons ── */}
-        {invitedLessons.length > 0 && (
-          <>
-            <h1 className={styles.heading} style={(isCreator || enrolledCourses.length > 0) ? { marginTop: '2.5rem' } : undefined}>
-              {isCreator ? 'Lessons assigned to you' : enrolledCourses.length > 0 ? 'Assigned lessons' : 'Your lessons'}
-            </h1>
-            <div className={styles.list}>
-              {invitedLessons.map(lesson => {
-                const stat = statsMap.get(lesson.id)
-                return (
-                  <div key={lesson.id} className={styles.card}>
-                    <div className={styles.cardBody}>
-                      <h2 className={styles.cardTitle}>{lesson.title}</h2>
-                      <p className={styles.cardMeta}>
-                        {stat
-                          ? `${stat.attemptCount} attempt${stat.attemptCount !== 1 ? 's' : ''}${stat.bestScore != null ? ` · Best: ${Math.round(stat.bestScore * 100)}%` : ''}${stat.lastAttempt ? ` · Last: ${new Date(stat.lastAttempt).toLocaleDateString()}` : ''}`
-                          : 'Not started'}
-                      </p>
-                    </div>
-                    <div className={styles.cardActions}>
-                      <Link href={`/learn/${lesson.id}`} className={styles.editLink}>Take lesson</Link>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </>
-        )}
-
-        {/* ── Lesson history ── */}
-        {lessonHistory.length > 0 && (
-          <>
-            <h1 className={styles.heading} style={{ marginTop: '2.5rem' }}>
-              Lessons taken
-            </h1>
-            <div className={styles.list}>
-              {lessonHistory.map(lesson => (
-                <div key={lesson.id} className={styles.card}>
-                  <div className={styles.cardBody}>
-                    <h2 className={styles.cardTitle}>{lesson.title}</h2>
-                    <p className={styles.cardMeta}>
-                      {lesson.attemptCount} attempt{lesson.attemptCount !== 1 ? 's' : ''}
-                      {lesson.bestScore != null ? ` · Best: ${Math.round(lesson.bestScore * 100)}%` : ''}
-                      {lesson.lastAttempt ? ` · Last: ${new Date(lesson.lastAttempt).toLocaleDateString()}` : ''}
-                    </p>
-                  </div>
-                  <div className={styles.cardActions}>
-                    <Link href={`/learn/${lesson.id}`} className={styles.previewLink}>Retake</Link>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <h1 className={styles.heading}>Your courses &amp; lessons</h1>
+            <LearnerDashboard
+              courses={enrolledCourses}
+              lessons={invitedLessons.map(l => ({
+                id: l.id,
+                title: l.title,
+                slug: l.slug,
+                attemptCount: statsMap.get(l.id)?.attemptCount ?? 0,
+                bestScore: statsMap.get(l.id)?.bestScore ?? null,
+                lastAttempt: statsMap.get(l.id)?.lastAttempt ?? null,
+              }))}
+              history={lessonHistory}
+              isCreator={false}
+            />
           </>
         )}
 

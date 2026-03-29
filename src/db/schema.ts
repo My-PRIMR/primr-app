@@ -48,6 +48,10 @@ export const lessons = pgTable('lessons', {
   sourceVideoUrl:   text('source_video_url'),
   /** Null for manually-created lessons; set for video-ingested lessons */
   generationStatus: lessonGenerationStatusEnum('generation_status'),
+  /** Null = draft (only creator can access); set = published (accessible to invited/enrolled users) */
+  publishedAt:      timestamp('published_at'),
+  /** When true and the lesson has an exam block, only exam score counts toward the final score */
+  examEnforced:     boolean('exam_enforced').notNull().default(true),
   createdAt:        timestamp('created_at').notNull().defaultNow(),
   updatedAt:        timestamp('updated_at').notNull().defaultNow(),
 })

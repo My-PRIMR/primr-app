@@ -14,14 +14,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: `
           (function(){
             try {
+              // Check for theme parameter in URL (from parent iframe)
+              var urlParams = new URLSearchParams(window.location.search);
+              var paramTheme = urlParams.get('theme');
+
               // Migrate old key to new key
               var oldKey = localStorage.getItem('primr-theme');
               if (oldKey && !localStorage.getItem('primr_theme_preference')) {
                 localStorage.setItem('primr_theme_preference', oldKey);
                 localStorage.removeItem('primr-theme');
               }
-              // Apply stored theme
-              var t = localStorage.getItem('primr_theme_preference');
+
+              // Apply theme: prioritize URL param, then stored preference, then system
+              var t = paramTheme || localStorage.getItem('primr_theme_preference');
               if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
             } catch(e) {}
           })();

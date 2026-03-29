@@ -27,19 +27,24 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
   useEffect(() => {
     if (!contentRef.current) return
 
+    let debounceTimeout: NodeJS.Timeout
+
     const sendHeight = () => {
       if (contentRef.current) {
         window.parent.postMessage({ type: 'lesson-height', height: contentRef.current.scrollHeight }, '*')
       }
     }
 
-    // Wait for images to load before sending height
+    const debouncedSendHeight = () => {
+      clearTimeout(debounceTimeout)
+      debounceTimeout = setTimeout(sendHeight, 100)
+    }
+
+    // Send initial height after images load
     const images = contentRef.current.querySelectorAll('img')
     if (images.length === 0) {
-      // No images, send height after a short delay
       setTimeout(sendHeight, 100)
     } else {
-      // Wait for all images to load
       Promise.all(Array.from(images).map(img => {
         return new Promise(resolve => {
           if (img.complete) {
@@ -50,9 +55,45 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
           }
         })
       })).then(() => {
-        // All images loaded, send height
         setTimeout(sendHeight, 50)
       })
+    }
+
+    // Watch for block transitions and DOM changes (new images, content updates)
+    const observer = new MutationObserver(() => {
+      debouncedSendHeight()
+    })
+
+    observer.observe(contentRef.current, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      characterData: true,
+    })
+
+    // Also watch for image loads that happen after initial render
+    const imageObserver = new MutationObserver((mutations) => {
+      mutations.forEach(mutation => {
+        if (mutation.addedNodes.length) {
+          Array.from(mutation.addedNodes).forEach(node => {
+            if (node instanceof HTMLImageElement) {
+              node.addEventListener('load', debouncedSendHeight, { once: true })
+              node.addEventListener('error', debouncedSendHeight, { once: true })
+            }
+          })
+        }
+      })
+    })
+
+    imageObserver.observe(contentRef.current, {
+      childList: true,
+      subtree: true,
+    })
+
+    return () => {
+      clearTimeout(debounceTimeout)
+      observer.disconnect()
+      imageObserver.disconnect()
     }
   }, [])
 

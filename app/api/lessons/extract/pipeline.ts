@@ -8,12 +8,21 @@ const MIN_IMAGE_BYTES = 30_000
 // Maximum pages to screenshot per document to avoid excessive processing.
 const MAX_SCREENSHOT_PAGES = 30
 
+/**
+ * Create a guaranteed fresh copy of a Buffer for WASM consumption.
+ * WASM modules (like LiteParse) transfer (detach) the underlying ArrayBuffer,
+ * making the original unusable. ArrayBuffer.slice() always allocates new memory.
+ */
+function freshCopy(buf: Buffer): Uint8Array {
+  const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+  return new Uint8Array(ab)
+}
+
 /** Extract text from a PDF buffer using LiteParse (spatial layout preserved). */
 export async function extractTextWithLiteParse(pdfBuffer: Buffer): Promise<string> {
   const { LiteParse } = await import('@llamaindex/liteparse')
   const parser = new LiteParse({ ocrEnabled: false })
-  // Buffer.from(buffer) copies the data — prevents WASM from detaching our original
-  const result = await parser.parse(Buffer.from(pdfBuffer))
+  const result = await parser.parse(freshCopy(pdfBuffer))
   return result.text ?? ''
 }
 
@@ -54,8 +63,7 @@ export async function enrichPdf(
   // Screenshot up to MAX_SCREENSHOT_PAGES pages (1-indexed).
   // We don't know total page count upfront, so pass a page range and let LiteParse cap it.
   const pageRange = Array.from({ length: MAX_SCREENSHOT_PAGES }, (_, i) => i + 1)
-  // Buffer.from(buffer) copies the data — prevents WASM from detaching our original
-  const screenshots = await parser.screenshot(Buffer.from(pdfBuffer), pageRange)
+  const screenshots = await parser.screenshot(freshCopy(pdfBuffer), pageRange)
 
   let imageIndex = 0
   for (const shot of screenshots) {

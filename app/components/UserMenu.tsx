@@ -88,6 +88,12 @@ export function UserMenu({ userName, userEmail, role, internalRole, internalUrl 
             </>
           )}
 
+          {/* Security */}
+          <a href="/account/security" className={styles.logoutItem}>
+            Change password
+          </a>
+          <div className={styles.divider} />
+
           {/* Logout */}
           <a href="/api/auth/logout" className={styles.logoutItem}>
             Log out

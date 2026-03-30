@@ -8,36 +8,39 @@
   padding: 0.875rem 2rem;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(8px);
-  border-bottom: 0.5px solid rgba(15, 17, 23, 0.10);
+  border-bottom: 0.5px solid var(--border);
 }
 
 @media (prefers-color-scheme: dark) {
   .header {
     background: rgba(20, 21, 32, 0.92);
-    border-bottom-color: rgba(255, 255, 255, 0.08);
   }
+}
+
+:global(:root[data-theme="dark"]) .header {
+  background: rgba(20, 21, 32, 0.92);
+}
+
+:global(:root[data-theme="light"]) .header {
+  background: rgba(255, 255, 255, 0.92);
 }
 
 .wordmark {
   font-family: 'DM Serif Display', Georgia, serif;
   font-size: 20px;
   font-weight: 400;
-  color: #0F1117;
-}
-
-@media (prefers-color-scheme: dark) {
-  .wordmark { color: #EDEEF5; }
+  color: var(--ink);
 }
 
 .right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .user {
   font-size: 13px;
-  color: #8A8FA8;
+  color: var(--ink-muted);
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -47,15 +50,11 @@
 .logoutBtn {
   font-size: 13px;
   font-weight: 500;
-  color: #8A8FA8;
+  color: var(--ink-muted);
   background: none;
   border: none;
   cursor: pointer;
   padding: 0;
   transition: color 120ms;
 }
-.logoutBtn:hover { color: #0F1117; }
-
-@media (prefers-color-scheme: dark) {
-  .logoutBtn:hover { color: #EDEEF5; }
-}
+.logoutBtn:hover { color: var(--ink); }

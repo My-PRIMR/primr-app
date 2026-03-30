@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { UserMenu } from '../components/UserMenu'
+import { ThemeToggle } from '../components/ThemeToggle'
 import styles from './LearnHeader.module.css'
 
 interface LearnHeaderProps {
@@ -16,7 +17,10 @@ export default function LearnHeader({ userName, userEmail, role, internalRole, i
   return (
     <header className={styles.header}>
       <Link href={dashboardHref} className={styles.wordmark}>Primr</Link>
-      <UserMenu userName={userName} userEmail={userEmail} role={role} internalRole={internalRole} internalUrl={internalUrl} />
+      <div className={styles.right}>
+        <ThemeToggle />
+        <UserMenu userName={userName} userEmail={userEmail} role={role} internalRole={internalRole} internalUrl={internalUrl} />
+      </div>
     </header>
   )
 }

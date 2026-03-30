@@ -29,9 +29,8 @@ export async function extractTextWithLiteParse(pdfBuffer: Buffer): Promise<strin
     return result.text ?? ''
   } catch (err) {
     console.warn('[extract] LiteParse failed, falling back to pdf-parse:', err instanceof Error ? err.message : err)
-    const pdfParseModule = await import('pdf-parse')
-    const pdfParse = pdfParseModule.default ?? pdfParseModule
-    const result = await (pdfParse as (buf: Buffer) => Promise<{ text: string }>)(pdfBuffer)
+    const pdfParse = await import('pdf-parse') as unknown as (buf: Buffer) => Promise<{ text: string }>
+    const result = await pdfParse(pdfBuffer)
     return result.text ?? ''
   }
 }

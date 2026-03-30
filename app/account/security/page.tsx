@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import styles from './page.module.css'
 
 export default function SecurityPage() {
+  const router = useRouter()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -21,12 +22,20 @@ export default function SecurityPage() {
       return
     }
     setLoading(true)
-    const res = await fetch('/api/account/change-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ currentPassword, newPassword }),
-    })
-    const data = await res.json()
+    let res: Response
+    let data: { error?: string }
+    try {
+      res = await fetch('/api/account/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+      data = await res.json()
+    } catch {
+      setError('Something went wrong. Please try again.')
+      setLoading(false)
+      return
+    }
     setLoading(false)
     if (!res.ok) {
       setError(data.error ?? 'Something went wrong.')
@@ -83,7 +92,9 @@ export default function SecurityPage() {
           </button>
         </form>
         <p className={styles.back}>
-          <Link href="/my-primr" className={styles.backLink}>← Back</Link>
+          <button type="button" onClick={() => router.back()} className={styles.backLink}>
+            ← Back
+          </button>
         </p>
       </div>
     </main>

@@ -12,7 +12,8 @@ const MAX_SCREENSHOT_PAGES = 30
 export async function extractTextWithLiteParse(pdfBuffer: Buffer): Promise<string> {
   const { LiteParse } = await import('@llamaindex/liteparse')
   const parser = new LiteParse({ ocrEnabled: false })
-  const result = await parser.parse(pdfBuffer)
+  // Copy before passing — LiteParse WASM transfers (detaches) the ArrayBuffer
+  const result = await parser.parse(Buffer.from(new Uint8Array(pdfBuffer)))
   return result.text ?? ''
 }
 
@@ -53,7 +54,8 @@ export async function enrichPdf(
   // Screenshot up to MAX_SCREENSHOT_PAGES pages (1-indexed).
   // We don't know total page count upfront, so pass a page range and let LiteParse cap it.
   const pageRange = Array.from({ length: MAX_SCREENSHOT_PAGES }, (_, i) => i + 1)
-  const screenshots = await parser.screenshot(pdfBuffer, pageRange)
+  // Copy before passing — LiteParse WASM transfers (detaches) the ArrayBuffer
+  const screenshots = await parser.screenshot(Buffer.from(new Uint8Array(pdfBuffer)), pageRange)
 
   let imageIndex = 0
   for (const shot of screenshots) {

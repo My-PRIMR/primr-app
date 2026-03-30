@@ -18,12 +18,21 @@ function freshCopy(buf: Buffer): Uint8Array {
   return new Uint8Array(ab)
 }
 
-/** Extract text from a PDF buffer using LiteParse (spatial layout preserved). */
+/** Extract text from a PDF buffer using LiteParse with pdf-parse fallback. */
 export async function extractTextWithLiteParse(pdfBuffer: Buffer): Promise<string> {
-  const { LiteParse } = await import('@llamaindex/liteparse')
-  const parser = new LiteParse({ ocrEnabled: false })
-  const result = await parser.parse(freshCopy(pdfBuffer))
-  return result.text ?? ''
+  // Log first 8 bytes so we can verify the PDF header (%PDF-) in production logs
+  console.log('[extract] buffer header:', pdfBuffer.slice(0, 8).toString('hex'), 'length:', pdfBuffer.length)
+  try {
+    const { LiteParse } = await import('@llamaindex/liteparse')
+    const parser = new LiteParse({ ocrEnabled: false })
+    const result = await parser.parse(freshCopy(pdfBuffer))
+    return result.text ?? ''
+  } catch (err) {
+    console.warn('[extract] LiteParse failed, falling back to pdf-parse:', err instanceof Error ? err.message : err)
+    const pdfParse = (await import('pdf-parse')).default
+    const result = await pdfParse(pdfBuffer)
+    return result.text ?? ''
+  }
 }
 
 /** Find all YouTube URLs in a block of text (deduped). */

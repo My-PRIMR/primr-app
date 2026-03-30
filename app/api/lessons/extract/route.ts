@@ -28,8 +28,7 @@ export async function POST(req: NextRequest) {
 
     const name = file.name.toLowerCase()
     const bytes = await file.arrayBuffer()
-    // Copy via Uint8Array to prevent WASM (LiteParse) from detaching the ArrayBuffer
-    const buffer = Buffer.from(new Uint8Array(bytes))
+    const buffer = Buffer.from(bytes)
 
     let text = ''
     let assets: DocumentAsset[] = []

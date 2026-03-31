@@ -160,6 +160,7 @@ export default async function DashboardPage() {
         <div className={styles.navActions}>
           {isCreator && (
             <>
+              <Link href="/creator/progress" className={styles.newCourseBtn}>Progress</Link>
               <Link href="/creator/courses/new" className={styles.newCourseBtn}>+ New course</Link>
               <Link href="/creator/new" className={styles.newBtn}>+ New lesson</Link>
             </>

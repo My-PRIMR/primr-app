@@ -7,9 +7,10 @@ import { canAccessLesson } from '@/lib/lesson-access'
 import LessonPlayer from './LessonPlayer'
 import LearnHeader from '../LearnHeader'
 
-export default async function LearnPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ showcase?: string }> }) {
+export default async function LearnPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ embed?: string }> }) {
   const { id } = await params
-  const { showcase } = await searchParams
+  const { embed } = await searchParams
+  const isEmbed = embed === 'true'
 
   const lesson = await db.query.lessons.findFirst({
     where: eq(lessons.id, id),
@@ -37,8 +38,8 @@ export default async function LearnPage({ params, searchParams }: { params: Prom
 
   return (
     <>
-      {showcase !== 'true' && <LearnHeader userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} internalRole={session.user.internalRole} internalUrl={process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004'} />}
-      <LessonPlayer lessonId={lesson.id} manifest={lesson.manifest} adminMode={adminMode} examEnforced={lesson.examEnforced} hideHeader={showcase === 'true'} />
+      {!isEmbed && <LearnHeader userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} internalRole={session.user.internalRole} internalUrl={process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004'} />}
+      <LessonPlayer lessonId={lesson.id} manifest={lesson.manifest} adminMode={adminMode} examEnforced={lesson.examEnforced} isEmbed={isEmbed} />
     </>
   )
 }

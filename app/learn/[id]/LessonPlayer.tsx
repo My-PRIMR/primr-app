@@ -6,7 +6,7 @@ import { LessonRenderer } from '@primr/components'
 import type { LessonManifest, LessonCompletePayload, LessonMode } from '@primr/components'
 import { FeedbackOverlay } from './FeedbackOverlay'
 
-export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforced = true, hideHeader = false }: { lessonId: string; manifest: LessonManifest; adminMode?: boolean; examEnforced?: boolean; hideHeader?: boolean }) {
+export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforced = true, isEmbed = false }: { lessonId: string; manifest: LessonManifest; adminMode?: boolean; examEnforced?: boolean; isEmbed?: boolean }) {
   const [attemptId, setAttemptId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [mode, setMode] = useState<LessonMode>('interactive')
@@ -72,7 +72,7 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
 
   return (
     <div ref={contentRef} style={{ position: 'relative' }}>
-      {adminMode && (
+      {isEmbed && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0.5rem 1.5rem 0', gap: '0.5rem' }}>
           <button
             type="button"

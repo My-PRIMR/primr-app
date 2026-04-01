@@ -31,7 +31,7 @@ export default async function CourseResultsPage({
   const courseLessonRows = await db
     .select({
       lessonId: chapterLessons.lessonId,
-      lessonTitle: sql<string>`${chapterLessons.title}`,
+      lessonTitle: chapterLessons.title,
       sectionPosition: courseSections.position,
       chapterPosition: courseChapters.position,
       lessonPosition: chapterLessons.position,
@@ -76,6 +76,7 @@ export default async function CourseResultsPage({
       })
       .from(lessonAttempts)
       .innerJoin(users, eq(users.id, lessonAttempts.userId))
+      .innerJoin(courseEnrollments, sql`lower(${courseEnrollments.email}) = lower(${users.email}) and ${courseEnrollments.courseId} = ${id}`)
       .where(and(
         eq(lessonAttempts.status, 'completed'),
         inArray(lessonAttempts.lessonId, lessonIds),
@@ -194,7 +195,7 @@ export default async function CourseResultsPage({
         <div className={styles.statCard}>
           <div className={styles.statLabel}>Pass rate</div>
           <div className={styles.statValue}>{passRate != null ? `${Math.round(passRate * 100)}%` : '—'}</div>
-          <div className={styles.statSub}>≥ {Math.round(PASS_THRESHOLD * 100)}% avg = pass</div>
+          <div className={styles.statSub}>≥ {Math.round(PASS_THRESHOLD * 100)}% avg, scored only</div>
         </div>
       </div>
 

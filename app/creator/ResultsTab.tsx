@@ -109,7 +109,7 @@ export default function ResultsTab({ results }: { results: ResultsData }) {
 
       {/* Empty state */}
       {!hasAnything && (
-        <p className={styles.empty}>No lessons published yet.</p>
+        <p className={styles.empty}>No lessons or courses published yet.</p>
       )}
 
       {/* Courses section */}
@@ -184,7 +184,7 @@ export default function ResultsTab({ results }: { results: ResultsData }) {
                               ? 'var(--color-teal)'
                               : learner.status === 'in_progress'
                                 ? 'var(--color-amber)'
-                                : 'var(--color-ink-muted, #999)'
+                                : 'var(--ink-muted, #888)'
 
                             const pillClass = learner.status === 'completed'
                               ? styles.completedPillSub

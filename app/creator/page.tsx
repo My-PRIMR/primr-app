@@ -4,13 +4,13 @@ import CreatorDashboard from './CreatorDashboard'
 import LearnerDashboard from './LearnerDashboard'
 import { db } from '@/db'
 import {
-  lessons, lessonInvitations, lessonAttempts,
+  users, lessons, lessonInvitations, lessonAttempts,
   courses, courseSections, courseChapters, chapterLessons, courseEnrollments,
 } from '@/db/schema'
 import { desc, eq, and, sql, inArray, max, isNull, gte } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { fillDailyActivity } from '@/lib/results'
-import type { ResultsData } from './ResultsTab'
+import type { ResultsData, CourseResultRow, CourseLearnerRow } from './ResultsTab'
 import { redirect } from 'next/navigation'
 import styles from './page.module.css'
 
@@ -66,43 +66,167 @@ export default async function DashboardPage() {
   // ── Creator: results data ─────────────────────────────────────────────────
   let resultsData: ResultsData | undefined
 
-  if (isCreator && createdLessons.length > 0) {
+  if (isCreator && (createdLessons.length > 0 || createdCourses.length > 0)) {
     const createdLessonIds = createdLessons.map(l => l.id)
+    const courseIds = createdCourses.map(c => c.id)
 
-    // Per-lesson: invited counts
-    const invitedRows = await db
-      .select({
-        lessonId: lessonInvitations.lessonId,
-        count: sql<number>`count(*)::int`,
-      })
-      .from(lessonInvitations)
-      .where(inArray(lessonInvitations.lessonId, createdLessonIds))
-      .groupBy(lessonInvitations.lessonId)
+    // Course lesson IDs (for aggregate stats)
+    let courseLessonIds: string[] = []
+    if (courseIds.length > 0) {
+      const courseLessonRows = await db
+        .select({ lessonId: chapterLessons.lessonId })
+        .from(chapterLessons)
+        .innerJoin(courseChapters, eq(courseChapters.id, chapterLessons.chapterId))
+        .innerJoin(courseSections, eq(courseSections.id, courseChapters.sectionId))
+        .where(inArray(courseSections.courseId, courseIds))
+      courseLessonIds = courseLessonRows.map(r => r.lessonId).filter((id): id is string => id !== null)
+    }
+
+    const allLessonIds = [...createdLessonIds, ...courseLessonIds]
+
+    // Per-lesson: invited counts (standalone lessons only)
+    let invitedRows: { lessonId: string; count: number }[] = []
+    if (createdLessonIds.length > 0) {
+      invitedRows = await db
+        .select({
+          lessonId: lessonInvitations.lessonId,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(lessonInvitations)
+        .where(inArray(lessonInvitations.lessonId, createdLessonIds))
+        .groupBy(lessonInvitations.lessonId)
+    }
 
     const invitedMap = new Map(invitedRows.map(r => [r.lessonId, r.count]))
 
-    // Per-lesson: attempt stats (distinct users)
-    const attemptStatRows = await db
-      .select({
-        lessonId: lessonAttempts.lessonId,
-        startedCount: sql<number>`count(distinct ${lessonAttempts.userId})::int`,
-        completedCount: sql<number>`count(distinct case when ${lessonAttempts.status} = 'completed' then ${lessonAttempts.userId} end)::int`,
-        avgScore: sql<number | null>`avg(case when ${lessonAttempts.status} = 'completed' and ${lessonAttempts.score} is not null then ${lessonAttempts.score} end)`,
-      })
-      .from(lessonAttempts)
-      .where(inArray(lessonAttempts.lessonId, createdLessonIds))
-      .groupBy(lessonAttempts.lessonId)
+    // Per-lesson: attempt stats (distinct users) for standalone lessons
+    let attemptStatRows: {
+      lessonId: string
+      startedCount: number
+      completedCount: number
+      avgScore: number | null
+    }[] = []
+    if (createdLessonIds.length > 0) {
+      attemptStatRows = await db
+        .select({
+          lessonId: lessonAttempts.lessonId,
+          startedCount: sql<number>`count(distinct ${lessonAttempts.userId})::int`,
+          completedCount: sql<number>`count(distinct case when ${lessonAttempts.status} = 'completed' then ${lessonAttempts.userId} end)::int`,
+          avgScore: sql<number | null>`avg(case when ${lessonAttempts.status} = 'completed' and ${lessonAttempts.score} is not null then ${lessonAttempts.score} end)`,
+        })
+        .from(lessonAttempts)
+        .where(inArray(lessonAttempts.lessonId, createdLessonIds))
+        .groupBy(lessonAttempts.lessonId)
+    }
 
     const attemptStatMap = new Map(attemptStatRows.map(r => [r.lessonId, r]))
 
-    // Distinct learner count across all lessons
-    const totalLearnersRow = await db
-      .select({ count: sql<number>`count(distinct ${lessonAttempts.userId})::int` })
-      .from(lessonAttempts)
-      .where(inArray(lessonAttempts.lessonId, createdLessonIds))
-
     const overallStarted = attemptStatRows.reduce((sum, r) => sum + r.startedCount, 0)
     const overallCompleted = attemptStatRows.reduce((sum, r) => sum + r.completedCount, 0)
+
+    // Course enrollment rows
+    let enrolledEmails: string[] = []
+    let courseEnrollmentRows: { courseId: string; email: string; userName: string | null }[] = []
+    if (courseIds.length > 0) {
+      const rows = await db
+        .select({
+          courseId: courseEnrollments.courseId,
+          email: courseEnrollments.email,
+          userName: users.name,
+        })
+        .from(courseEnrollments)
+        .leftJoin(users, sql`lower(${users.email}) = lower(${courseEnrollments.email})`)
+        .where(inArray(courseEnrollments.courseId, courseIds))
+      courseEnrollmentRows = rows
+      enrolledEmails = rows.map(r => r.email.toLowerCase())
+    }
+
+    // Course completion rows
+    let courseCompletionRows: {
+      courseId: string
+      learnerEmail: string
+      completedCount: number
+      bestAvgScore: number | null
+      lastActivity: string | null
+    }[] = []
+    if (courseIds.length > 0) {
+      courseCompletionRows = await db
+        .select({
+          courseId: courseSections.courseId,
+          learnerEmail: sql<string>`lower(${users.email})`,
+          completedCount: sql<number>`count(distinct ${lessonAttempts.lessonId})::int`,
+          bestAvgScore: sql<number | null>`avg(${lessonAttempts.score})`,
+          lastActivity: sql<string | null>`max(${lessonAttempts.completedAt})::text`,
+        })
+        .from(lessonAttempts)
+        .innerJoin(users, eq(users.id, lessonAttempts.userId))
+        .innerJoin(chapterLessons, eq(chapterLessons.lessonId, lessonAttempts.lessonId))
+        .innerJoin(courseChapters, eq(courseChapters.id, chapterLessons.chapterId))
+        .innerJoin(courseSections, eq(courseSections.id, courseChapters.sectionId))
+        .where(and(
+          eq(lessonAttempts.status, 'completed'),
+          inArray(courseSections.courseId, courseIds),
+        ))
+        .groupBy(courseSections.courseId, sql`lower(${users.email})`)
+    }
+
+    // Build courseRows
+    const courseRows: CourseResultRow[] = createdCourses.map(course => {
+      const enrollees = courseEnrollmentRows.filter(e => e.courseId === course.id)
+      const completionMap = new Map(
+        courseCompletionRows
+          .filter(c => c.courseId === course.id)
+          .map(c => [c.learnerEmail, c])
+      )
+      const totalLessons = course.lessonCount
+
+      const learners: CourseLearnerRow[] = enrollees.map(e => {
+        const completion = completionMap.get(e.email.toLowerCase())
+        const completedLessons = completion?.completedCount ?? 0
+        const status: CourseLearnerRow['status'] =
+          completedLessons >= totalLessons && totalLessons > 0 ? 'completed'
+          : completedLessons > 0 ? 'in_progress'
+          : 'not_started'
+        return {
+          email: e.email,
+          name: e.userName,
+          completedLessons,
+          totalLessons,
+          avgScore: completion?.bestAvgScore ?? null,
+          status,
+          lastActivity: completion?.lastActivity ?? null,
+        }
+      })
+
+      // Sort: completed (avgScore desc) → in_progress → not_started
+      learners.sort((a, b) => {
+        const statusOrder = { completed: 0, in_progress: 1, not_started: 2 }
+        if (statusOrder[a.status] !== statusOrder[b.status]) return statusOrder[a.status] - statusOrder[b.status]
+        if (a.status === 'completed') return (b.avgScore ?? 0) - (a.avgScore ?? 0)
+        return 0
+      })
+
+      return {
+        id: course.id,
+        title: course.title,
+        totalLessons,
+        enrolledCount: enrollees.length,
+        completedCount: learners.filter(l => l.status === 'completed').length,
+        learners,
+      }
+    })
+
+    // Total learners: dedup by lowercased email across enrollments + lesson attempts
+    let lessonAttemptEmails: string[] = []
+    if (allLessonIds.length > 0) {
+      const emailRows = await db
+        .select({ email: sql<string>`lower(${users.email})` })
+        .from(lessonAttempts)
+        .innerJoin(users, eq(users.id, lessonAttempts.userId))
+        .where(inArray(lessonAttempts.lessonId, allLessonIds))
+      lessonAttemptEmails = emailRows.map(r => r.email)
+    }
+    const totalLearners = new Set([...enrolledEmails, ...lessonAttemptEmails]).size
 
     // Overall avg score and last activity across all completed attempts
     const overallScoreRow = await db
@@ -112,7 +236,7 @@ export default async function DashboardPage() {
       })
       .from(lessonAttempts)
       .where(and(
-        inArray(lessonAttempts.lessonId, createdLessonIds),
+        allLessonIds.length > 0 ? inArray(lessonAttempts.lessonId, allLessonIds) : sql`false`,
         eq(lessonAttempts.status, 'completed'),
       ))
 
@@ -127,14 +251,14 @@ export default async function DashboardPage() {
       })
       .from(lessonAttempts)
       .where(and(
-        inArray(lessonAttempts.lessonId, createdLessonIds),
+        allLessonIds.length > 0 ? inArray(lessonAttempts.lessonId, allLessonIds) : sql`false`,
         eq(lessonAttempts.status, 'completed'),
         gte(lessonAttempts.completedAt, thirtyDaysAgo),
       ))
       .groupBy(sql`date(${lessonAttempts.completedAt})`)
 
     resultsData = {
-      totalLearners: totalLearnersRow[0]?.count ?? 0,
+      totalLearners,
       startedCount: overallStarted,
       completedCount: overallCompleted,
       avgScore: overallScoreRow[0]?.avgScore ?? null,
@@ -151,7 +275,7 @@ export default async function DashboardPage() {
           avgScore: stat?.avgScore ?? null,
         }
       }),
-      courseRows: [],
+      courseRows,
     }
   }
 
@@ -254,8 +378,7 @@ export default async function DashboardPage() {
         <div className={styles.navActions}>
           {isCreator && (
             <>
-              <Link href="/creator/progress" className={styles.newCourseBtn}>Progress</Link>
-              <Link href="/creator/courses/new" className={styles.newCourseBtn}>+ New course</Link>
+<Link href="/creator/courses/new" className={styles.newCourseBtn}>+ New course</Link>
               <Link href="/creator/new" className={styles.newBtn}>+ New lesson</Link>
             </>
           )}

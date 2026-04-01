@@ -660,8 +660,8 @@
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 20px;
-  background: var(--teal-soft);
-  color: var(--teal);
+  background: var(--teal-soft, #e0f5f1);
+  color: var(--teal, #0a7c6e);
 }
 
 .inProgressPillSub {
@@ -670,8 +670,8 @@
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 20px;
-  background: var(--amber-soft);
-  color: var(--amber);
+  background: var(--amber-soft, #fef3c7);
+  color: var(--amber, #d97706);
 }
 
 .notStartedPillSub {

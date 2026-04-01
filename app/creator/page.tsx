@@ -5,7 +5,7 @@ import LearnerDashboard from './LearnerDashboard'
 import { db } from '@/db'
 import {
   users, lessons, lessonInvitations, lessonAttempts,
-  courses, courseSections, courseChapters, chapterLessons, courseEnrollments,
+  courses, courseSections, courseChapters, chapterLessons, courseEnrollments, lessonFeedback,
 } from '@/db/schema'
 import { desc, eq, and, sql, inArray, max, isNull, gte } from 'drizzle-orm'
 import { getSession } from '@/session'
@@ -120,6 +120,20 @@ export default async function DashboardPage() {
     }
 
     const attemptStatMap = new Map(attemptStatRows.map(r => [r.lessonId, r]))
+
+    // Per-lesson average rating
+    let ratingRows: { lessonId: string; avgRating: number | null }[] = []
+    if (createdLessonIds.length > 0) {
+      ratingRows = await db
+        .select({
+          lessonId: lessonFeedback.lessonId,
+          avgRating: sql<number | null>`avg(${lessonFeedback.rating})`,
+        })
+        .from(lessonFeedback)
+        .where(inArray(lessonFeedback.lessonId, createdLessonIds))
+        .groupBy(lessonFeedback.lessonId)
+    }
+    const ratingMap = new Map(ratingRows.map(r => [r.lessonId, r.avgRating]))
 
     // Overall started/completed counts across all lessons (standalone + course)
     let overallStarted = 0
@@ -286,6 +300,7 @@ export default async function DashboardPage() {
           startedCount: stat?.startedCount ?? 0,
           completedCount: stat?.completedCount ?? 0,
           avgScore: stat?.avgScore ?? null,
+          avgRating: ratingMap.get(l.id) ?? null,
         }
       }),
       courseRows,

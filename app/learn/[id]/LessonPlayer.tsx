@@ -1,15 +1,19 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import '@primr/components/dist/style.css'
 import { LessonRenderer } from '@primr/components'
 import type { LessonManifest, LessonCompletePayload, LessonMode } from '@primr/components'
+import { FeedbackOverlay } from './FeedbackOverlay'
 
 export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforced = true, hideHeader = false }: { lessonId: string; manifest: LessonManifest; adminMode?: boolean; examEnforced?: boolean; hideHeader?: boolean }) {
   const [attemptId, setAttemptId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [mode, setMode] = useState<LessonMode>('interactive')
+  const [phase, setPhase] = useState<'learning' | 'feedback' | 'complete'>('learning')
+  const [pendingFlags, setPendingFlags] = useState<Array<{ blockId: string; comment: string }>>([])
   const submitted = useRef(false)
+  const lastPayloadRef = useRef<LessonCompletePayload | null>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
   // Start a new attempt on mount
@@ -23,11 +27,14 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
       .catch(() => setError('Could not start lesson.'))
   }, [lessonId])
 
-
+  const handleBlockFlag = useCallback((blockId: string, comment: string) => {
+    setPendingFlags(prev => [...prev, { blockId, comment }])
+  }, [])
 
   async function handleLessonComplete(payload: LessonCompletePayload) {
     if (!attemptId || submitted.current) return
     submitted.current = true
+    lastPayloadRef.current = payload
 
     await fetch(`/api/attempts/${attemptId}`, {
       method: 'PATCH',
@@ -39,8 +46,24 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
       }),
     })
 
-    // Notify parent page (for embedded showcase lessons) that lesson is complete
-    window.parent.postMessage({ type: 'lesson-complete', score: payload.score }, '*')
+    setPhase('feedback')
+  }
+
+  async function handleFeedbackDone(rating: number | null, comment: string) {
+    if (attemptId) {
+      await fetch(`/api/lessons/${lessonId}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          attemptId,
+          rating: rating ?? undefined,
+          comment: comment || undefined,
+          blockFlags: pendingFlags,
+        }),
+      })
+    }
+    setPhase('complete')
+    window.parent.postMessage({ type: 'lesson-complete', score: lastPayloadRef.current?.score }, '*')
   }
 
   if (error) {
@@ -48,7 +71,7 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
   }
 
   return (
-    <div ref={contentRef}>
+    <div ref={contentRef} style={{ position: 'relative' }}>
       {adminMode && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0.5rem 1.5rem 0', gap: '0.5rem' }}>
           <button
@@ -75,7 +98,11 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
         mode={mode}
         examEnforced={examEnforced}
         onLessonComplete={mode === 'interactive' ? handleLessonComplete : undefined}
+        onBlockFlag={mode === 'interactive' && !adminMode ? handleBlockFlag : undefined}
       />
+      {phase === 'feedback' && (
+        <FeedbackOverlay onDone={handleFeedbackDone} />
+      )}
     </div>
   )
 }

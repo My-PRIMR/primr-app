@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, text, jsonb, timestamp, uuid, real, integer, boolean, unique } from 'drizzle-orm/pg-core'
+import { pgTable, pgEnum, text, jsonb, timestamp, uuid, real, integer, smallint, boolean, unique } from 'drizzle-orm/pg-core'
 import type { LessonManifest } from '@primr/components'
 
 // ── Enums ────────────────────────────────────────────────────────────────────
@@ -210,3 +210,17 @@ export const internalUsageLog = pgTable('internal_usage_log', {
 
 export type InternalUsageLog = typeof internalUsageLog.$inferSelect
 export type NewInternalUsageLog = typeof internalUsageLog.$inferInsert
+
+// ── Lesson Feedback ───────────────────────────────────────────────────────────
+export const lessonFeedback = pgTable('lesson_feedback', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  lessonId:    uuid('lesson_id').notNull().references(() => lessons.id, { onDelete: 'cascade' }),
+  attemptId:   uuid('attempt_id').notNull().references(() => lessonAttempts.id, { onDelete: 'cascade' }).unique(),
+  rating:      smallint('rating'),
+  comment:     text('comment'),
+  blockFlags:  jsonb('block_flags').$type<Array<{ blockId: string; comment: string }>>().notNull().default([]),
+  submittedAt: timestamp('submitted_at').notNull().defaultNow(),
+})
+
+export type LessonFeedback = typeof lessonFeedback.$inferSelect
+export type NewLessonFeedback = typeof lessonFeedback.$inferInsert

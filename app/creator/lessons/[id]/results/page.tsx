@@ -45,6 +45,7 @@ export default async function LessonResultsPage({
       score: lessonAttempts.score,
       blockResults: lessonAttempts.blockResults,
       startedAt: lessonAttempts.startedAt,
+      completedAt: lessonAttempts.completedAt,
     })
     .from(lessonAttempts)
     .innerJoin(users, eq(users.id, lessonAttempts.userId))
@@ -72,7 +73,7 @@ export default async function LessonResultsPage({
         attemptCount: 1,
         bestScore: row.status === 'completed' ? (row.score ?? null) : null,
         status: row.status === 'completed' ? 'completed' : 'in_progress',
-        lastActiveAt: row.startedAt,
+        lastActiveAt: row.completedAt ?? row.startedAt,
       })
     } else {
       existing.attemptCount++
@@ -82,8 +83,9 @@ export default async function LessonResultsPage({
           existing.bestScore = row.score
         }
       }
-      if (row.startedAt > existing.lastActiveAt) {
-        existing.lastActiveAt = row.startedAt
+      const rowActiveAt = row.completedAt ?? row.startedAt
+      if (rowActiveAt > existing.lastActiveAt) {
+        existing.lastActiveAt = rowActiveAt
       }
     }
   }
@@ -136,7 +138,7 @@ export default async function LessonResultsPage({
         />
       </nav>
 
-      <Link href="/creator" className={styles.backLink}>← Results</Link>
+      <Link href="/creator" className={styles.backLink}>← Back to lessons</Link>
 
       <h1 className={styles.pageTitle}>{lesson.title}</h1>
       <p className={styles.pageMeta}>{metaParts}</p>

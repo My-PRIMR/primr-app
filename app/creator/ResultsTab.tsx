@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import styles from './CreatorDashboard.module.css'
 
@@ -12,6 +13,25 @@ export type LessonResultRow = {
   avgScore: number | null
 }
 
+export type CourseLearnerRow = {
+  email: string
+  name: string | null
+  completedLessons: number
+  totalLessons: number
+  avgScore: number | null
+  status: 'completed' | 'in_progress' | 'not_started'
+  lastActivity: string | null
+}
+
+export type CourseResultRow = {
+  id: string
+  title: string
+  totalLessons: number
+  enrolledCount: number
+  completedCount: number   // learners who completed all lessons
+  learners: CourseLearnerRow[]
+}
+
 export type ResultsData = {
   totalLearners: number
   startedCount: number
@@ -21,13 +41,26 @@ export type ResultsData = {
   /** 30 entries, one per day, ascending date order */
   dailyActivity: Array<{ date: string; count: number }>
   lessonRows: LessonResultRow[]
+  courseRows: CourseResultRow[]
 }
 
 export default function ResultsTab({ results }: { results: ResultsData }) {
-  const { totalLearners, startedCount, completedCount, avgScore, lastActivityDate, dailyActivity, lessonRows } = results
+  const { totalLearners, startedCount, completedCount, avgScore, lastActivityDate, dailyActivity, lessonRows, courseRows } = results
+
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+
+  const toggleExpand = (id: string) => {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
   const completionRate = startedCount > 0 ? Math.round((completedCount / startedCount) * 100) : null
   const maxActivity = Math.max(...dailyActivity.map(d => d.count), 1)
+
+  const hasAnything = courseRows.length > 0 || lessonRows.length > 0
 
   return (
     <div>
@@ -74,12 +107,154 @@ export default function ResultsTab({ results }: { results: ResultsData }) {
         </div>
       </div>
 
-      {/* Per-lesson table */}
-      {lessonRows.length === 0 ? (
+      {/* Empty state */}
+      {!hasAnything && (
         <p className={styles.empty}>No lessons published yet.</p>
-      ) : (
+      )}
+
+      {/* Courses section */}
+      {courseRows.length > 0 && (
         <>
-          <div className={styles.resultsSectionTitle}>Results by lesson</div>
+          <div className={styles.resultsSectionTitle}>Courses</div>
+          <div className={styles.courseList}>
+            {courseRows.map(course => {
+              const isExpanded = expanded.has(course.id)
+              const completionPct = course.enrolledCount > 0
+                ? Math.round((course.completedCount / course.enrolledCount) * 100)
+                : null
+
+              return (
+                <div key={course.id} className={styles.courseItem}>
+                  <div
+                    className={styles.courseHeader}
+                    onClick={() => toggleExpand(course.id)}
+                  >
+                    <span className={styles.expandIcon}>{isExpanded ? '−' : '+'}</span>
+                    <div className={styles.courseInfo}>
+                      <div className={styles.courseTitle}>{course.title}</div>
+                      <div className={styles.courseMeta}>
+                        {course.enrolledCount} enrolled · {course.totalLessons} lessons
+                      </div>
+                    </div>
+                    <div className={styles.courseCompletionWrap}>
+                      <div className={styles.courseMiniBar}>
+                        <div
+                          className={styles.courseMiniBarFill}
+                          style={{
+                            width: completionPct != null ? `${completionPct}%` : '0%'
+                          }}
+                        />
+                      </div>
+                      <span className={styles.courseCompletionPct}>
+                        {completionPct != null ? `${completionPct}% completed` : '—'}
+                      </span>
+                    </div>
+                    <Link
+                      href={`/creator/courses/${course.id}/results`}
+                      className={styles.courseViewLink}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      View results →
+                    </Link>
+                  </div>
+
+                  {isExpanded && (
+                    <div className={styles.learnerSubTable}>
+                      <table className={styles.learnerTable}>
+                        <thead>
+                          <tr>
+                            <th>Learner</th>
+                            <th>Progress</th>
+                            <th>Avg score</th>
+                            <th>Status</th>
+                            <th>Last active</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {course.learners.map(learner => {
+                            const progressFrac = course.totalLessons > 0
+                              ? learner.completedLessons / learner.totalLessons
+                              : 0
+                            const progressPct = Math.round(progressFrac * 100)
+
+                            const barColor = learner.status === 'completed'
+                              ? 'var(--color-teal)'
+                              : learner.status === 'in_progress'
+                                ? 'var(--color-amber)'
+                                : 'var(--color-ink-muted, #999)'
+
+                            const pillClass = learner.status === 'completed'
+                              ? styles.completedPillSub
+                              : learner.status === 'in_progress'
+                                ? styles.inProgressPillSub
+                                : styles.notStartedPillSub
+
+                            const pillLabel = learner.status === 'completed'
+                              ? 'Completed'
+                              : learner.status === 'in_progress'
+                                ? 'In progress'
+                                : 'Not started'
+
+                            return (
+                              <tr key={learner.email}>
+                                <td>
+                                  {learner.name && <div className={styles.learnerName}>{learner.name}</div>}
+                                  <div className={styles.learnerEmail}>{learner.email}</div>
+                                </td>
+                                <td>
+                                  <div className={styles.progWrap}>
+                                    <div className={styles.progBarBg}>
+                                      <div
+                                        className={styles.progBarFill}
+                                        style={{ width: `${progressPct}%`, backgroundColor: barColor }}
+                                      />
+                                    </div>
+                                    <span className={styles.progLabel}>
+                                      {learner.completedLessons} / {learner.totalLessons} lessons
+                                    </span>
+                                  </div>
+                                </td>
+                                <td>
+                                  {learner.avgScore != null ? (
+                                    <div className={styles.scoreBarWrap}>
+                                      <div className={styles.scoreBarTrack}>
+                                        <div
+                                          className={styles.scoreBarFill}
+                                          style={{ width: `${Math.round(learner.avgScore * 100)}%` }}
+                                        />
+                                      </div>
+                                      <span className={styles.scorePct}>{Math.round(learner.avgScore * 100)}%</span>
+                                    </div>
+                                  ) : (
+                                    <span style={{ color: 'var(--ink-muted)' }}>—</span>
+                                  )}
+                                </td>
+                                <td>
+                                  <span className={pillClass}>{pillLabel}</span>
+                                </td>
+                                <td>
+                                  {learner.lastActivity
+                                    ? new Date(learner.lastActivity).toLocaleDateString('en-US', { timeZone: 'UTC' })
+                                    : '—'}
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Standalone lessons table */}
+      {lessonRows.length > 0 && (
+        <>
+          <div className={styles.resultsSectionTitle}>Standalone lessons</div>
           <table className={styles.table}>
             <thead>
               <tr>

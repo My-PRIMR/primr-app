@@ -7,8 +7,10 @@ import {
   lessons, lessonInvitations, lessonAttempts,
   courses, courseSections, courseChapters, chapterLessons, courseEnrollments,
 } from '@/db/schema'
-import { desc, eq, and, sql, inArray, max, isNull } from 'drizzle-orm'
+import { desc, eq, and, sql, inArray, max, isNull, gte } from 'drizzle-orm'
 import { getSession } from '@/session'
+import { fillDailyActivity } from '@/lib/results'
+import type { ResultsData } from './ResultsTab'
 import { redirect } from 'next/navigation'
 import styles from './page.module.css'
 
@@ -60,6 +62,97 @@ export default async function DashboardPage() {
         .where(and(eq(lessons.createdBy, userId), isNull(chapterLessons.id)))
         .orderBy(desc(lessons.updatedAt))
     : []
+
+  // ── Creator: results data ─────────────────────────────────────────────────
+  let resultsData: ResultsData | undefined
+
+  if (isCreator && createdLessons.length > 0) {
+    const createdLessonIds = createdLessons.map(l => l.id)
+
+    // Per-lesson: invited counts
+    const invitedRows = await db
+      .select({
+        lessonId: lessonInvitations.lessonId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(lessonInvitations)
+      .where(inArray(lessonInvitations.lessonId, createdLessonIds))
+      .groupBy(lessonInvitations.lessonId)
+
+    const invitedMap = new Map(invitedRows.map(r => [r.lessonId, r.count]))
+
+    // Per-lesson: attempt stats (distinct users)
+    const attemptStatRows = await db
+      .select({
+        lessonId: lessonAttempts.lessonId,
+        startedCount: sql<number>`count(distinct ${lessonAttempts.userId})::int`,
+        completedCount: sql<number>`count(distinct case when ${lessonAttempts.status} = 'completed' then ${lessonAttempts.userId} end)::int`,
+        avgScore: sql<number | null>`avg(case when ${lessonAttempts.status} = 'completed' and ${lessonAttempts.score} is not null then ${lessonAttempts.score} end)`,
+      })
+      .from(lessonAttempts)
+      .where(inArray(lessonAttempts.lessonId, createdLessonIds))
+      .groupBy(lessonAttempts.lessonId)
+
+    const attemptStatMap = new Map(attemptStatRows.map(r => [r.lessonId, r]))
+
+    // Distinct learner count across all lessons
+    const totalLearnersRow = await db
+      .select({ count: sql<number>`count(distinct ${lessonAttempts.userId})::int` })
+      .from(lessonAttempts)
+      .where(inArray(lessonAttempts.lessonId, createdLessonIds))
+
+    const overallStarted = attemptStatRows.reduce((sum, r) => sum + r.startedCount, 0)
+    const overallCompleted = attemptStatRows.reduce((sum, r) => sum + r.completedCount, 0)
+
+    // Overall avg score and last activity across all completed attempts
+    const overallScoreRow = await db
+      .select({
+        avgScore: sql<number | null>`avg(${lessonAttempts.score})`,
+        lastActivity: sql<string | null>`max(${lessonAttempts.completedAt})::text`,
+      })
+      .from(lessonAttempts)
+      .where(and(
+        inArray(lessonAttempts.lessonId, createdLessonIds),
+        eq(lessonAttempts.status, 'completed'),
+      ))
+
+    // Daily activity: completed attempts per day for last 30 days
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+    const dailyRows = await db
+      .select({
+        date: sql<string>`date(${lessonAttempts.completedAt})::text`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(lessonAttempts)
+      .where(and(
+        inArray(lessonAttempts.lessonId, createdLessonIds),
+        eq(lessonAttempts.status, 'completed'),
+        gte(lessonAttempts.completedAt, thirtyDaysAgo),
+      ))
+      .groupBy(sql`date(${lessonAttempts.completedAt})`)
+
+    resultsData = {
+      totalLearners: totalLearnersRow[0]?.count ?? 0,
+      startedCount: overallStarted,
+      completedCount: overallCompleted,
+      avgScore: overallScoreRow[0]?.avgScore ?? null,
+      lastActivityDate: overallScoreRow[0]?.lastActivity ?? null,
+      dailyActivity: fillDailyActivity(dailyRows, 30),
+      lessonRows: createdLessons.map(l => {
+        const stat = attemptStatMap.get(l.id)
+        return {
+          id: l.id,
+          title: l.title,
+          invitedCount: invitedMap.get(l.id) ?? 0,
+          startedCount: stat?.startedCount ?? 0,
+          completedCount: stat?.completedCount ?? 0,
+          avgScore: stat?.avgScore ?? null,
+        }
+      }),
+    }
+  }
 
   // ── Learner: enrolled courses with progress ─────────────────────────────────
   const enrolledCourseRows = await db
@@ -176,6 +269,7 @@ export default async function DashboardPage() {
           <>
             <h1 className={styles.heading}>Your content</h1>
             <CreatorDashboard
+              results={resultsData}
               courses={createdCourses.map(c => ({
                 id: c.id,
                 title: c.title,

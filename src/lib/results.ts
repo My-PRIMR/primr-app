@@ -7,8 +7,8 @@ export type DailyActivity = { date: string; count: number }
 export function fillDailyActivity(
   sparse: Array<{ date: string; count: number }>,
   days: number,
+  now: Date = new Date(),
 ): DailyActivity[] {
-  const now = new Date()
   const sparseMap = new Map(sparse.map(r => [r.date, r.count]))
   const result: DailyActivity[] = []
 
@@ -36,6 +36,10 @@ export type BlockPerf = {
 /**
  * Aggregates blockResults across attempts into per-block performance stats.
  * Only returns blocks that have at least one result entry.
+ *
+ * Note: only `'correct'` and `'incorrect'` statuses count toward `pctCorrect`.
+ * Other statuses (e.g. `'completed'`, `'skipped'`) contribute to `responseCount`
+ * but are excluded from the correct/incorrect ratio.
  */
 export function computeBlockPerformance(
   attempts: Array<{ blockResults: Record<string, { status: string; score?: number }> | null }>,

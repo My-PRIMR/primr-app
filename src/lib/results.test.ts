@@ -12,19 +12,22 @@ describe('fillDailyActivity', () => {
   })
 
   it('fills in counts from sparse data', () => {
-    const today = new Date().toISOString().slice(0, 10)
-    const result = fillDailyActivity([{ date: today, count: 3 }], 7)
+    const now = new Date('2026-01-15T12:00:00Z')
+    const today = now.toISOString().slice(0, 10)
+    const result = fillDailyActivity([{ date: today, count: 3 }], 7, now)
     const todayEntry = result.find(r => r.date === today)
     expect(todayEntry?.count).toBe(3)
   })
 
   it('ignores sparse entries outside the window', () => {
-    const result = fillDailyActivity([{ date: '2000-01-01', count: 99 }], 7)
+    const now = new Date('2026-01-15T12:00:00Z')
+    const result = fillDailyActivity([{ date: '2000-01-01', count: 99 }], 7, now)
     expect(result.every(r => r.count === 0)).toBe(true)
   })
 
   it('dates are in ascending order', () => {
-    const result = fillDailyActivity([], 5)
+    const now = new Date('2026-01-15T12:00:00Z')
+    const result = fillDailyActivity([], 5, now)
     for (let i = 1; i < result.length; i++) {
       expect(result[i].date > result[i - 1].date).toBe(true)
     }

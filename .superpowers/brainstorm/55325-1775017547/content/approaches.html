@@ -1,0 +1,42 @@
+<h2>Three approaches to creator results tracking</h2>
+<p class="subtitle">All three deliver the same features. The difference is architecture and where the data fetching lives.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Pure server-rendered (RSC) <span style="font-size:0.75em;opacity:0.6;font-weight:normal">Recommended</span></h3>
+      <p>Results tab and lesson drilldown are both Next.js Server Components. Data fetched at request time with Drizzle queries. No new API routes.</p>
+      <div class="pros-cons" style="margin-top:0.75rem">
+        <div class="pros"><h4>Pros</h4><ul><li>No client JS for data</li><li>Consistent with existing pattern (my-primr page)</li><li>Simpler — less code</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>No interactive sorting/filtering without extra client component</li><li>Full page reload to change filters</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>API-first (client components)</h3>
+      <p>New API routes return JSON. Creator dashboard fetches client-side. Enables real-time sorting, filtering, pagination without page reloads.</p>
+      <div class="pros-cons" style="margin-top:0.75rem">
+        <div class="pros"><h4>Pros</h4><ul><li>Interactive table sorting/filtering</li><li>Can add pagination easily</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>More code (API routes + client fetching)</li><li>Two different data patterns in the app</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Hybrid — RSC summary, client drilldown</h3>
+      <p>Results tab is server-rendered (aggregate totals). Per-lesson drilldown is a client component with an API route — enables sorting the learner roster by score/date.</p>
+      <div class="pros-cons" style="margin-top:0.75rem">
+        <div class="pros"><h4>Pros</h4><ul><li>Right tool for each job</li><li>Interactive where it matters (drilldown)</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Two patterns to maintain</li><li>Slightly more complexity</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:1.5rem">My recommendation: <strong>A</strong> — pure RSC keeps it simple and consistent. The learner roster table can still be sorted via URL search params (a Next.js pattern), and we can add client interactivity later if needed.</p>

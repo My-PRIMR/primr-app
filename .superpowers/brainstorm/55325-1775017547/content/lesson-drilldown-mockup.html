@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Per-lesson Results Drilldown</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #1a1a1a; --ink-soft: #444; --ink-muted: #888;
+    --accent: #0a7c6e; --accent-soft: #e8f5f3;
+    --border: #e8e8e8; --border-mid: #d0d0d0;
+    --surface: #fff; --surface-alt: #f7f7f7;
+    --teal: #0a7c6e; --teal-soft: #e0f5f1;
+    --amber: #d97706; --amber-soft: #fef3c7;
+    --coral: #e05a44; --coral-soft: #fdecea;
+  }
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: var(--surface-alt); color: var(--ink);
+    padding: 1.5rem; font-size: 14px; line-height: 1.5;
+  }
+
+  .nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 1rem; margin-bottom: 1.25rem; border-bottom: 1.5px solid var(--border);
+  }
+  .wordmark { font-family: 'DM Serif Display', Georgia, serif; font-size: 20px; color: var(--ink); }
+  .nav-btn { font-size: 13px; font-weight: 500; color: var(--ink-muted); background: none; border: 1.5px solid var(--border-mid); border-radius: 6px; padding: 5px 12px; }
+
+  .back-link { font-size: 13px; font-weight: 500; color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 1rem; }
+  .back-link:hover { opacity: 0.75; }
+
+  .page-header { margin-bottom: 1.5rem; }
+  .page-title { font-family: 'DM Serif Display', Georgia, serif; font-size: 22px; color: var(--ink); margin-bottom: 4px; }
+  .page-meta { font-size: 13px; color: var(--ink-muted); }
+
+  /* stat strip */
+  .stat-strip { display: flex; gap: 10px; margin-bottom: 1.5rem; }
+  .stat-card { flex: 1; background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 16px; }
+  .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); margin-bottom: 3px; }
+  .stat-value { font-size: 22px; font-weight: 700; color: var(--ink); line-height: 1; }
+  .stat-sub { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+
+  /* section */
+  .section { margin-bottom: 2rem; }
+  .section-title { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 0.75rem; }
+
+  /* learner table */
+  .data-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .data-table thead th {
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--ink-muted); text-align: left; padding: 10px 14px;
+    border-bottom: 1.5px solid var(--border); background: var(--surface-alt);
+  }
+  .data-table tbody td { font-size: 13px; color: var(--ink); padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .data-table tbody tr:last-child td { border-bottom: none; }
+  .data-table tbody tr:hover td { background: var(--surface-alt); }
+
+  .pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+  .pill-green { background: var(--teal-soft); color: var(--teal); }
+  .pill-amber { background: var(--amber-soft); color: var(--amber); }
+  .pill-grey { background: var(--surface-alt); color: var(--ink-muted); border: 1px solid var(--border); }
+
+  .score-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .score-bar-bg { flex: 1; height: 6px; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; min-width: 60px; }
+  .score-bar-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+  .score-bar-fill.low { background: var(--coral); }
+  .score-val { font-size: 12px; font-weight: 600; color: var(--ink-soft); min-width: 32px; text-align: right; }
+  .muted { color: var(--ink-muted); }
+
+  /* block breakdown */
+  .blocks-grid { display: flex; flex-direction: column; gap: 8px; }
+  .block-row {
+    background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 14px 18px; display: flex; align-items: center; gap: 16px;
+  }
+  .block-icon {
+    width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 15px;
+  }
+  .block-icon-quiz { background: var(--accent-soft); }
+  .block-icon-exam { background: var(--amber-soft); }
+  .block-body { flex: 1; min-width: 0; }
+  .block-name { font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .block-type { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+  .block-stat { flex-shrink: 0; text-align: right; }
+  .block-pct { font-size: 18px; font-weight: 700; color: var(--ink); }
+  .block-pct.high { color: var(--teal); }
+  .block-pct.low { color: var(--coral); }
+  .block-pct-label { font-size: 11px; color: var(--ink-muted); }
+  .block-bar-wrap { flex: 1; max-width: 160px; }
+  .block-bar-bg { height: 8px; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+  .block-bar-fill { height: 100%; border-radius: 4px; background: var(--accent); }
+  .block-bar-fill.low { background: var(--coral); }
+  .block-n { font-size: 11px; color: var(--ink-muted); margin-top: 4px; text-align: right; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <span class="wordmark">Primr</span>
+  <button class="nav-btn">Account</button>
+</div>
+
+<a class="back-link" href="#">← Results</a>
+
+<div class="page-header">
+  <div class="page-title">Intro to Project Management</div>
+  <div class="page-meta">Published · Exam enforced · 12 invited learners</div>
+</div>
+
+<!-- stat strip -->
+<div class="stat-strip">
+  <div class="stat-card">
+    <div class="stat-label">Started</div>
+    <div class="stat-value">11</div>
+    <div class="stat-sub">of 12 invited</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Completed</div>
+    <div class="stat-value">10</div>
+    <div class="stat-sub">83% completion</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Avg score</div>
+    <div class="stat-value">88%</div>
+    <div class="stat-sub">completed attempts only</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Pass rate</div>
+    <div class="stat-value">90%</div>
+    <div class="stat-sub">≥ 70% = pass</div>
+  </div>
+</div>
+
+<!-- learner roster -->
+<div class="section">
+  <div class="section-title">Learner roster</div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Learner</th>
+        <th>Status</th>
+        <th>Score</th>
+        <th>Attempts</th>
+        <th>Last active</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <div style="font-weight:500">Sarah Chen</div>
+          <div style="font-size:12px;color:var(--ink-muted)">sarah@acme.com</div>
+        </td>
+        <td><span class="pill pill-green">Completed</span></td>
+        <td>
+          <div class="score-bar-wrap">
+            <div class="score-bar-bg"><div class="score-bar-fill" style="width:96%"></div></div>
+            <span class="score-val">96%</span>
+          </div>
+        </td>
+        <td>1</td>
+        <td class="muted">Mar 28</td>
+      </tr>
+      <tr>
+        <td>
+          <div style="font-weight:500">James Park</div>
+          <div style="font-size:12px;color:var(--ink-muted)">james@acme.com</div>
+        </td>
+        <td><span class="pill pill-green">Completed</span></td>
+        <td>
+          <div class="score-bar-wrap">
+            <div class="score-bar-bg"><div class="score-bar-fill" style="width:82%"></div></div>
+            <span class="score-val">82%</span>
+          </div>
+        </td>
+        <td>2</td>
+        <td class="muted">Mar 29</td>
+      </tr>
+      <tr>
+        <td>
+          <div style="font-weight:500">Maria Lopez</div>
+          <div style="font-size:12px;color:var(--ink-muted)">mlopez@acme.com</div>
+        </td>
+        <td><span class="pill pill-green">Completed</span></td>
+        <td>
+          <div class="score-bar-wrap">
+            <div class="score-bar-bg"><div class="score-bar-fill" style="width:64%" class="low"></div></div>
+            <span class="score-val">64%</span>
+          </div>
+        </td>
+        <td>3</td>
+        <td class="muted">Mar 30</td>
+      </tr>
+      <tr>
+        <td>
+          <div style="font-weight:500">Tom Briggs</div>
+          <div style="font-size:12px;color:var(--ink-muted)">tbriggs@acme.com</div>
+        </td>
+        <td><span class="pill pill-amber">In progress</span></td>
+        <td><span class="muted">—</span></td>
+        <td>1</td>
+        <td class="muted">Mar 31</td>
+      </tr>
+      <tr>
+        <td>
+          <div style="font-weight:500">Priya Nair</div>
+          <div style="font-size:12px;color:var(--ink-muted)">pnair@acme.com</div>
+        </td>
+        <td><span class="pill pill-grey">Not started</span></td>
+        <td><span class="muted">—</span></td>
+        <td>0</td>
+        <td class="muted">—</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- block breakdown -->
+<div class="section">
+  <div class="section-title">Block performance <span style="font-size:12px;font-weight:400;color:var(--ink-muted)">(scored blocks only, across all completed attempts)</span></div>
+  <div class="blocks-grid">
+
+    <div class="block-row">
+      <div class="block-icon block-icon-quiz">🧠</div>
+      <div class="block-body">
+        <div class="block-name">Knowledge check: What is a project charter?</div>
+        <div class="block-type">Quiz · 10 responses</div>
+      </div>
+      <div class="block-bar-wrap">
+        <div class="block-bar-bg"><div class="block-bar-fill" style="width:92%"></div></div>
+        <div class="block-n">92% correct</div>
+      </div>
+      <div class="block-stat">
+        <div class="block-pct high">92%</div>
+        <div class="block-pct-label">correct</div>
+      </div>
+    </div>
+
+    <div class="block-row">
+      <div class="block-icon block-icon-quiz">🧠</div>
+      <div class="block-body">
+        <div class="block-name">Knowledge check: Stakeholder vs. sponsor</div>
+        <div class="block-type">Quiz · 10 responses</div>
+      </div>
+      <div class="block-bar-wrap">
+        <div class="block-bar-bg"><div class="block-bar-fill" style="width:80%"></div></div>
+        <div class="block-n">80% correct</div>
+      </div>
+      <div class="block-stat">
+        <div class="block-pct high">80%</div>
+        <div class="block-pct-label">correct</div>
+      </div>
+    </div>
+
+    <div class="block-row">
+      <div class="block-icon block-icon-exam">📝</div>
+      <div class="block-body">
+        <div class="block-name">Final exam</div>
+        <div class="block-type">Exam · 10 responses</div>
+      </div>
+      <div class="block-bar-wrap">
+        <div class="block-bar-bg"><div class="block-bar-fill low" style="width:58%"></div></div>
+        <div class="block-n">58% avg score</div>
+      </div>
+      <div class="block-stat">
+        <div class="block-pct low">58%</div>
+        <div class="block-pct-label">avg score</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

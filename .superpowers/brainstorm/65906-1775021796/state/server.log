@@ -1,0 +1,6 @@
+{"type":"server-started","port":62200,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:62200","screen_dir":"/Users/gpan/PRIMR/primr-app/.superpowers/brainstorm/65906-1775021796/content","state_dir":"/Users/gpan/PRIMR/primr-app/.superpowers/brainstorm/65906-1775021796/state"}
+{"type":"screen-added","file":"/Users/gpan/PRIMR/primr-app/.superpowers/brainstorm/65906-1775021796/content/approach-options.html"}
+{"type":"screen-added","file":"/Users/gpan/PRIMR/primr-app/.superpowers/brainstorm/65906-1775021796/content/merged-results-mockup.html"}
+{"type":"screen-added","file":"/Users/gpan/PRIMR/primr-app/.superpowers/brainstorm/65906-1775021796/content/course-drilldown-mockup.html"}
+{"type":"screen-added","file":"/Users/gpan/PRIMR/primr-app/.superpowers/brainstorm/65906-1775021796/content/waiting-1.html"}
+{"type":"server-stopped","reason":"idle timeout"}

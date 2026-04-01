@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Results Tab — Merge Approaches</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #1a1a1a; --ink-soft: #444; --ink-muted: #888;
+    --accent: #0a7c6e; --accent-soft: #e8f5f3;
+    --border: #e8e8e8; --border-mid: #d0d0d0;
+    --surface: #fff; --surface-alt: #f7f7f7;
+    --teal: #0a7c6e; --teal-soft: #e0f5f1;
+    --amber: #d97706; --amber-soft: #fef3c7;
+    --coral: #e05a44; --coral-soft: #fdecea;
+  }
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: #f0f0f0;
+    color: var(--ink);
+    padding: 2rem;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  h1 { font-family: 'DM Serif Display', Georgia, serif; font-size: 22px; margin-bottom: 0.25rem; }
+  .lead { color: var(--ink-muted); font-size: 14px; margin-bottom: 2rem; }
+
+  .approaches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+  .approach {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .approach:hover { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .approach.selected { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+
+  .approach-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-muted); background: var(--surface-alt);
+    padding: 10px 16px; border-bottom: 1.5px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .approach-label .rec {
+    font-size: 10px; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 4px; padding: 2px 6px;
+  }
+
+  /* Mini mockup styles */
+  .mockup { padding: 12px 14px; background: var(--surface-alt); }
+
+  /* tabs */
+  .m-tabs { display: flex; border-bottom: 1.5px solid var(--border); margin-bottom: 10px; }
+  .m-tab {
+    font-size: 11px; font-weight: 500; color: var(--ink-muted);
+    padding: 5px 10px; border-bottom: 2px solid transparent; margin-bottom: -1.5px;
+  }
+  .m-tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+
+  /* stat strip */
+  .m-stats { display: flex; gap: 6px; margin-bottom: 8px; }
+  .m-stat { flex:1; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; }
+  .m-stat-val { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .m-stat-lbl { font-size: 9px; color: var(--ink-muted); }
+
+  /* chart bar */
+  .m-chart { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px; margin-bottom: 8px; }
+  .m-chart-title { font-size: 9px; font-weight: 600; color: var(--ink-muted); margin-bottom: 5px; }
+  .m-bars { display: flex; align-items: flex-end; gap: 2px; height: 28px; }
+  .m-bar { flex:1; border-radius: 2px 2px 0 0; background: var(--accent-soft); border: 1px solid var(--accent); min-height: 2px; }
+
+  /* section title */
+  .m-section { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); margin-bottom: 5px; }
+
+  /* table */
+  .m-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; font-size: 10px; }
+  .m-table th { background: var(--surface-alt); color: var(--ink-muted); font-weight: 600; padding: 5px 8px; border-bottom: 1px solid var(--border); text-align: left; }
+  .m-table td { padding: 5px 8px; border-bottom: 1px solid var(--border); color: var(--ink); }
+  .m-table tr:last-child td { border-bottom: none; }
+
+  /* pill */
+  .m-pill { display: inline-block; font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 10px; }
+  .m-pill-green { background: var(--teal-soft); color: var(--teal); }
+  .m-pill-amber { background: var(--amber-soft); color: var(--amber); }
+
+  /* expand row */
+  .m-expandable { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 5px; }
+  .m-expand-header { padding: 6px 10px; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .m-expand-icon { color: var(--accent); font-size: 10px; font-weight: 700; }
+  .m-expand-title { font-size: 11px; font-weight: 600; flex: 1; }
+  .m-expand-meta { font-size: 9px; color: var(--ink-muted); }
+  .m-mini-bar { width: 60px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .m-mini-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+  .m-expand-body { border-top: 1px solid var(--border); background: var(--surface-alt); padding: 6px 10px; }
+  .m-learner-row { display: flex; align-items: center; gap: 8px; font-size: 10px; padding: 3px 0; border-bottom: 1px solid var(--border); }
+  .m-learner-row:last-child { border-bottom: none; }
+  .m-learner-name { flex: 1; }
+  .m-progress { display: flex; align-items: center; gap: 4px; }
+  .m-prog-bar { width: 36px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .m-prog-fill { height: 100%; border-radius: 2px; }
+
+  /* score bar */
+  .m-score { display: flex; align-items: center; gap: 4px; }
+  .m-score-bar { flex:1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; min-width: 40px; }
+  .m-score-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+  .m-score-val { font-size: 9px; color: var(--ink-soft); }
+
+  .m-link { font-size: 9px; color: var(--accent); font-weight: 500; }
+
+  /* drilldown page mini */
+  .m-drilldown { background: var(--surface-alt); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); }
+  .m-drilldown-title { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+  .m-drilldown-meta { font-size: 9px; color: var(--ink-muted); margin-bottom: 8px; }
+
+  /* approach description */
+  .approach-desc { padding: 12px 16px; }
+  .approach-name { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .approach-summary { font-size: 12px; color: var(--ink-soft); margin-bottom: 10px; }
+  .approach-bullets { list-style: none; padding: 0; }
+  .approach-bullets li { font-size: 12px; color: var(--ink-soft); padding: 3px 0; display: flex; gap: 6px; }
+  .approach-bullets li::before { content: '→'; color: var(--accent); flex-shrink: 0; }
+  .approach-bullets li.con::before { content: '✗'; color: var(--coral); }
+</style>
+</head>
+<body>
+
+<h1>Merging /creator/progress into the Results tab</h1>
+<p class="lead">Three approaches for adding course tracking + per-learner detail to the existing Results tab. Click one to select.</p>
+
+<div class="approaches">
+
+  <!-- Option A: Expandable courses section -->
+  <div class="approach" onclick="select(this,'A')">
+    <div class="approach-label">Option A <span class="rec">Recommended</span></div>
+    <div class="mockup">
+      <div class="m-tabs">
+        <div class="m-tab">Lessons</div>
+        <div class="m-tab">Courses</div>
+        <div class="m-tab active">Results</div>
+        <div class="m-tab">My Learning</div>
+      </div>
+      <div class="m-stats">
+        <div class="m-stat"><div class="m-stat-val">24</div><div class="m-stat-lbl">Learners</div></div>
+        <div class="m-stat"><div class="m-stat-val">71%</div><div class="m-stat-lbl">Completion</div></div>
+        <div class="m-stat"><div class="m-stat-val">83%</div><div class="m-stat-lbl">Avg score</div></div>
+        <div class="m-stat"><div class="m-stat-val">Today</div><div class="m-stat-lbl">Last active</div></div>
+      </div>
+      <div class="m-chart">
+        <div class="m-chart-title">Completions — last 30 days</div>
+        <div class="m-bars">
+          <div class="m-bar" style="height:20%"></div><div class="m-bar" style="height:0%"></div>
+          <div class="m-bar" style="height:40%"></div><div class="m-bar" style="height:30%"></div>
+          <div class="m-bar" style="height:0%"></div><div class="m-bar" style="height:60%"></div>
+          <div class="m-bar" style="height:50%"></div><div class="m-bar" style="height:70%"></div>
+          <div class="m-bar" style="height:40%"></div><div class="m-bar" style="height:80%"></div>
+          <div class="m-bar" style="height:100%"></div><div class="m-bar" style="height:85%"></div>
+        </div>
+      </div>
+      <div class="m-section" style="margin-bottom:4px">Courses</div>
+      <div class="m-expandable">
+        <div class="m-expand-header">
+          <span class="m-expand-icon">+</span>
+          <span class="m-expand-title">Intro to PM</span>
+          <span class="m-expand-meta">8 learners · 75%</span>
+          <div class="m-mini-bar"><div class="m-mini-fill" style="width:75%"></div></div>
+        </div>
+      </div>
+      <div class="m-expandable" style="margin-bottom:8px">
+        <div class="m-expand-header">
+          <span class="m-expand-icon">−</span>
+          <span class="m-expand-title">Agile Fundamentals</span>
+          <span class="m-expand-meta">6 learners · 50%</span>
+          <div class="m-mini-bar"><div class="m-mini-fill" style="width:50%"></div></div>
+        </div>
+        <div class="m-expand-body">
+          <div class="m-learner-row">
+            <span class="m-learner-name">Sarah Chen</span>
+            <div class="m-progress"><div class="m-prog-bar"><div class="m-prog-fill" style="width:100%;background:var(--teal)"></div></div><span style="font-size:9px;color:var(--ink-muted)">3/3</span></div>
+            <span style="font-size:9px;color:var(--ink-muted)">91%</span>
+          </div>
+          <div class="m-learner-row">
+            <span class="m-learner-name">James Park</span>
+            <div class="m-progress"><div class="m-prog-bar"><div class="m-prog-fill" style="width:67%;background:var(--amber)"></div></div><span style="font-size:9px;color:var(--ink-muted)">2/3</span></div>
+            <span style="font-size:9px;color:var(--ink-muted)">74%</span>
+          </div>
+          <div class="m-learner-row">
+            <span class="m-learner-name">Priya Nair</span>
+            <div class="m-progress"><div class="m-prog-bar"><div class="m-prog-fill" style="width:0%"></div></div><span style="font-size:9px;color:var(--ink-muted)">0/3</span></div>
+            <span style="font-size:9px;color:var(--ink-muted)">—</span>
+          </div>
+        </div>
+      </div>
+      <div class="m-section" style="margin-bottom:4px">Standalone lessons</div>
+      <table class="m-table">
+        <thead><tr><th>Lesson</th><th>Done</th><th>Score</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>Risk Assessment</td><td><span class="m-pill m-pill-green">8/10</span></td><td><div class="m-score"><div class="m-score-bar"><div class="m-score-fill" style="width:88%"></div></div><span class="m-score-val">88%</span></div></td><td><span class="m-link">View →</span></td></tr>
+          <tr><td>Stakeholder Comms</td><td><span class="m-pill m-pill-amber">4/8</span></td><td><div class="m-score"><div class="m-score-bar"><div class="m-score-fill" style="width:74%"></div></div><span class="m-score-val">74%</span></div></td><td><span class="m-link">View →</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="approach-desc">
+      <div class="approach-name">Two sections, inline course expansion</div>
+      <div class="approach-summary">Courses expand in place to show per-learner progress. Standalone lessons link to the existing drilldown with block performance.</div>
+      <ul class="approach-bullets">
+        <li>Keeps all results on one page</li>
+        <li>Course learner data visible without navigation</li>
+        <li>Lessons keep block-level breakdown in drilldown</li>
+        <li class="con">Results tab gets longer with many courses</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Option B: Sub-tabs within Results -->
+  <div class="approach" onclick="select(this,'B')">
+    <div class="approach-label">Option B</div>
+    <div class="mockup">
+      <div class="m-tabs">
+        <div class="m-tab">Lessons</div>
+        <div class="m-tab">Courses</div>
+        <div class="m-tab active">Results</div>
+        <div class="m-tab">My Learning</div>
+      </div>
+      <div class="m-stats">
+        <div class="m-stat"><div class="m-stat-val">24</div><div class="m-stat-lbl">Learners</div></div>
+        <div class="m-stat"><div class="m-stat-val">71%</div><div class="m-stat-lbl">Completion</div></div>
+        <div class="m-stat"><div class="m-stat-val">83%</div><div class="m-stat-lbl">Avg score</div></div>
+        <div class="m-stat"><div class="m-stat-val">Today</div><div class="m-stat-lbl">Last active</div></div>
+      </div>
+      <!-- sub-tabs -->
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:8px;">
+        <div style="font-size:10px;font-weight:600;color:var(--ink);border-bottom:2px solid var(--accent);padding:5px 10px;margin-bottom:-1px;">Courses</div>
+        <div style="font-size:10px;font-weight:500;color:var(--ink-muted);border-bottom:2px solid transparent;padding:5px 10px;margin-bottom:-1px;">Lessons</div>
+      </div>
+      <div class="m-expandable">
+        <div class="m-expand-header">
+          <span class="m-expand-icon">+</span>
+          <span class="m-expand-title">Intro to PM</span>
+          <span class="m-expand-meta">8 learners · 75%</span>
+          <div class="m-mini-bar"><div class="m-mini-fill" style="width:75%"></div></div>
+        </div>
+      </div>
+      <div class="m-expandable" style="margin-bottom:8px">
+        <div class="m-expand-header">
+          <span class="m-expand-icon">−</span>
+          <span class="m-expand-title">Agile Fundamentals</span>
+          <span class="m-expand-meta">6 learners · 50%</span>
+          <div class="m-mini-bar"><div class="m-mini-fill" style="width:50%"></div></div>
+        </div>
+        <div class="m-expand-body">
+          <div class="m-learner-row">
+            <span class="m-learner-name">Sarah Chen</span>
+            <div class="m-progress"><div class="m-prog-bar"><div class="m-prog-fill" style="width:100%;background:var(--teal)"></div></div><span style="font-size:9px;color:var(--ink-muted)">3/3</span></div>
+            <span style="font-size:9px;color:var(--ink-muted)">91%</span>
+          </div>
+          <div class="m-learner-row">
+            <span class="m-learner-name">James Park</span>
+            <div class="m-progress"><div class="m-prog-bar"><div class="m-prog-fill" style="width:67%;background:var(--amber)"></div></div><span style="font-size:9px;color:var(--ink-muted)">2/3</span></div>
+            <span style="font-size:9px;color:var(--ink-muted)">74%</span>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:10px;color:var(--ink-muted);font-style:italic">Switch to "Lessons" sub-tab for standalone lessons table</p>
+    </div>
+    <div class="approach-desc">
+      <div class="approach-name">Sub-tabs within Results</div>
+      <div class="approach-summary">Courses and lessons split into sub-tabs inside the Results tab. Activity chart and stat cards stay shared at the top.</div>
+      <ul class="approach-bullets">
+        <li>Cleaner separation between course and lesson data</li>
+        <li>Less vertical scrolling per sub-tab</li>
+        <li class="con">Extra navigation layer (tabs within tabs)</li>
+        <li class="con">Harder to see everything at once</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Option C: Course drilldown pages -->
+  <div class="approach" onclick="select(this,'C')">
+    <div class="approach-label">Option C</div>
+    <div class="mockup">
+      <div class="m-tabs">
+        <div class="m-tab">Lessons</div>
+        <div class="m-tab">Courses</div>
+        <div class="m-tab active">Results</div>
+        <div class="m-tab">My Learning</div>
+      </div>
+      <div class="m-stats">
+        <div class="m-stat"><div class="m-stat-val">24</div><div class="m-stat-lbl">Learners</div></div>
+        <div class="m-stat"><div class="m-stat-val">71%</div><div class="m-stat-lbl">Completion</div></div>
+        <div class="m-stat"><div class="m-stat-val">83%</div><div class="m-stat-lbl">Avg score</div></div>
+        <div class="m-stat"><div class="m-stat-val">Today</div><div class="m-stat-lbl">Last active</div></div>
+      </div>
+      <div class="m-section" style="margin-bottom:4px">All content</div>
+      <table class="m-table">
+        <thead><tr><th>Title</th><th>Type</th><th>Done</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>Intro to PM</td><td style="font-size:9px;color:var(--ink-muted)">Course</td><td><span class="m-pill m-pill-green">6/8</span></td><td><span class="m-link">View →</span></td></tr>
+          <tr><td>Agile Fund.</td><td style="font-size:9px;color:var(--ink-muted)">Course</td><td><span class="m-pill m-pill-amber">3/6</span></td><td><span class="m-link">View →</span></td></tr>
+          <tr><td>Risk Assessment</td><td style="font-size:9px;color:var(--ink-muted)">Lesson</td><td><span class="m-pill m-pill-green">8/10</span></td><td><span class="m-link">View →</span></td></tr>
+          <tr><td>Stakeholder Comms</td><td style="font-size:9px;color:var(--ink-muted)">Lesson</td><td><span class="m-pill m-pill-amber">4/8</span></td><td><span class="m-link">View →</span></td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:10px;color:var(--ink-muted);margin-top:6px;font-style:italic">"View →" goes to /creator/courses/[id]/results or /creator/lessons/[id]/results</p>
+    </div>
+    <div class="approach-desc">
+      <div class="approach-name">Unified table + separate course drilldown pages</div>
+      <div class="approach-summary">One table for all content (courses and lessons). Clicking "View →" goes to a dedicated drilldown page for each. Mirrors the existing lesson drilldown pattern.</div>
+      <ul class="approach-bullets">
+        <li>Consistent pattern — everything uses a drilldown</li>
+        <li>Cleanest Results tab — just one table</li>
+        <li class="con">Requires a new /creator/courses/[id]/results page</li>
+        <li class="con">More navigation — can't quickly scan all learners</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function select(el, choice) {
+  document.querySelectorAll('.approach').forEach(a => a.classList.remove('selected'));
+  el.classList.add('selected');
+  if (window.__recordChoice) window.__recordChoice(choice, el.querySelector('.approach-name').textContent);
+}
+</script>
+
+</body>
+</html>

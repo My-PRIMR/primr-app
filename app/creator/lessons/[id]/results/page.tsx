@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { db } from '@/db'
-import { lessons, lessonAttempts, lessonInvitations, users } from '@/db/schema'
+import { lessons, lessonAttempts, lessonInvitations, users, lessonFeedback } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { computeBlockPerformance } from '@/lib/results'
@@ -119,6 +119,45 @@ export default async function LessonResultsPage({
   const completedAttempts = attemptRows.filter(r => r.status === 'completed')
   const blockPerf = computeBlockPerformance(completedAttempts, lesson.manifest.blocks)
 
+  // Feedback data
+  const feedbackRows = await db
+    .select()
+    .from(lessonFeedback)
+    .where(eq(lessonFeedback.lessonId, id))
+
+  const ratings = feedbackRows
+    .map(r => r.rating)
+    .filter((r): r is number => r != null)
+  const avgRating = ratings.length > 0
+    ? ratings.reduce((a, b) => a + b, 0) / ratings.length
+    : null
+  const ratingDist = [5, 4, 3, 2, 1].map(star => ({
+    star,
+    count: ratings.filter(r => r === star).length,
+  }))
+  const maxDistCount = Math.max(...ratingDist.map(r => r.count), 1)
+
+  // Block flags — aggregate across all feedback rows
+  const flagMap = new Map<string, { flagCount: number; comments: string[] }>()
+  for (const row of feedbackRows) {
+    const flags = (row.blockFlags ?? []) as Array<{ blockId: string; comment: string }>
+    for (const f of flags) {
+      const existing = flagMap.get(f.blockId)
+      if (!existing) {
+        flagMap.set(f.blockId, { flagCount: 1, comments: f.comment ? [f.comment] : [] })
+      } else {
+        existing.flagCount++
+        if (f.comment) existing.comments.push(f.comment)
+      }
+    }
+  }
+  const blockFlagsSorted = [...flagMap.entries()]
+    .map(([blockId, data]) => ({ blockId, ...data }))
+    .sort((a, b) => b.flagCount - a.flagCount)
+  const blockTitleMap = new Map(
+    lesson.manifest.blocks.map(b => [b.id, (b.props as { title?: string }).title ?? b.type])
+  )
+
   const metaParts = [
     lesson.publishedAt ? 'Published' : 'Draft',
     lesson.examEnforced ? 'Exam enforced' : null,
@@ -168,6 +207,36 @@ export default async function LessonResultsPage({
           <div className={styles.statSub}>≥ {Math.round(PASS_THRESHOLD * 100)}% = pass</div>
         </div>
       </div>
+
+      {/* Feedback summary bar */}
+      {avgRating !== null && (
+        <div className={styles.section}>
+          <div className={styles.sectionTitle}>Learner feedback</div>
+          <div className={styles.feedbackBar}>
+            <div className={styles.feedbackRating}>
+              <span className={styles.feedbackStar}>★</span>
+              <span className={styles.feedbackRatingVal}>{avgRating.toFixed(1)}</span>
+              <span className={styles.feedbackRatingCount}>
+                · {ratings.length} rating{ratings.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <div className={styles.ratingDist}>
+              {ratingDist.map(({ star, count }) => (
+                <div key={star} className={styles.ratingDistRow}>
+                  <span className={styles.ratingDistLabel}>{star}★</span>
+                  <div className={styles.ratingDistTrack}>
+                    <div
+                      className={styles.ratingDistFill}
+                      style={{ width: `${(count / maxDistCount) * 100}%` }}
+                    />
+                  </div>
+                  <span className={styles.ratingDistCount}>{count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Learner roster */}
       <div className={styles.section}>
@@ -281,6 +350,32 @@ export default async function LessonResultsPage({
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Block flags */}
+      {blockFlagsSorted.length > 0 && (
+        <div className={styles.section}>
+          <div className={styles.sectionTitle}>Flagged sections</div>
+          <div className={styles.flagList}>
+            {blockFlagsSorted.map(({ blockId, flagCount, comments }) => (
+              <div key={blockId} className={styles.flagItem}>
+                <div className={styles.flagItemHeader}>
+                  <span className={styles.flagBlockTitle}>
+                    {blockTitleMap.get(blockId) ?? blockId}
+                  </span>
+                  <span className={styles.flagCount}>
+                    {flagCount} flag{flagCount !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                {comments.length > 0 && (
+                  <ul className={styles.flagComments}>
+                    {comments.map((c, i) => <li key={i}>{c}</li>)}
+                  </ul>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}

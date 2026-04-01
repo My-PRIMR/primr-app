@@ -11,6 +11,7 @@ export type LessonResultRow = {
   startedCount: number
   completedCount: number
   avgScore: number | null
+  avgRating: number | null
 }
 
 export type CourseLearnerRow = {
@@ -266,6 +267,7 @@ export default function ResultsTab({ results }: { results: ResultsData }) {
                 <th className={styles.thMeta}>Started</th>
                 <th className={styles.thMeta}>Completed</th>
                 <th className={styles.thMeta}>Avg score</th>
+                <th className={styles.thMeta}>Rating</th>
                 <th className={styles.thActions}></th>
               </tr>
             </thead>
@@ -300,6 +302,15 @@ export default function ResultsTab({ results }: { results: ResultsData }) {
                           </div>
                           <span className={styles.scorePct}>{Math.round(row.avgScore * 100)}%</span>
                         </div>
+                      ) : (
+                        <span style={{ color: 'var(--ink-muted, #888)' }}>—</span>
+                      )}
+                    </td>
+                    <td className={styles.tdMeta}>
+                      {row.avgRating != null ? (
+                        <span style={{ color: 'var(--color-amber, #e2a800)', fontWeight: 500 }}>
+                          ★ {row.avgRating.toFixed(1)}
+                        </span>
                       ) : (
                         <span style={{ color: 'var(--ink-muted, #888)' }}>—</span>
                       )}

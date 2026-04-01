@@ -209,3 +209,106 @@
 .blockPct { font-size: 18px; font-weight: 700; color: var(--teal, #0a7c6e); }
 .blockPctLow { font-size: 18px; font-weight: 700; color: var(--coral, #e05a44); }
 .blockPctLabel { font-size: 11px; color: var(--ink-muted); }
+
+/* ── Feedback bar ── */
+.feedbackBar {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.feedbackRating {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+.feedbackStar {
+  color: var(--color-amber, #e2a800);
+  font-size: 20px;
+}
+.feedbackRatingVal {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.feedbackRatingCount {
+  font-size: 13px;
+  color: var(--ink-muted, #888);
+}
+.ratingDist {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 160px;
+  max-width: 280px;
+}
+.ratingDistRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 12px;
+}
+.ratingDistLabel {
+  width: 24px;
+  text-align: right;
+  color: var(--ink-muted, #888);
+  flex-shrink: 0;
+}
+.ratingDistTrack {
+  flex: 1;
+  height: 6px;
+  background: var(--border-mid, #e5e7eb);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.ratingDistFill {
+  height: 100%;
+  background: var(--color-amber, #e2a800);
+  border-radius: 3px;
+  transition: width 300ms ease;
+}
+.ratingDistCount {
+  width: 20px;
+  text-align: right;
+  color: var(--ink-muted, #888);
+  flex-shrink: 0;
+}
+
+/* ── Flag list ── */
+.flagList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.flagItem {
+  padding: 0.75rem 1rem;
+  border: 0.5px solid var(--border-mid, #e5e7eb);
+  border-radius: 8px;
+}
+.flagItemHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.flagBlockTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+.flagCount {
+  font-size: 12px;
+  color: var(--ink-muted, #888);
+  background: var(--surface-raised, #f5f5f5);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.flagComments {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 13px;
+  color: var(--ink-muted, #888);
+  line-height: 1.6;
+}

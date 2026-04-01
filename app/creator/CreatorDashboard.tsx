@@ -183,7 +183,7 @@ export default function CreatorDashboard({
       </div>
 
       {/* ── Toolbar ── */}
-      <div className={styles.toolbar}>
+      {tab !== 'results' && tab !== 'learning' && <div className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
           {selected.size > 0 && (
             <button className={styles.deleteBulkBtn} onClick={deleteSelected} disabled={deleting}>
@@ -205,7 +205,7 @@ export default function CreatorDashboard({
             aria-label="List view"
           >☰</button>
         </div>
-      </div>
+      </div>}
 
       {/* ── Courses tab ── */}
       {isCourses && (

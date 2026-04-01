@@ -51,7 +51,7 @@ export default function ResultsTab({ results }: { results: ResultsData }) {
         <div className={styles.statCard}>
           <div className={styles.statLabel}>Last activity</div>
           <div className={styles.statValue} style={{ fontSize: '18px', paddingTop: '4px' }}>
-            {lastActivityDate ? new Date(lastActivityDate).toLocaleDateString() : '—'}
+            {lastActivityDate ? new Date(lastActivityDate).toLocaleDateString('en-US', { timeZone: 'UTC' }) : '—'}
           </div>
           <div className={styles.statSub}>{lastActivityDate ? 'most recent completion' : 'no completions yet'}</div>
         </div>
@@ -93,7 +93,8 @@ export default function ResultsTab({ results }: { results: ResultsData }) {
             </thead>
             <tbody>
               {lessonRows.map(row => {
-                const completedFrac = row.invitedCount > 0 ? row.completedCount / row.invitedCount : 0
+                const denominator = row.invitedCount > 0 ? row.invitedCount : row.startedCount
+                const completedFrac = denominator > 0 ? row.completedCount / denominator : 0
                 const pillClass = completedFrac >= 0.8
                   ? styles.completedPill
                   : completedFrac > 0
@@ -107,7 +108,7 @@ export default function ResultsTab({ results }: { results: ResultsData }) {
                     <td className={styles.tdMeta}>{row.startedCount}</td>
                     <td className={styles.tdMeta}>
                       <span className={pillClass}>
-                        {row.completedCount} / {row.invitedCount}
+                        {row.completedCount} / {denominator}
                       </span>
                     </td>
                     <td className={styles.tdMeta}>

@@ -151,6 +151,7 @@ export default async function DashboardPage() {
           avgScore: stat?.avgScore ?? null,
         }
       }),
+      courseRows: [],
     }
   }
 

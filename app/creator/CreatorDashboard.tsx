@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { InvitePanel } from './InvitePanel'
 import type { EnrolledCourse, InvitedLesson, HistoryLesson } from './LearnerDashboard'
 import styles from './CreatorDashboard.module.css'
+import ResultsTab, { type ResultsData } from './ResultsTab'
 
 export type LearnerData = {
   courses: EnrolledCourse[]
@@ -33,7 +34,7 @@ export type LessonItem = {
   showcase: boolean
 }
 
-type Tab = 'courses' | 'lessons' | 'learning'
+type Tab = 'courses' | 'lessons' | 'results' | 'learning'
 type View = 'card' | 'list'
 
 function courseLabel(status: string, doneCount: number, lessonCount: number) {
@@ -60,10 +61,12 @@ export default function CreatorDashboard({
   courses,
   lessons,
   learner,
+  results,
 }: {
   courses: CourseItem[]
   lessons: LessonItem[]
   learner?: LearnerData
+  results?: ResultsData
 }) {
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('lessons')
@@ -78,7 +81,7 @@ export default function CreatorDashboard({
   const selected = isCourses ? selectedCourses : selectedLessons
   const setSelected = isCourses ? setSelectedCourses : setSelectedLessons
 
-  const allSelected = tab !== 'learning' && items.length > 0 && selected.size === items.length
+  const allSelected = tab !== 'learning' && tab !== 'results' && items.length > 0 && selected.size === items.length
 
   function toggle(id: string) {
     setSelected(prev => {
@@ -155,12 +158,21 @@ export default function CreatorDashboard({
           Courses
           {courses.length > 0 && <span className={styles.tabBadge}>{courses.length}</span>}
         </button>
+        {results && (
+          <button
+            className={`${styles.tab} ${tab === 'results' ? styles.tabActive : ''}`}
+            onClick={() => setTab('results')}
+          >
+            Results
+          </button>
+        )}
         {learner && (
           <button
             className={`${styles.tab} ${tab === 'learning' ? styles.tabActive : ''}`}
             onClick={() => setTab('learning')}
+            title="Primr lessons I have taken"
           >
-            Learning
+            My Learning
             {(learner.courses.length + learner.lessons.length + learner.history.length) > 0 && (
               <span className={styles.tabBadge}>
                 {learner.courses.length + learner.lessons.length + learner.history.length}
@@ -435,6 +447,11 @@ export default function CreatorDashboard({
             </tbody>
           </table>
         )
+      )}
+
+      {/* ── Results tab ── */}
+      {tab === 'results' && results && (
+        <ResultsTab results={results} />
       )}
 
       {/* ── Learning tab ── */}

@@ -486,3 +486,201 @@
   color: var(--ink-muted);
   border: 1px solid var(--border);
 }
+
+/* ── Results: course section ──────────────────────────────────────────────── */
+.courseList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 2rem;
+}
+
+.courseItem {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.courseHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.courseHeader:hover {
+  background: var(--surface-alt);
+}
+
+.expandIcon {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  width: 16px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.courseInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.courseTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.courseMeta {
+  font-size: 12px;
+  color: var(--ink-muted);
+  margin-top: 1px;
+}
+
+.courseCompletionWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.courseMiniBar {
+  width: 80px;
+  height: 5px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.courseMiniBarFill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+.courseCompletionPct {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  min-width: 36px;
+  text-align: right;
+}
+
+.courseViewLink {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.courseViewLink:hover {
+  opacity: 0.75;
+}
+
+/* Expanded learner sub-table */
+.learnerSubTable {
+  border-top: 1.5px solid var(--border);
+  background: var(--surface-alt);
+}
+
+.learnerTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.learnerTable thead th {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  text-align: left;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.learnerTable tbody td {
+  font-size: 13px;
+  color: var(--ink);
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.learnerTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.learnerName {
+  font-weight: 500;
+}
+
+.learnerEmail {
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
+.progWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progBarBg {
+  width: 80px;
+  height: 5px;
+  background: var(--border-mid);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progBarFill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.progLabel {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.completedPillSub {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: var(--teal-soft);
+  color: var(--teal);
+}
+
+.inProgressPillSub {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.notStartedPillSub {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: var(--surface-alt);
+  color: var(--ink-muted);
+  border: 1px solid var(--border);
+}

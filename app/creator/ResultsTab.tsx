@@ -125,34 +125,37 @@ export default function ResultsTab({ results }: { results: ResultsData }) {
 
               return (
                 <div key={course.id} className={styles.courseItem}>
-                  <div
-                    className={styles.courseHeader}
-                    onClick={() => toggleExpand(course.id)}
-                  >
-                    <span className={styles.expandIcon}>{isExpanded ? '−' : '+'}</span>
-                    <div className={styles.courseInfo}>
-                      <div className={styles.courseTitle}>{course.title}</div>
-                      <div className={styles.courseMeta}>
-                        {course.enrolledCount} enrolled · {course.totalLessons} lessons
+                  <div className={styles.courseHeader}>
+                    <button
+                      type="button"
+                      className={styles.expandToggle}
+                      onClick={() => toggleExpand(course.id)}
+                      aria-expanded={isExpanded}
+                    >
+                      <span className={styles.expandIcon}>{isExpanded ? '−' : '+'}</span>
+                      <div className={styles.courseInfo}>
+                        <div className={styles.courseTitle}>{course.title}</div>
+                        <div className={styles.courseMeta}>
+                          {course.enrolledCount} enrolled · {course.totalLessons} lessons
+                        </div>
                       </div>
-                    </div>
-                    <div className={styles.courseCompletionWrap}>
-                      <div className={styles.courseMiniBar}>
-                        <div
-                          className={styles.courseMiniBarFill}
-                          style={{
-                            width: completionPct != null ? `${completionPct}%` : '0%'
-                          }}
-                        />
+                      <div className={styles.courseCompletionWrap}>
+                        <div className={styles.courseMiniBar}>
+                          <div
+                            className={styles.courseMiniBarFill}
+                            style={{
+                              width: completionPct != null ? `${completionPct}%` : '0%'
+                            }}
+                          />
+                        </div>
+                        <span className={styles.courseCompletionPct}>
+                          {completionPct != null ? `${completionPct}% completed` : '—'}
+                        </span>
                       </div>
-                      <span className={styles.courseCompletionPct}>
-                        {completionPct != null ? `${completionPct}% completed` : '—'}
-                      </span>
-                    </div>
+                    </button>
                     <Link
                       href={`/creator/courses/${course.id}/results`}
                       className={styles.courseViewLink}
-                      onClick={e => e.stopPropagation()}
                     >
                       View results →
                     </Link>
@@ -172,7 +175,7 @@ export default function ResultsTab({ results }: { results: ResultsData }) {
                         </thead>
                         <tbody>
                           {course.learners.map(learner => {
-                            const progressFrac = course.totalLessons > 0
+                            const progressFrac = learner.totalLessons > 0
                               ? learner.completedLessons / learner.totalLessons
                               : 0
                             const progressPct = Math.round(progressFrac * 100)
@@ -226,7 +229,7 @@ export default function ResultsTab({ results }: { results: ResultsData }) {
                                       <span className={styles.scorePct}>{Math.round(learner.avgScore * 100)}%</span>
                                     </div>
                                   ) : (
-                                    <span style={{ color: 'var(--ink-muted)' }}>—</span>
+                                    <span style={{ color: 'var(--ink-muted, #888)' }}>—</span>
                                   )}
                                 </td>
                                 <td>
@@ -298,7 +301,7 @@ export default function ResultsTab({ results }: { results: ResultsData }) {
                           <span className={styles.scorePct}>{Math.round(row.avgScore * 100)}%</span>
                         </div>
                       ) : (
-                        <span style={{ color: 'var(--ink-muted)' }}>—</span>
+                        <span style={{ color: 'var(--ink-muted, #888)' }}>—</span>
                       )}
                     </td>
                     <td className={styles.tdActions}>

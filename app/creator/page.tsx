@@ -121,8 +121,20 @@ export default async function DashboardPage() {
 
     const attemptStatMap = new Map(attemptStatRows.map(r => [r.lessonId, r]))
 
-    const overallStarted = attemptStatRows.reduce((sum, r) => sum + r.startedCount, 0)
-    const overallCompleted = attemptStatRows.reduce((sum, r) => sum + r.completedCount, 0)
+    // Overall started/completed counts across all lessons (standalone + course)
+    let overallStarted = 0
+    let overallCompleted = 0
+    if (allLessonIds.length > 0) {
+      const overallAttemptStats = await db
+        .select({
+          startedCount: sql<number>`count(distinct ${lessonAttempts.userId})::int`,
+          completedCount: sql<number>`count(distinct case when ${lessonAttempts.status} = 'completed' then ${lessonAttempts.userId} end)::int`,
+        })
+        .from(lessonAttempts)
+        .where(inArray(lessonAttempts.lessonId, allLessonIds))
+      overallStarted = overallAttemptStats[0]?.startedCount ?? 0
+      overallCompleted = overallAttemptStats[0]?.completedCount ?? 0
+    }
 
     // Course enrollment rows
     let enrolledEmails: string[] = []
@@ -146,7 +158,7 @@ export default async function DashboardPage() {
       courseId: string
       learnerEmail: string
       completedCount: number
-      bestAvgScore: number | null
+      avgScore: number | null
       lastActivity: string | null
     }[] = []
     if (courseIds.length > 0) {
@@ -155,7 +167,7 @@ export default async function DashboardPage() {
           courseId: courseSections.courseId,
           learnerEmail: sql<string>`lower(${users.email})`,
           completedCount: sql<number>`count(distinct ${lessonAttempts.lessonId})::int`,
-          bestAvgScore: sql<number | null>`avg(${lessonAttempts.score})`,
+          avgScore: sql<number | null>`avg(${lessonAttempts.score})`,
           lastActivity: sql<string | null>`max(${lessonAttempts.completedAt})::text`,
         })
         .from(lessonAttempts)
@@ -192,7 +204,7 @@ export default async function DashboardPage() {
           name: e.userName,
           completedLessons,
           totalLessons,
-          avgScore: completion?.bestAvgScore ?? null,
+          avgScore: completion?.avgScore ?? null,
           status,
           lastActivity: completion?.lastActivity ?? null,
         }
@@ -224,6 +236,7 @@ export default async function DashboardPage() {
         .from(lessonAttempts)
         .innerJoin(users, eq(users.id, lessonAttempts.userId))
         .where(inArray(lessonAttempts.lessonId, allLessonIds))
+        .groupBy(users.email)
       lessonAttemptEmails = emailRows.map(r => r.email)
     }
     const totalLearners = new Set([...enrolledEmails, ...lessonAttemptEmails]).size

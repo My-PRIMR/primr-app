@@ -7,6 +7,7 @@ import { InvitePanel } from './InvitePanel'
 import type { EnrolledCourse, InvitedLesson, HistoryLesson } from './LearnerDashboard'
 import styles from './CreatorDashboard.module.css'
 import ResultsTab, { type ResultsData } from './ResultsTab'
+import ResultsTabBoundary from './ResultsTabBoundary'
 
 export type LearnerData = {
   courses: EnrolledCourse[]
@@ -451,7 +452,9 @@ export default function CreatorDashboard({
 
       {/* ── Results tab ── */}
       {tab === 'results' && results && (
-        <ResultsTab results={results} />
+        <ResultsTabBoundary>
+          <ResultsTab results={results} />
+        </ResultsTabBoundary>
       )}
 
       {/* ── Learning tab ── */}

@@ -45,6 +45,17 @@ export type ResultsData = {
   courseRows: CourseResultRow[]
 }
 
+function safeFormatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—'
+  try {
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return '—'
+    return d.toLocaleDateString('en-US', { timeZone: 'UTC' })
+  } catch {
+    return '—'
+  }
+}
+
 export default function ResultsTab({ results }: { results: ResultsData }) {
   const { totalLearners, startedCount, completedCount, avgScore, lastActivityDate, dailyActivity, lessonRows, courseRows } = results
 
@@ -85,7 +96,7 @@ export default function ResultsTab({ results }: { results: ResultsData }) {
         <div className={styles.statCard}>
           <div className={styles.statLabel}>Last activity</div>
           <div className={styles.statValue} style={{ fontSize: '18px', paddingTop: '4px' }}>
-            {lastActivityDate ? new Date(lastActivityDate).toLocaleDateString('en-US', { timeZone: 'UTC' }) : '—'}
+            {safeFormatDate(lastActivityDate)}
           </div>
           <div className={styles.statSub}>{lastActivityDate ? 'most recent completion' : 'no completions yet'}</div>
         </div>
@@ -237,9 +248,7 @@ export default function ResultsTab({ results }: { results: ResultsData }) {
                                   <span className={pillClass}>{pillLabel}</span>
                                 </td>
                                 <td>
-                                  {learner.lastActivity
-                                    ? new Date(learner.lastActivity).toLocaleDateString('en-US', { timeZone: 'UTC' })
-                                    : '—'}
+                                  {safeFormatDate(learner.lastActivity)}
                                 </td>
                               </tr>
                             )

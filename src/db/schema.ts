@@ -72,7 +72,11 @@ export const lessonAttempts = pgTable('lesson_attempts', {
   score:       real('score'),
   totalBlocks: integer('total_blocks').notNull(),
   scoredBlocks: integer('scored_blocks'),
-  blockResults: jsonb('block_results').$type<Record<string, { status: string; score?: number }>>(),
+  blockResults: jsonb('block_results').$type<Record<string, {
+    status: string
+    score?: number
+    questions?: Array<{ index: number; chosenIndex: number; correct: boolean }>
+  }>>(),
   startedAt:   timestamp('started_at').notNull().defaultNow(),
   completedAt: timestamp('completed_at'),
 })

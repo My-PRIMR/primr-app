@@ -381,6 +381,44 @@ export default async function LessonResultsPage({
                       <span className={styles.muted}>—</span>
                     )}
                   </div>
+                  {block.questionStats && block.questionStats.length > 0 && (
+                    <div className={styles.questionList}>
+                      {block.questionStats.map(q => {
+                        const maxChoiceCount = Math.max(...q.choiceCounts, 1)
+                        const qPctCorrect = q.totalAnswered > 0 ? Math.round((q.correctCount / q.totalAnswered) * 100) : null
+                        return (
+                          <div key={q.index} className={styles.questionItem}>
+                            <div className={styles.questionHeader}>
+                              <span className={styles.questionNum}>Q{q.index + 1}</span>
+                              <span className={styles.questionPrompt}>
+                                {q.prompt.replace(/\*\*|__|\*|`/g, '').slice(0, 120)}{q.prompt.length > 120 ? '…' : ''}
+                              </span>
+                              <span className={styles.questionPct}>{qPctCorrect != null ? `${qPctCorrect}% correct` : '—'}</span>
+                            </div>
+                            <div className={styles.choiceList}>
+                              {q.options.map((opt, oi) => {
+                                const count = q.choiceCounts[oi] ?? 0
+                                const pct = q.totalAnswered > 0 ? Math.round((count / q.totalAnswered) * 100) : 0
+                                const isCorrect = oi === q.correctIndex
+                                return (
+                                  <div key={oi} className={[styles.choiceRow, isCorrect ? styles.choiceCorrect : ''].filter(Boolean).join(' ')}>
+                                    <span className={styles.choiceLetter}>{String.fromCharCode(65 + oi)}</span>
+                                    <span className={styles.choiceText}>{opt.slice(0, 60)}{opt.length > 60 ? '…' : ''}</span>
+                                    <div className={styles.choiceBarTrack}>
+                                      <div className={styles.choiceBarFill} style={{ width: `${(count / maxChoiceCount) * 100}%` }} />
+                                    </div>
+                                    <span className={styles.choiceCount}>{count}</span>
+                                    <span className={styles.choicePct}>{pct}%</span>
+                                    {isCorrect && <span className={styles.choiceCheck}>✓</span>}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )
             })}

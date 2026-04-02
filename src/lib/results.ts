@@ -22,6 +22,17 @@ export function fillDailyActivity(
   return result
 }
 
+export type QuestionStat = {
+  index: number
+  prompt: string
+  options: string[]
+  correctIndex: number
+  totalAnswered: number
+  correctCount: number
+  /** How many learners chose each option (parallel to options array) */
+  choiceCounts: number[]
+}
+
 export type BlockPerf = {
   blockId: string
   blockType: string
@@ -31,6 +42,8 @@ export type BlockPerf = {
   pctCorrect: number | null
   /** Average score 0–1 for score-based blocks. Null if no score present. */
   avgScore: number | null
+  /** Per-question breakdown — present for quiz/exam blocks with question data */
+  questionStats?: QuestionStat[]
 }
 
 /**
@@ -42,10 +55,10 @@ export type BlockPerf = {
  * but are excluded from the correct/incorrect ratio.
  */
 export function computeBlockPerformance(
-  attempts: Array<{ blockResults: Record<string, { status: string; score?: number }> | null }>,
+  attempts: Array<{ blockResults: Record<string, { status: string; score?: number; questions?: Array<{ index: number; chosenIndex: number; correct: boolean }> }> | null }>,
   blocks: Array<{ id: string; type: string; props: Record<string, unknown> }>,
 ): BlockPerf[] {
-  const collected = new Map<string, Array<{ status: string; score?: number }>>()
+  const collected = new Map<string, Array<{ status: string; score?: number; questions?: Array<{ index: number; chosenIndex: number; correct: boolean }> }>>()
 
   for (const attempt of attempts) {
     if (!attempt.blockResults) continue
@@ -61,6 +74,25 @@ export function computeBlockPerformance(
       const results = collected.get(b.id)!
       const withStatus = results.filter(r => r.status === 'correct' || r.status === 'incorrect')
       const withScore = results.filter(r => r.score != null)
+      const manifestQuestions = (b.props as { questions?: Array<{ prompt: string; options: string[]; correctIndex: number }> } | null)?.questions
+      let questionStats: QuestionStat[] | undefined
+      if (manifestQuestions && manifestQuestions.length > 0) {
+        const qs = manifestQuestions.map((q, qi) => {
+          const choiceCounts = Array(q.options.length).fill(0) as number[]
+          let totalAnswered = 0
+          let correctCount = 0
+          for (const r of results) {
+            const qr = r.questions?.find(x => x.index === qi)
+            if (!qr || qr.chosenIndex === -1) continue
+            totalAnswered++
+            if (qr.chosenIndex >= 0 && qr.chosenIndex < choiceCounts.length) choiceCounts[qr.chosenIndex]++
+            if (qr.correct) correctCount++
+          }
+          return { index: qi, prompt: q.prompt, options: q.options, correctIndex: q.correctIndex, totalAnswered, correctCount, choiceCounts }
+        }).filter(q => q.totalAnswered > 0)
+        if (qs.length > 0) questionStats = qs
+      }
+
       return {
         blockId: b.id,
         blockType: b.type,
@@ -72,6 +104,7 @@ export function computeBlockPerformance(
         avgScore: withScore.length > 0
           ? withScore.reduce((sum, r) => sum + r.score!, 0) / withScore.length
           : null,
+        questionStats,
       }
     })
     .filter(b => b.pctCorrect != null || b.avgScore != null)

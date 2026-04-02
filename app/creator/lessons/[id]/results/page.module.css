@@ -205,6 +205,7 @@
 .blockBarFillLow { height: 100%; border-radius: 4px; background: var(--coral, #e05a44); }
 .blockBarN { font-size: 11px; color: var(--ink-muted); margin-top: 4px; text-align: right; }
 
+.blockRow { flex-wrap: wrap; }
 .blockStat { flex-shrink: 0; text-align: right; min-width: 52px; }
 .blockPct { font-size: 18px; font-weight: 700; color: var(--teal, #0a7c6e); }
 .blockPctLow { font-size: 18px; font-weight: 700; color: var(--coral, #e05a44); }
@@ -312,3 +313,42 @@
   color: var(--ink-muted, #888);
   line-height: 1.6;
 }
+
+/* ── Per-question breakdown ── */
+.questionList {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-light, #f0f0f0);
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+.questionItem { display: flex; flex-direction: column; gap: 0.3rem; }
+.questionHeader { display: flex; align-items: baseline; gap: 0.5rem; font-size: 12px; }
+.questionNum { color: var(--ink-muted); font-weight: 600; flex-shrink: 0; }
+.questionPrompt { flex: 1; color: var(--ink); font-size: 12px; }
+.questionPct { color: var(--ink-muted); flex-shrink: 0; font-size: 11px; }
+.choiceList { display: flex; flex-direction: column; gap: 3px; padding-left: 1.25rem; }
+.choiceRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+.choiceCorrect { color: var(--teal, #0a7c6e); }
+.choiceLetter { font-weight: 600; width: 14px; flex-shrink: 0; }
+.choiceText { width: 160px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.choiceBarTrack {
+  flex: 1;
+  height: 6px;
+  max-width: 120px;
+  background: var(--surface-alt, #eee);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.choiceBarFill { height: 100%; background: var(--teal, #0a7c6e); border-radius: 3px; }
+.choiceCount { width: 20px; text-align: right; flex-shrink: 0; }
+.choicePct { width: 28px; text-align: right; flex-shrink: 0; }
+.choiceCheck { color: var(--teal, #0a7c6e); font-size: 10px; flex-shrink: 0; }

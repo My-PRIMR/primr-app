@@ -182,7 +182,7 @@ export default async function DashboardPage() {
           learnerEmail: sql<string>`lower(${users.email})`,
           completedCount: sql<number>`count(distinct ${lessonAttempts.lessonId})::int`,
           avgScore: sql<number | null>`avg(${lessonAttempts.score})`,
-          lastActivity: sql<string | null>`max(${lessonAttempts.completedAt})::text`,
+          lastActivity: sql<string | null>`to_char(max(${lessonAttempts.completedAt}) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`,
         })
         .from(lessonAttempts)
         .innerJoin(users, eq(users.id, lessonAttempts.userId))
@@ -259,7 +259,7 @@ export default async function DashboardPage() {
     const overallScoreRow = await db
       .select({
         avgScore: sql<number | null>`avg(${lessonAttempts.score})`,
-        lastActivity: sql<string | null>`max(${lessonAttempts.completedAt})::text`,
+        lastActivity: sql<string | null>`to_char(max(${lessonAttempts.completedAt}) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`,
       })
       .from(lessonAttempts)
       .where(and(
@@ -371,7 +371,7 @@ export default async function DashboardPage() {
         lessonId: lessonAttempts.lessonId,
         attemptCount: sql<number>`count(*)::int`,
         bestScore: sql<number | null>`max(${lessonAttempts.score})`,
-        lastAttempt: sql<string | null>`max(${lessonAttempts.completedAt})::text`,
+        lastAttempt: sql<string | null>`to_char(max(${lessonAttempts.completedAt}) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`,
       })
       .from(lessonAttempts)
       .where(and(
@@ -389,7 +389,7 @@ export default async function DashboardPage() {
       title: lessons.title,
       attemptCount: sql<number>`count(${lessonAttempts.id})::int`,
       bestScore: sql<number | null>`max(${lessonAttempts.score})`,
-      lastAttempt: sql<string | null>`max(${lessonAttempts.startedAt})::text`,
+      lastAttempt: sql<string | null>`to_char(max(${lessonAttempts.startedAt}) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`,
     })
     .from(lessonAttempts)
     .innerJoin(lessons, eq(lessons.id, lessonAttempts.lessonId))

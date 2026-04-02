@@ -155,7 +155,7 @@ export default async function LessonResultsPage({
     .map(([blockId, data]) => ({ blockId, ...data }))
     .sort((a, b) => b.flagCount - a.flagCount)
   const blockTitleMap = new Map(
-    lesson.manifest.blocks.map(b => [b.id, (b.props as { title?: string }).title ?? b.type])
+    lesson.manifest.blocks.map(b => [b.id, (b.props as { title?: string } | null)?.title ?? b.type])
   )
 
   const metaParts = [

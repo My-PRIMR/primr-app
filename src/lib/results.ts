@@ -64,7 +64,7 @@ export function computeBlockPerformance(
       return {
         blockId: b.id,
         blockType: b.type,
-        label: (b.props.title as string | undefined) ?? b.type,
+        label: ((b.props as Record<string, unknown> | null)?.title as string | undefined) ?? b.type,
         responseCount: results.length,
         pctCorrect: withStatus.length > 0
           ? withStatus.filter(r => r.status === 'correct').length / withStatus.length

@@ -74,4 +74,5 @@ export function computeBlockPerformance(
           : null,
       }
     })
+    .filter(b => b.pctCorrect != null || b.avgScore != null)
 }

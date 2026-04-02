@@ -318,7 +318,7 @@ export default function ResultsTab({ results }: { results: ResultsData }) {
                     <td className={styles.tdMeta}>
                       {row.avgRating != null ? (
                         <span style={{ color: 'var(--color-amber, #e2a800)', fontWeight: 500 }}>
-                          ★ {row.avgRating.toFixed(1)}
+                          ★ {Number(row.avgRating).toFixed(1)}
                         </span>
                       ) : (
                         <span style={{ color: 'var(--ink-muted, #888)' }}>—</span>

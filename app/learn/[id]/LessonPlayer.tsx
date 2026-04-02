@@ -46,6 +46,16 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
       }),
     })
 
+    // Save block flags immediately so they aren't lost if the learner closes
+    // the window before interacting with the feedback overlay.
+    if (pendingFlags.length > 0) {
+      await fetch(`/api/lessons/${lessonId}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ attemptId, blockFlags: pendingFlags }),
+      })
+    }
+
     setPhase('feedback')
   }
 

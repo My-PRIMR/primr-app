@@ -208,35 +208,69 @@ export default async function LessonResultsPage({
         </div>
       </div>
 
-      {/* Feedback summary bar */}
-      {avgRating !== null && (
-        <div className={styles.section}>
-          <div className={styles.sectionTitle}>Learner feedback</div>
-          <div className={styles.feedbackBar}>
-            <div className={styles.feedbackRating}>
-              <span className={styles.feedbackStar}>★</span>
-              <span className={styles.feedbackRatingVal}>{avgRating.toFixed(1)}</span>
-              <span className={styles.feedbackRatingCount}>
-                · {ratings.length} rating{ratings.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-            <div className={styles.ratingDist}>
-              {ratingDist.map(({ star, count }) => (
-                <div key={star} className={styles.ratingDistRow}>
-                  <span className={styles.ratingDistLabel}>{star}★</span>
-                  <div className={styles.ratingDistTrack}>
-                    <div
-                      className={styles.ratingDistFill}
-                      style={{ width: `${(count / maxDistCount) * 100}%` }}
-                    />
-                  </div>
-                  <span className={styles.ratingDistCount}>{count}</span>
+      {/* Feedback summary */}
+      <div className={styles.section}>
+        <div className={styles.sectionTitle}>Learner feedback</div>
+        {feedbackRows.length === 0 ? (
+          <p className={styles.muted} style={{ margin: 0, fontSize: '14px' }}>
+            No feedback submitted yet. Learners are prompted after completing the lesson.
+          </p>
+        ) : (
+          <>
+            {avgRating !== null && (
+              <div className={styles.feedbackBar}>
+                <div className={styles.feedbackRating}>
+                  <span className={styles.feedbackStar}>★</span>
+                  <span className={styles.feedbackRatingVal}>{avgRating.toFixed(1)}</span>
+                  <span className={styles.feedbackRatingCount}>
+                    · {ratings.length} rating{ratings.length !== 1 ? 's' : ''}
+                  </span>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+                <div className={styles.ratingDist}>
+                  {ratingDist.map(({ star, count }) => (
+                    <div key={star} className={styles.ratingDistRow}>
+                      <span className={styles.ratingDistLabel}>{star}★</span>
+                      <div className={styles.ratingDistTrack}>
+                        <div
+                          className={styles.ratingDistFill}
+                          style={{ width: `${(count / maxDistCount) * 100}%` }}
+                        />
+                      </div>
+                      <span className={styles.ratingDistCount}>{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {blockFlagsSorted.length > 0 && (
+              <>
+                <div className={styles.sectionTitle} style={{ marginTop: avgRating !== null ? '1.5rem' : 0 }}>
+                  Flagged sections
+                </div>
+                <div className={styles.flagList}>
+                  {blockFlagsSorted.map(({ blockId, flagCount, comments }) => (
+                    <div key={blockId} className={styles.flagItem}>
+                      <div className={styles.flagItemHeader}>
+                        <span className={styles.flagBlockTitle}>
+                          {blockTitleMap.get(blockId) ?? blockId}
+                        </span>
+                        <span className={styles.flagCount}>
+                          {flagCount} flag{flagCount !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      {comments.length > 0 && (
+                        <ul className={styles.flagComments}>
+                          {comments.map((c, i) => <li key={i}>{c}</li>)}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </div>
 
       {/* Learner roster */}
       <div className={styles.section}>
@@ -354,31 +388,6 @@ export default async function LessonResultsPage({
         </div>
       )}
 
-      {/* Block flags */}
-      {blockFlagsSorted.length > 0 && (
-        <div className={styles.section}>
-          <div className={styles.sectionTitle}>Flagged sections</div>
-          <div className={styles.flagList}>
-            {blockFlagsSorted.map(({ blockId, flagCount, comments }) => (
-              <div key={blockId} className={styles.flagItem}>
-                <div className={styles.flagItemHeader}>
-                  <span className={styles.flagBlockTitle}>
-                    {blockTitleMap.get(blockId) ?? blockId}
-                  </span>
-                  <span className={styles.flagCount}>
-                    {flagCount} flag{flagCount !== 1 ? 's' : ''}
-                  </span>
-                </div>
-                {comments.length > 0 && (
-                  <ul className={styles.flagComments}>
-                    {comments.map((c, i) => <li key={i}>{c}</li>)}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </main>
   )
 }

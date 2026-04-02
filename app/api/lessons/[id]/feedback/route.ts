@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
 import { lessons, lessonAttempts, lessonFeedback } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
 import { getSession } from '@/session'
 
 export async function POST(
@@ -49,7 +49,8 @@ export async function POST(
     return NextResponse.json({ error: 'Rating must be 1–5' }, { status: 400 })
   }
 
-  // Upsert: one feedback row per attempt (unique constraint on attemptId)
+  // Upsert: one feedback row per attempt. A second call (e.g. adding rating after
+  // flags were saved at lesson-complete) updates rating, comment, and blockFlags.
   try {
     const [row] = await db
       .insert(lessonFeedback)
@@ -60,13 +61,15 @@ export async function POST(
         comment: comment ?? null,
         blockFlags,
       })
-      .onConflictDoNothing()
+      .onConflictDoUpdate({
+        target: lessonFeedback.attemptId,
+        set: {
+          rating: sql`excluded.rating`,
+          comment: sql`excluded.comment`,
+          blockFlags: sql`excluded.block_flags`,
+        },
+      })
       .returning({ id: lessonFeedback.id })
-
-    if (!row) {
-      // Duplicate — already submitted
-      return NextResponse.json({ error: 'Feedback already submitted' }, { status: 409 })
-    }
 
     return NextResponse.json({ id: row.id })
   } catch {

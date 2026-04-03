@@ -87,6 +87,7 @@ export default function Step1Form({
     onField('documentName', '')
     onField('documentAssets', [])
     if (fileInputRef.current) fileInputRef.current.value = ''
+    setIsPasting(false)
   }
 
   const submitLabel = mode === 'lesson' ? 'Generate lesson →' : 'Generate course →'
@@ -171,16 +172,15 @@ export default function Step1Form({
             <button
               type="button"
               className={styles.pasteToggle}
-              onClick={() => { setIsPasting(false); onField('documentText', '') }}
+              onClick={() => { setIsPasting(false); onField('documentText', ''); setExtractError('') }}
             >
               ← Back to file upload
             </button>
             <textarea
-              className={styles.textarea}
+              className={`${styles.textarea} ${styles.pasteTextarea}`}
               placeholder="Paste your content here — article, notes, training material..."
               value={state.documentText}
               onChange={e => onField('documentText', e.target.value)}
-              style={{ minHeight: '120px' }}
             />
           </>
         )}

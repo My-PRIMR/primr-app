@@ -45,7 +45,7 @@ Rules:
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function slugify(text: string): string {
+export function slugify(text: string): string {
   return text
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
@@ -54,7 +54,7 @@ function slugify(text: string): string {
     .replace(/-+/g, '-')
 }
 
-function buildAssetPromptSection(assets: DocumentAsset[]): string {
+export function buildAssetPromptSection(assets: DocumentAsset[]): string {
   if (!assets.length) return ''
   const lines = assets.map(a => {
     if (a.type === 'video') return `- [video] Page ${a.page}: ${a.url} — YouTube video found in document`
@@ -124,7 +124,14 @@ export async function generateLessonFromOutline(params: {
   }, { signal: params.signal })
 
   const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-  const manifest: LessonManifest = JSON.parse(extractJSON(raw))
+  let manifest: LessonManifest
+  try {
+    manifest = JSON.parse(extractJSON(raw))
+  } catch (err) {
+    console.error('[lesson-gen] JSON parse failed:', err)
+    console.error('[lesson-gen] full raw response:\n' + raw)
+    throw err
+  }
 
   if (params.includeImages) {
     await enrichWithPexelsImages(manifest, process.env.PEXELS_API_KEY ?? '')

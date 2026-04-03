@@ -11,7 +11,7 @@ import { enrichWithPexelsImages, IMAGE_PROMPT_SNIPPET } from '@/lib/pexels'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline } from '@/types/outline'
 import type { DocumentAsset } from '@/types/outline'
-import { generateLessonFromOutline } from '@/lib/lesson-gen'
+import { generateLessonFromOutline, slugify, buildAssetPromptSection } from '@/lib/lesson-gen'
 
 const client = new Anthropic()
 
@@ -56,28 +56,6 @@ Rules:
 - Return ONLY valid JSON. No explanation, no markdown fences, no extra text, no preamble. Start your response with { and end with }.`
 }
 
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-}
-
-function buildAssetPromptSection(assets: DocumentAsset[]): string {
-  if (!assets.length) return ''
-  const lines = assets.map(a => {
-    if (a.type === 'video') return `- [video] Page ${a.page}: ${a.url} — YouTube video found in document`
-    if (a.type === 'image') return `- [image] Page ${a.page}: ${a.url} — visual content extracted from page`
-    return `- [link] Page ${a.page}: ${a.url} — hyperlink found in document`
-  })
-  return `\n\nDocument assets — incorporate these into the lesson where contextually appropriate:\n` +
-    `For video assets, create a 'media' block with the url field set to the YouTube URL.\n` +
-    `For image assets, add an image field to a relevant narrative block: "image": { "src": "<url>", "alt": "<description>", "caption": "<optional caption>" }.\n` +
-    lines.join('\n')
-}
 
 export async function POST(req: NextRequest) {
   const session = await getSession()
@@ -141,6 +119,7 @@ export async function POST(req: NextRequest) {
       passiveLesson: passiveLesson && canSelectModels(internalRole, productRole),
       includeImages: includeImages && canUsePexels(plan, internalRole),
       userId,
+      signal: req.signal,
     })
     id = result.lessonId
     manifest = result.manifest

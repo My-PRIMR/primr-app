@@ -1,34 +1,10 @@
-/* ── Tokens ──────────────────────────────────────────────────────────────── */
 .root {
-  --ink:         #0F1117;
-  --ink-soft:    #4A4D5E;
-  --ink-muted:   #8A8FA8;
-  --surface:     #FFFFFF;
-  --surface-alt: #F7F6F3;
-  --border:      rgba(15,17,23,0.10);
-  --border-mid:  rgba(15,17,23,0.18);
-  --accent:      #6B5CE7;
-  --accent-soft: #EAE7FB;
-
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   font-family: 'DM Sans', system-ui, sans-serif;
   color: var(--ink);
   background: var(--surface);
-}
-
-@media (prefers-color-scheme: dark) {
-  .root {
-    --ink:         #EDEEF5;
-    --ink-soft:    #B0B3C8;
-    --ink-muted:   #6B6E85;
-    --surface:     #1A1C28;
-    --surface-alt: #141520;
-    --border:      rgba(255,255,255,0.08);
-    --border-mid:  rgba(255,255,255,0.14);
-    --accent-soft: rgba(107,92,231,0.18);
-  }
 }
 
 /* ── Nav ─────────────────────────────────────────────────────────────────── */

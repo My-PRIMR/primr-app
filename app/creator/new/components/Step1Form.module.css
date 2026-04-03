@@ -321,3 +321,17 @@
   padding: 1px 6px;
   vertical-align: middle;
 }
+
+.pasteToggle {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--accent);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: opacity 150ms;
+}
+.pasteToggle:hover { opacity: 0.75; }

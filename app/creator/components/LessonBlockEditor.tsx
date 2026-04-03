@@ -313,6 +313,7 @@ export default function LessonBlockEditor({
                   <Component
                     {...(block.props as Record<string, unknown>)}
                     {...pageProps}
+                    isEditor={true}
                     onComplete={() => {}}
                   />
                 )}

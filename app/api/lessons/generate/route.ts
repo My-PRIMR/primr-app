@@ -11,6 +11,7 @@ import { enrichWithPexelsImages, IMAGE_PROMPT_SNIPPET } from '@/lib/pexels'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline } from '@/types/outline'
 import type { DocumentAsset } from '@/types/outline'
+import { generateLessonFromOutline } from '@/lib/lesson-gen'
 
 const client = new Anthropic()
 
@@ -55,31 +56,6 @@ Rules:
 - Return ONLY valid JSON. No explanation, no markdown fences, no extra text, no preamble. Start your response with { and end with }.`
 }
 
-function buildOutlineSystemPrompt(blockRange: string): string {
-  return `You are an expert instructional designer. Generate a complete Primr lesson as JSON from the provided outline. Each block in the outline specifies a type, summary of what it should cover, and optionally an item count.
-
-Return this structure:
-{
-  "id": "kebab-case-id",
-  "title": "Lesson Title",
-  "slug": "kebab-case-slug",
-  "blocks": [{ "id": "block-id", "type": "block-type", "props": { ... } }]
-}
-
-${BLOCK_SCHEMAS}
-
-Rules:
-- Generate exactly the blocks listed in the outline, in the same order, with the same IDs and types
-- Use each block's summary to guide the content you generate for its props
-- If itemCount is specified, generate exactly that many items (questions, cards, steps, etc.)
-- The outline targets ${blockRange} blocks — cover content proportionally, do not skip later sections
-- Always end with one "exam" block — a comprehensive final assessment covering the full lesson
-- Tailor content to the specified audience and level
-- Body/prompt fields support markdown: **bold**, *italic*, __underline__, \`code\`, and links
-- Narrative body max ~200 words, quiz explanations max ~40 words, step body max ~120 words
-- Flashcard decks: max 8 cards. Quiz: max 6 questions. Step-navigator: max 6 steps. Exam: 5–12 questions spanning the whole lesson.
-- Return ONLY valid JSON. No explanation, no markdown fences, no extra text, no preamble. Start your response with { and end with }.`
-}
 
 function slugify(text: string): string {
   return text
@@ -147,73 +123,87 @@ export async function POST(req: NextRequest) {
 
   const isOutlineBased = !!outline
   const blockRange = blockCountRange(documentText)
-  let systemPrompt = isOutlineBased ? buildOutlineSystemPrompt(blockRange) : buildLegacySystemPrompt(blockRange)
-
-  if (passiveLesson && canSelectModels(internalRole, productRole)) {
-    systemPrompt += '\n\nIMPORTANT: Generate only informational content blocks (text, heading, narrative, step-navigator, hero, callout). Do not include any interactive or assessment blocks (quiz, flashcard, fill-in-the-blank, or similar). The lesson should be purely informational — no questions, no exercises.'
-  }
-
-  if (includeImages && canSelectModels(internalRole, productRole)) {
-    systemPrompt += IMAGE_PROMPT_SNIPPET
-  }
-
-  const userMessage = isOutlineBased
-    ? [
-        topic?.trim() ? `Creator's intent: ${topic}\n` : '',
-        `Generate a Primr lesson from this outline:\n\n${JSON.stringify(outline, null, 2)}`,
-        documentText?.trim() ? `\n\nSource document (use this as the primary source for all content, facts, and questions — do not invent material not present in this document):\n"""\n${documentText}\n"""` : '',
-        documentAssets?.length ? buildAssetPromptSection(documentAssets) : '',
-      ].join('')
-    : [
-        title?.trim() ? `Lesson title: "${title}"\n` : '',
-        topic?.trim() ? `Create a Primr lesson about: ${topic}` : 'Create a Primr lesson from the provided source document.',
-        documentText?.trim() ? `\n\nSource document (use this as the primary source for all content, facts, and questions — do not invent material not present in this document):\n"""\n${documentText}\n"""` : '',
-        documentAssets?.length ? buildAssetPromptSection(documentAssets) : '',
-      ].join('')
 
   console.log(`[generate] mode: ${isOutlineBased ? 'outline' : 'legacy'}`)
   const t0 = Date.now()
 
-  const message = await client.messages.create({
-    model: resolvedModel.id,
-    max_tokens: 16384,
-    system: systemPrompt,
-    messages: [{ role: 'user', content: userMessage + '\n\nRespond with JSON only.' }],
-  })
-
-  console.log(`[generate] responded in ${Date.now() - t0}ms, usage: ${JSON.stringify(message.usage)}`)
-
-  const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-
+  let id: string
   let manifest: LessonManifest
-  try {
-    manifest = JSON.parse(extractJSON(raw))
-    console.log(`[generate] parsed manifest: id=${manifest.id}, blocks=${manifest.blocks.length}`)
-  } catch (err) {
-    console.error(`[generate] JSON parse failed:`, err)
-    console.error(`[generate] full raw response:\n${raw}`)
-    return NextResponse.json({ error: 'AI returned invalid JSON', raw }, { status: 500 })
+
+  if (isOutlineBased) {
+    // Outline-based path — delegate to shared utility
+    const result = await generateLessonFromOutline({
+      outline: outline!,
+      documentText,
+      topic,
+      documentAssets,
+      model: resolvedModel.id,
+      passiveLesson: passiveLesson && canSelectModels(internalRole, productRole),
+      includeImages: includeImages && canUsePexels(plan, internalRole),
+      userId,
+    })
+    id = result.lessonId
+    manifest = result.manifest
+  } else {
+    // Legacy (topic-only) path — inline generation
+    let systemPrompt = buildLegacySystemPrompt(blockRange)
+
+    if (passiveLesson && canSelectModels(internalRole, productRole)) {
+      systemPrompt += '\n\nIMPORTANT: Generate only informational content blocks (text, heading, narrative, step-navigator, hero, callout). Do not include any interactive or assessment blocks (quiz, flashcard, fill-in-the-blank, or similar). The lesson should be purely informational — no questions, no exercises.'
+    }
+
+    if (includeImages && canSelectModels(internalRole, productRole)) {
+      systemPrompt += IMAGE_PROMPT_SNIPPET
+    }
+
+    const userMessage = [
+      title?.trim() ? `Lesson title: "${title}"\n` : '',
+      topic?.trim() ? `Create a Primr lesson about: ${topic}` : 'Create a Primr lesson from the provided source document.',
+      documentText?.trim() ? `\n\nSource document (use this as the primary source for all content, facts, and questions — do not invent material not present in this document):\n"""\n${documentText}\n"""` : '',
+      documentAssets?.length ? buildAssetPromptSection(documentAssets) : '',
+    ].join('')
+
+    const message = await client.messages.create({
+      model: resolvedModel.id,
+      max_tokens: 16384,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMessage + '\n\nRespond with JSON only.' }],
+    })
+
+    console.log(`[generate] responded in ${Date.now() - t0}ms, usage: ${JSON.stringify(message.usage)}`)
+
+    const raw = message.content[0].type === 'text' ? message.content[0].text : ''
+
+    try {
+      manifest = JSON.parse(extractJSON(raw))
+      console.log(`[generate] parsed manifest: id=${manifest.id}, blocks=${manifest.blocks.length}`)
+    } catch (err) {
+      console.error(`[generate] JSON parse failed:`, err)
+      console.error(`[generate] full raw response:\n${raw}`)
+      return NextResponse.json({ error: 'AI returned invalid JSON', raw }, { status: 500 })
+    }
+
+    if (includeImages && canUsePexels(plan, internalRole)) {
+      await enrichWithPexelsImages(manifest, process.env.PEXELS_API_KEY ?? '')
+    }
+
+    const slug = `${slugify(manifest.slug || manifest.title)}-${Math.random().toString(36).slice(2, 7)}`
+    manifest.slug = slug
+
+    const t1 = Date.now()
+    const [lesson] = await db.insert(lessons).values({
+      slug,
+      title: manifest.title,
+      manifest,
+      createdBy: userId,
+    }).returning()
+    console.log(`[generate] saved to DB in ${Date.now() - t1}ms, id=${lesson.id}`)
+    id = lesson.id
   }
-
-  if (includeImages && canUsePexels(plan, internalRole)) {
-    await enrichWithPexelsImages(manifest, process.env.PEXELS_API_KEY ?? '')
-  }
-
-  const slug = `${slugify(manifest.slug || manifest.title)}-${Math.random().toString(36).slice(2, 7)}`
-  manifest.slug = slug
-
-  const t1 = Date.now()
-  const [lesson] = await db.insert(lessons).values({
-    slug,
-    title: manifest.title,
-    manifest,
-    createdBy: userId,
-  }).returning()
-  console.log(`[generate] saved to DB in ${Date.now() - t1}ms, id=${lesson.id}`)
 
   if (userId) {
     await logUsage(userId, 'standalone_lesson', resolvedModel.id)
   }
 
-  return NextResponse.json({ id: lesson.id, manifest })
+  return NextResponse.json({ id, manifest })
 }

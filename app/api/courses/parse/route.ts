@@ -167,6 +167,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Provide at least one document, paste text, or a YouTube URL.' }, { status: 400 })
     }
 
+    if (rawText && files.length > 0) {
+      return NextResponse.json({ error: 'Provide either pasted text or file uploads, not both.' }, { status: 400 })
+    }
+
     // Determine structure source
     const hasDoc = files.length > 0 || !!rawText
     const hasVideo = !!videoUrl
@@ -231,7 +235,7 @@ export async function POST(req: NextRequest) {
       'Respond with JSON only.',
     )
 
-    console.log(`[courses/parse] model=${resolvedModel.id} structureSource=${structureSource} video=${hasVideo} docs=${files.length}`)
+    console.log(`[courses/parse] model=${resolvedModel.id} structureSource=${structureSource} video=${hasVideo} docs=${files.length} rawText=${!!rawText}`)
     const t0 = Date.now()
     const message = await client.messages.create({
       model: resolvedModel.id,

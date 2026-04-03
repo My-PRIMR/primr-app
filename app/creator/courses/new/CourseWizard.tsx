@@ -71,6 +71,8 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
   const [skipHero, setSkipHero] = useState(false)
   const [includeImages, setIncludeImages] = useState(false)
   const [notifyEmail, setNotifyEmail] = useState(true)
+  const [isPasting, setIsPasting] = useState(false)
+  const [pastedText, setPastedText] = useState('')
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Step 4 polling
@@ -116,7 +118,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
     set({ stagedFiles: state.stagedFiles.filter((_, i) => i !== idx) })
   }
 
-  const hasSources = state.stagedFiles.length > 0 || state.videoUrl.trim().length > 0
+  const hasSources = state.stagedFiles.length > 0 || state.videoUrl.trim().length > 0 || (isPasting && pastedText.trim().length > 0)
 
   async function handleAnalyzeSources() {
     if (!hasSources) return
@@ -124,7 +126,11 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
     set({ status: 'loading', step: 2, errorMessage: '' })
 
     const formData = new FormData()
-    for (const f of state.stagedFiles) formData.append('file', f)
+    if (isPasting) {
+      formData.append('text', pastedText.trim())
+    } else {
+      for (const f of state.stagedFiles) formData.append('file', f)
+    }
     if (state.videoUrl.trim()) formData.append('videoUrl', state.videoUrl.trim())
     formData.append('audience', state.audience)
     formData.append('level', state.level)
@@ -412,29 +418,57 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
             {/* ── Documents (primary) ── */}
             <div className={styles.formGroup}>
               <label className={styles.label}>Documents <span className={styles.optional}>(optional, up to 5)</span></label>
-              {state.stagedFiles.length > 0 && (
-                <div className={styles.fileList}>
-                  {state.stagedFiles.map((f, i) => (
-                    <div key={i} className={styles.fileRow}>
-                      <span className={styles.fileName}>📎 {f.name}</span>
-                      <button type="button" className={styles.deleteBtn} onClick={() => removeFile(i)}>✕</button>
+
+              {!isPasting ? (
+                <>
+                  {state.stagedFiles.length > 0 && (
+                    <div className={styles.fileList}>
+                      {state.stagedFiles.map((f, i) => (
+                        <div key={i} className={styles.fileRow}>
+                          <span className={styles.fileName}>📎 {f.name}</span>
+                          <button type="button" className={styles.deleteBtn} onClick={() => removeFile(i)}>✕</button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-              {state.stagedFiles.length < 5 && (
-                <label className={styles.uploadBtn}>
-                  {state.stagedFiles.length === 0 ? 'Choose file(s)' : 'Add another file'}
-                  <input
-                    type="file"
-                    accept=".pdf,.docx,.txt,.md"
-                    multiple
-                    className={styles.fileInput}
-                    onChange={handleFilePick}
+                  )}
+                  {state.stagedFiles.length < 5 && (
+                    <label className={styles.uploadBtn}>
+                      {state.stagedFiles.length === 0 ? 'Choose file(s)' : 'Add another file'}
+                      <input
+                        type="file"
+                        accept=".pdf,.docx,.txt,.md"
+                        multiple
+                        className={styles.fileInput}
+                        onChange={handleFilePick}
+                      />
+                    </label>
+                  )}
+                  <button
+                    type="button"
+                    className={styles.pasteToggle}
+                    onClick={() => { set({ stagedFiles: [] }); setIsPasting(true) }}
+                  >
+                    Or paste text instead →
+                  </button>
+                  <p className={styles.fieldHint}>PDF, DOCX, TXT, or MD. Combined with video transcript as source material.</p>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className={styles.pasteToggle}
+                    onClick={() => { setIsPasting(false); setPastedText('') }}
+                  >
+                    ← Back to file upload
+                  </button>
+                  <textarea
+                    className={`${styles.textarea} ${styles.pasteTextarea}`}
+                    placeholder="Paste your content here — article, notes, training material..."
+                    value={pastedText}
+                    onChange={e => setPastedText(e.target.value)}
                   />
-                </label>
+                </>
               )}
-              <p className={styles.fieldHint}>PDF, DOCX, TXT, or MD. Combined with video transcript as source material.</p>
             </div>
 
             {/* ── YouTube URL ── */}

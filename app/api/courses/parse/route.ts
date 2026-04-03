@@ -155,6 +155,7 @@ export async function POST(req: NextRequest) {
     const focus = (formData.get('focus') as string | null) || ''
     const model = (formData.get('model') as string | null) || undefined
     const structureSourceRaw = (formData.get('structureSource') as string | null) || 'auto'
+    const rawText = (formData.get('text') as string | null)?.trim() || ''
 
     if (model) {
       const m = resolveModel(model, internalRole, productRole)
@@ -162,12 +163,12 @@ export async function POST(req: NextRequest) {
       resolvedModel = m
     }
 
-    if (!files.length && !videoUrl) {
-      return NextResponse.json({ error: 'Provide at least one document or a YouTube URL.' }, { status: 400 })
+    if (!files.length && !videoUrl && !rawText) {
+      return NextResponse.json({ error: 'Provide at least one document, paste text, or a YouTube URL.' }, { status: 400 })
     }
 
     // Determine structure source
-    const hasDoc = files.length > 0
+    const hasDoc = files.length > 0 || !!rawText
     const hasVideo = !!videoUrl
     const structureSource: 'document' | 'video' =
       structureSourceRaw === 'video' ? 'video'
@@ -176,13 +177,15 @@ export async function POST(req: NextRequest) {
       : 'video'
 
     // ── Extract document text ────────────────────────────────────────────────
-    let docText = ''
-    for (const file of files) {
-      try {
-        const text = (await extractTextFromFile(file)).trim()
-        docText += (docText ? '\n\n---\n\n' : '') + `[Document: ${file.name}]\n${text}`
-      } catch (err: unknown) {
-        return NextResponse.json({ error: err instanceof Error ? err.message : `Failed to read ${file.name}.` }, { status: 400 })
+    let docText = rawText
+    if (!rawText) {
+      for (const file of files) {
+        try {
+          const text = (await extractTextFromFile(file)).trim()
+          docText += (docText ? '\n\n---\n\n' : '') + `[Document: ${file.name}]\n${text}`
+        } catch (err: unknown) {
+          return NextResponse.json({ error: err instanceof Error ? err.message : `Failed to read ${file.name}.` }, { status: 400 })
+        }
       }
     }
 

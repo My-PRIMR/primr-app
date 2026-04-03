@@ -484,7 +484,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
             </div>
 
             {/* ── Structure source toggle ── */}
-            {state.stagedFiles.length > 0 && state.videoUrl.trim() && (
+            {(state.stagedFiles.length > 0 || (isPasting && pastedText.trim().length > 0)) && state.videoUrl.trim() && (
               <div className={styles.formGroup}>
                 <label className={styles.label}>Course structure source</label>
                 <div className={styles.structureToggle}>

@@ -135,7 +135,7 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
       sourceQuote: { type: 'string', description: 'verbatim excerpt from the preceding narrative block this prompt was derived from' },
       ...common,
     },
-    notes: ['IMPORTANT: Each answer must be 1-2 words only, no punctuation.'],
+    notes: ['IMPORTANT: Each answer must be 1-2 words only, no punctuation. The `answers` array must contain exactly one entry per `{{blank}}` in the prompt — no more, no less.'],
   },
   {
     type: 'exam',

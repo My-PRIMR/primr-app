@@ -53,6 +53,7 @@ Rules:
 - Body/prompt fields support markdown: **bold**, *italic*, __underline__, \`code\`, and links
 - Narrative body max ~200 words, quiz explanations max ~40 words, step body max ~120 words
 - Flashcard decks: max 8 cards. Quiz: max 6 questions. Step-navigator: max 6 steps. Exam: 5–12 questions spanning the whole lesson.
+- SOURCE QUOTES: For every quiz/exam question, flashcard card, and fill-in-the-blank prompt, populate the \`sourceQuote\` field with a direct verbatim excerpt (≤ 2 sentences, copied exactly) from the immediately preceding narrative block that proves where the item was derived from. If no preceding narrative block exists, omit the field.
 - Return ONLY valid JSON. No explanation, no markdown fences, no extra text, no preamble. Start your response with { and end with }.`
 }
 

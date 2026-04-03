@@ -254,7 +254,7 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
     type: 'clickable-map',
     isInteractive: true,
     props: {
-      imageUrl: { type: 'string', required: true, description: 'URL of a real background image. Use empty string "" if no image is available — do NOT use placeholder.com, picsum, or any dummy URL.' },
+      imageUrl: { type: 'string', description: 'URL of a real background image. Omit entirely if no image is available — do NOT use placeholder.com, picsum, or any dummy URL.' },
       imageAlt: { type: 'string' },
       regions:  { type: 'Array<{ id: string, label: string, description?: string, x: number, y: number, width?: number, height?: number }>', required: true, description: 'x/y/width/height as percentages (0–100)' },
       mode:     { type: '"explore" | "identify"', default: '"explore"' },

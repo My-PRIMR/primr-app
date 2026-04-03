@@ -85,7 +85,7 @@ function PropsEditor({ blockType, props, onChange, activePage, onPageChange, can
             onChange(key, [...arr, template])
           }
 
-          const locked = blockType === 'fill-in-the-blank' && key === 'answers'
+          const locked = false
           const isPageArray = key === pageArrayKey
           if (isPageArray) pageItemRefs.current = []
 

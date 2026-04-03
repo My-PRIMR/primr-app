@@ -42,6 +42,7 @@ export default function Step1Form({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [extracting, setExtracting] = useState(false)
   const [extractError, setExtractError] = useState('')
+  const [isPasting, setIsPasting] = useState(false)
 
   const videoUrlValid = isYouTubeUrl(state.videoUrl.trim())
   const hasSources = (state.videoUrl.trim() && videoUrlValid) || !!state.documentText
@@ -86,6 +87,7 @@ export default function Step1Form({
     onField('documentName', '')
     onField('documentAssets', [])
     if (fileInputRef.current) fileInputRef.current.value = ''
+    setIsPasting(false)
   }
 
   const submitLabel = mode === 'lesson' ? 'Generate lesson →' : 'Generate course →'
@@ -98,60 +100,90 @@ export default function Step1Form({
       {/* ── Source document ── */}
       <div className={styles.uploadSection}>
         <span className={styles.uploadLabel}>Source document <span className={styles.optional}>(optional)</span></span>
-        <p className={styles.uploadHint}>Upload a PDF, DOCX, TXT, or MD file — content will be used as source material.</p>
 
-        {!state.documentName && canRichIngest && (
-          <div className={styles.enrichmentOptions}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={state.extractImages}
-                onChange={e => onField('extractImages', e.target.checked)}
-                className={styles.checkbox}
-              />
-              Extract images from PDF
-              <span className={styles.enrichmentNote}> — adds ~30–60s</span>
-            </label>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={state.decodeQr}
-                onChange={e => onField('decodeQr', e.target.checked)}
-                className={styles.checkbox}
-              />
-              Decode QR codes (e.g. embedded YouTube videos)
-              <span className={styles.enrichmentNote}> — adds ~10s</span>
-            </label>
-          </div>
-        )}
+        {!isPasting ? (
+          <>
+            <p className={styles.uploadHint}>Upload a PDF, DOCX, TXT, or MD file — content will be used as source material.</p>
 
-        {!state.documentName && !canRichIngest && (
-          <p className={styles.proNote}>
-            <span className={styles.proBadge}>Pro</span>
-            {' '}Upgrade to extract images and QR-encoded videos from PDFs.
-          </p>
-        )}
+            {!state.documentName && canRichIngest && (
+              <div className={styles.enrichmentOptions}>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={state.extractImages}
+                    onChange={e => onField('extractImages', e.target.checked)}
+                    className={styles.checkbox}
+                  />
+                  Extract images from PDF
+                  <span className={styles.enrichmentNote}> — adds ~30–60s</span>
+                </label>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={state.decodeQr}
+                    onChange={e => onField('decodeQr', e.target.checked)}
+                    className={styles.checkbox}
+                  />
+                  Decode QR codes (e.g. embedded YouTube videos)
+                  <span className={styles.enrichmentNote}> — adds ~10s</span>
+                </label>
+              </div>
+            )}
 
-        {state.documentName ? (
-          <div className={styles.uploadedFile}>
-            <span className={styles.uploadedName}>{state.documentName}</span>
-            <button type="button" className={styles.clearFile} onClick={clearDocument}>Remove</button>
-          </div>
+            {!state.documentName && !canRichIngest && (
+              <p className={styles.proNote}>
+                <span className={styles.proBadge}>Pro</span>
+                {' '}Upgrade to extract images and QR-encoded videos from PDFs.
+              </p>
+            )}
+
+            {state.documentName ? (
+              <div className={styles.uploadedFile}>
+                <span className={styles.uploadedName}>{state.documentName}</span>
+                <button type="button" className={styles.clearFile} onClick={clearDocument}>Remove</button>
+              </div>
+            ) : (
+              <>
+                <label className={styles.uploadBtn}>
+                  {extracting ? 'Reading file…' : 'Choose file'}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.docx,.txt,.md"
+                    className={styles.fileInput}
+                    onChange={handleFile}
+                    disabled={extracting}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className={styles.pasteToggle}
+                  onClick={() => setIsPasting(true)}
+                >
+                  Or paste text instead →
+                </button>
+              </>
+            )}
+
+            {extractError && <p className={styles.error}>{extractError}</p>}
+          </>
         ) : (
-          <label className={styles.uploadBtn}>
-            {extracting ? 'Reading file…' : 'Choose file'}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.docx,.txt,.md"
-              className={styles.fileInput}
-              onChange={handleFile}
-              disabled={extracting}
+          <>
+            <button
+              type="button"
+              className={styles.pasteToggle}
+              onClick={() => { setIsPasting(false); onField('documentText', ''); setExtractError('') }}
+            >
+              ← Back to file upload
+            </button>
+            <textarea
+              className={`${styles.textarea} ${styles.pasteTextarea}`}
+              placeholder="Paste your content here — article, notes, training material..."
+              value={state.documentText}
+              onChange={e => onField('documentText', e.target.value)}
             />
-          </label>
+          </>
         )}
-
-        {extractError && <p className={styles.error}>{extractError}</p>}
       </div>
 
       {/* ── YouTube URL ── */}

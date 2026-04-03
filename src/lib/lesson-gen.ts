@@ -39,6 +39,7 @@ Rules:
 - Body/prompt fields support markdown: **bold**, *italic*, __underline__, \`code\`, and links
 - TEACHING BLOCKS (narrative, step-navigator, media): must be self-contained and comprehensive. Narrative body should be 120–200 words and explicitly state every fact, term, and answer that the subsequent interactive block(s) will test. A learner should be able to answer every question solely from the teaching block — never assume outside knowledge.
 - INTERACTIVE BLOCKS (quiz, flashcard, fill-in-the-blank): every correct answer must be directly stated in the preceding teaching block. Do not test facts that were not explicitly taught.
+- SOURCE QUOTES: For every quiz/exam question, flashcard card, and fill-in-the-blank prompt, populate the \`sourceQuote\` field with a direct verbatim excerpt (≤ 2 sentences, copied exactly) from the immediately preceding narrative block that proves where the item was derived from. If no preceding narrative block exists, omit the field.
 - Flashcard decks: max 6 cards. Quiz: max 5 questions. Step-navigator: max 5 steps.
 - Quiz explanations (max 30 words) should reference where in the teaching block the answer was covered.
 - Return ONLY valid JSON. No explanation, no markdown fences, no extra text, no preamble. Start your response with { and end with }.`

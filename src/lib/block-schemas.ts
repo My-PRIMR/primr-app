@@ -112,7 +112,7 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
     type: 'quiz',
     isInteractive: true,
     props: {
-      questions: { type: 'Array<{ prompt: string, options: string[], correctIndex: number, explanation?: string }>', required: true },
+      questions: { type: 'Array<{ prompt: string, options: string[], correctIndex: number, explanation?: string, sourceQuote?: string }>', required: true },
       passScore: { type: 'number', description: '0 to 1' },
       ...common,
     },
@@ -121,7 +121,7 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
     type: 'flashcard',
     isInteractive: true,
     props: {
-      cards: { type: 'Array<{ front: string, back: string }>', required: true },
+      cards: { type: 'Array<{ front: string, back: string, sourceQuote?: string }>', required: true },
       ...common,
     },
   },
@@ -132,6 +132,7 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
       prompt:  { type: 'string', required: true, description: 'text with {{blank}} placeholders' },
       answers: { type: 'Array<string | string[]>', required: true, description: 'one entry per blank, can be array of accepted answers' },
       hint:    { type: 'string' },
+      sourceQuote: { type: 'string', description: 'verbatim excerpt from the preceding narrative block this prompt was derived from' },
       ...common,
     },
     notes: ['IMPORTANT: Each answer must be 1-2 words only, no punctuation.'],
@@ -141,7 +142,7 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
     isInteractive: true,
     props: {
       questions: {
-        type: 'Array<{ prompt: string, options: string[], correctIndex: number, explanation?: string }>',
+        type: 'Array<{ prompt: string, options: string[], correctIndex: number, explanation?: string, sourceQuote?: string }>',
         required: true,
         description: '5–12 comprehensive questions covering the full lesson. No immediate feedback — all revealed on submission.',
       },

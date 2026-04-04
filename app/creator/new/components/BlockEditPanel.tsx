@@ -213,31 +213,52 @@ function TipButton({ cls, tip, disabled, onClick, children }: {
 
 function FieldInput({ label, value, onChange }: { label: string; value: unknown; onChange: (v: unknown) => void }) {
   const tip = FIELD_TOOLTIPS[label]
-  if (typeof value === 'boolean') {
+  const [draft, setDraft] = useState(
+    typeof value === 'boolean' ? value
+      : typeof value === 'number' ? value
+      : typeof value === 'string' ? value
+      : JSON.stringify(value)
+  )
+
+  useEffect(() => {
+    setDraft(
+      typeof value === 'boolean' ? value
+        : typeof value === 'number' ? value
+        : typeof value === 'string' ? value
+        : JSON.stringify(value)
+    )
+  }, [value])
+
+  if (typeof draft === 'boolean') {
     return (
       <label className={styles.checkboxLabel}>
-        <input type="checkbox" checked={value} onChange={e => onChange(e.target.checked)} />
+        <input
+          type="checkbox"
+          checked={draft as boolean}
+          onChange={e => { setDraft(e.target.checked); onChange(e.target.checked) }}
+        />
         {label}{tip && <Tooltip text={tip} />}
       </label>
     )
   }
 
-  if (typeof value === 'number') {
+  if (typeof draft === 'number') {
     return (
       <label className={styles.fieldLabel}>
         <span>{label}{tip && <Tooltip text={tip} />}</span>
         <input
           type="number"
           className={styles.fieldInput}
-          defaultValue={value}
-          onBlur={e => onChange(parseFloat(e.target.value) || 0)}
+          value={draft as number}
+          onChange={e => setDraft(parseFloat(e.target.value) || 0)}
+          onBlur={() => onChange(draft)}
         />
       </label>
     )
   }
 
-  const strVal = typeof value === 'string' ? value : JSON.stringify(value)
-  const isLong = strVal.length > 80
+  const strDraft = draft as string
+  const isLong = strDraft.length > 80
 
   return (
     <label className={styles.fieldLabel}>
@@ -245,16 +266,18 @@ function FieldInput({ label, value, onChange }: { label: string; value: unknown;
       {isLong ? (
         <textarea
           className={styles.fieldTextarea}
-          defaultValue={strVal}
-          onBlur={e => onChange(e.target.value)}
-          rows={Math.min(8, Math.ceil(strVal.length / 60))}
+          value={strDraft}
+          onChange={e => setDraft(e.target.value)}
+          onBlur={() => onChange(strDraft)}
+          rows={Math.min(8, Math.ceil(strDraft.length / 60))}
         />
       ) : (
         <input
           type="text"
           className={styles.fieldInput}
-          defaultValue={strVal}
-          onBlur={e => onChange(e.target.value)}
+          value={strDraft}
+          onChange={e => setDraft(e.target.value)}
+          onBlur={() => onChange(strDraft)}
         />
       )}
     </label>
@@ -271,6 +294,19 @@ function formatLabel(key: string): string {
 
 export default function BlockEditPanel({ block, blockIndex, lessonTitle, activePage, onPageChange, onUpdate, onClose, headerAction, canPexels = false, canAiEdit = false }: Props) {
   const [localProps, setLocalProps] = useState<Record<string, unknown>>(block.props as Record<string, unknown>)
+
+  // Sync localProps when block.props is updated externally (e.g. from inline edits)
+  useEffect(() => {
+    const incoming = block.props as Record<string, unknown>
+    setLocalProps(prev => {
+      const keys = new Set([...Object.keys(prev), ...Object.keys(incoming)])
+      for (const k of keys) {
+        if (prev[k] !== incoming[k]) return incoming
+      }
+      return prev
+    })
+  }, [block.props])
+
   const [jsonOpen, setJsonOpen] = useState(false)
 
   // AI rewrite / type conversion

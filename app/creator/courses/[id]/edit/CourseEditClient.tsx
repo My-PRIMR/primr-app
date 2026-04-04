@@ -282,12 +282,13 @@ export default function CourseEditClient({ course, plan, internalRole }: { cours
                           const isSelected = cl.id === selectedClId
                           const canEdit = status.generationStatus === 'done' && status.lessonId
                           const isFailed = status.generationStatus === 'failed'
+                          const isInProgress = status.generationStatus === 'generating' || status.generationStatus === 'retrying' || status.generationStatus === 'pending'
                           const isOff = disabledLessons.has(cl.id)
 
                           return (
                             <div
                               key={cl.id}
-                              className={`${styles.lessonRow} ${isSelected ? styles.lessonRowActive : ''} ${!canEdit && !isFailed ? styles.lessonRowDisabled : ''} ${isOff ? styles.lessonRowOff : ''}`}
+                              className={`${styles.lessonRow} ${isSelected ? styles.lessonRowActive : ''} ${!canEdit && !isFailed && !isInProgress ? styles.lessonRowDisabled : ''} ${isOff ? styles.lessonRowOff : ''}`}
                             >
                               <span className={`${styles.statusMark} ${icon.cls}`}>{icon.label}</span>
                               <button

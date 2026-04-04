@@ -55,14 +55,35 @@ export const INSERTABLE_TYPES: { type: BlockType; label: string; icon: string }[
   { type: 'media', label: 'Video', icon: '▶' },
 ]
 
-export const EMPTY_PROPS: Record<BlockType, Record<string, unknown>> = {
-  hero: { title: '', tagline: '' },
-  narrative: { body: '', title: '', eyebrow: '' },
-  'step-navigator': { steps: [{ title: '', body: '' }], badge: '', title: '' },
-  quiz: { questions: [{ prompt: '', options: ['', '', '', ''], correctIndex: 0 }], badge: '', title: '' },
-  flashcard: { cards: [{ front: '', back: '' }], badge: '', title: '' },
+export const EMPTY_PROPS: Record<string, Record<string, unknown>> = {
+  // Core
+  hero:                { title: '', tagline: '' },
+  narrative:           { body: '', title: '', eyebrow: '' },
+  'step-navigator':    { steps: [{ title: '', body: '' }], badge: '', title: '' },
+  quiz:                { questions: [{ prompt: '', options: ['', '', '', ''], correctIndex: 0 }], badge: '', title: '' },
+  flashcard:           { cards: [{ front: '', back: '' }], badge: '', title: '' },
   'fill-in-the-blank': { prompt: '', answers: [''], badge: '', title: '' },
-  media: { url: '', title: '', badge: 'Video', caption: '', requireWatch: true },
+  media:               { url: '', title: '', badge: 'Video', caption: '' },
+  exam:                { questions: [{ prompt: '', options: ['', '', '', ''], correctIndex: 0 }], badge: '', title: '' },
+  // Phase 1
+  'hotspot-image':     { imageUrl: '', hotspots: [] },
+  'decision-tree':     { nodes: [{ id: 'root', prompt: '', choices: [] }], rootId: 'root' },
+  'sort-rank':         { items: [{ id: '1', label: '', correctPosition: 0 }] },
+  'code-runner':       { language: 'javascript', starterCode: '', instructions: '' },
+  'equation-renderer': { equations: [{ latex: '' }] },
+  'graph-plotter':     { functions: [] },
+  // Phase 2
+  'reaction-balancer': { reactants: [{ id: '1', formula: '' }], products: [{ id: '2', formula: '' }] },
+  'anatomy-labeler':   { imageUrl: '', regions: [{ id: '1', label: '', x: 0, y: 0 }] },
+  'circuit-builder':   { availableComponents: [] },
+  'chart-builder':     { data: [{ label: '', value: 0 }] },
+  'clickable-map':     { regions: [{ id: '1', label: '', x: 0, y: 0 }] },
+  // Phase 3
+  'sql-sandbox':           { tables: [] },
+  'audio-pronunciation':   { words: [{ word: '' }] },
+  'financial-calculator':  {},
+  'statute-annotator':     { text: '' },
+  'physics-simulator':     {},
 }
 
 const BLOCK_LABEL: Record<string, string> = {

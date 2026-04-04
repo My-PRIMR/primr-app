@@ -295,14 +295,9 @@ export default function BlockEditPanel({ block, blockIndex, lessonTitle, activeP
     }
     setSelectedType(newType)
     setAiError('')
-    // Only swap the live block if we have a safe empty template for this type.
-    // Types outside EMPTY_PROPS (Phase 1-3 blocks, exam) require AI to generate
-    // valid content — don't render an empty shell that would crash the component.
-    const emptyProps = (EMPTY_PROPS as Record<string, Record<string, unknown>>)[newType]
-    if (emptyProps) {
-      setLocalProps(emptyProps)
-      onUpdate(blockIndex, { ...block, type: newType as BlockConfig['type'], props: emptyProps })
-    }
+    const emptyProps = (EMPTY_PROPS as Record<string, Record<string, unknown>>)[newType] ?? {}
+    setLocalProps(emptyProps)
+    onUpdate(blockIndex, { ...block, type: newType as BlockConfig['type'], props: emptyProps })
   }
 
   function handleRevert() {

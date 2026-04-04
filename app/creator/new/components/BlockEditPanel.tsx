@@ -279,6 +279,7 @@ export default function BlockEditPanel({ block, blockIndex, lessonTitle, activeP
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
   const [aiOpen, setAiOpen] = useState(false)
+  const aiInFlight = useRef(false)
 
   function handleFieldChange(key: string, value: unknown) {
     const next = { ...localProps, [key]: value }
@@ -287,6 +288,7 @@ export default function BlockEditPanel({ block, blockIndex, lessonTitle, activeP
   }
 
   function handleTypeChange(newType: string) {
+    if (newType === selectedType) return
     if (!originalBlock) {
       setOriginalBlock({ type: block.type, props: { ...localProps } })
     }
@@ -308,6 +310,8 @@ export default function BlockEditPanel({ block, blockIndex, lessonTitle, activeP
   }
 
   async function handleAiRewrite() {
+    if (aiInFlight.current) return
+    aiInFlight.current = true
     const sourceProps = originalBlock?.props ?? localProps
     const sourceType = originalBlock?.type ?? block.type
     if (!originalBlock) {
@@ -337,6 +341,7 @@ export default function BlockEditPanel({ block, blockIndex, lessonTitle, activeP
       setAiError('Network error. Please try again.')
     } finally {
       setAiLoading(false)
+      aiInFlight.current = false
     }
   }
 

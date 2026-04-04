@@ -16,25 +16,32 @@ export default function BlockPickerModal({ open, onClose, onSelect, mode }: Bloc
   const [query, setQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('core')
   const searchRef = useRef<HTMLInputElement>(null)
+  const onCloseRef = useRef(onClose)
+  useEffect(() => { onCloseRef.current = onClose })
 
-  // Reset state when modal opens
+  // Reset state when modal opens (this component only mounts when open=true,
+  // but the effect guard handles the case if open prop ever changes while mounted)
   useEffect(() => {
     if (open) {
       setQuery('')
       setActiveCategory('core')
-      setTimeout(() => searchRef.current?.focus(), 0)
     }
   }, [open])
+
+  // Focus search on mount
+  useEffect(() => {
+    searchRef.current?.focus()
+  }, [])
 
   // Close on Escape
   useEffect(() => {
     if (!open) return
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') onCloseRef.current()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
 
@@ -59,10 +66,10 @@ export default function BlockPickerModal({ open, onClose, onSelect, mode }: Bloc
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={e => e.stopPropagation()}>
+      <div className={styles.modal} onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="block-picker-title">
         {/* Header */}
         <div className={styles.header}>
-          <h2 className={styles.title}>{mode === 'insert' ? 'Insert block' : 'Change block type'}</h2>
+          <h2 id="block-picker-title" className={styles.title}>{mode === 'insert' ? 'Insert block' : 'Change block type'}</h2>
           <button className={styles.closeBtn} onClick={onClose} aria-label="Close">×</button>
         </div>
 
@@ -95,7 +102,7 @@ export default function BlockPickerModal({ open, onClose, onSelect, mode }: Bloc
         {/* Block grid */}
         <div className={`${styles.grid} ${gridClass}`}>
           {visibleEntries.length === 0 ? (
-            <div className={styles.empty}>No blocks match &ldquo;{query}&rdquo;</div>
+            <div className={styles.empty}>No blocks match &ldquo;{trimmed}&rdquo;</div>
           ) : (
             visibleEntries.map(entry => (
               <button

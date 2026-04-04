@@ -36,7 +36,7 @@ export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 
 // ── Lessons ──────────────────────────────────────────────────────────────────
-export const lessonGenerationStatusEnum = pgEnum('lesson_generation_status', ['pending', 'generating', 'done', 'failed'])
+export const lessonGenerationStatusEnum = pgEnum('lesson_generation_status', ['pending', 'generating', 'done', 'failed', 'retrying'])
 
 export const lessons = pgTable('lessons', {
   id:               uuid('id').primaryKey().defaultRandom(),
@@ -154,7 +154,7 @@ export type CourseChapter = typeof courseChapters.$inferSelect
 export type NewCourseChapter = typeof courseChapters.$inferInsert
 
 // ── Chapter Lessons ───────────────────────────────────────────────────────────
-export const generationStatusEnum = pgEnum('generation_status', ['pending', 'generating', 'done', 'failed'])
+export const generationStatusEnum = pgEnum('generation_status', ['pending', 'generating', 'done', 'failed', 'retrying'])
 
 export const chapterLessons = pgTable('chapter_lessons', {
   id:               uuid('id').primaryKey().defaultRandom(),

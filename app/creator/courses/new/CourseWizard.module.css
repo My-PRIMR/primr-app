@@ -632,6 +632,15 @@
   align-items: center;
 }
 
+.statusRetrying {
+  display: flex;
+  align-items: center;
+}
+
+.statusRetrying .pulse {
+  background: var(--color-amber, #f59e0b);
+}
+
 .pulse {
   display: block;
   width: 10px;

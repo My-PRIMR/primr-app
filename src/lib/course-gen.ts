@@ -148,6 +148,26 @@ async function generateLesson(params: {
   return lessonId
 }
 
+// ── Retry helpers ────────────────────────────────────────────────────────────
+
+const MAX_RETRY_ATTEMPTS = 3
+const INITIAL_BACKOFF_MS = 2000
+
+function isRetryableError(err: unknown): boolean {
+  if (err instanceof Anthropic.RateLimitError) return true
+  if (err instanceof Anthropic.InternalServerError) return true
+  if (err instanceof Anthropic.APIConnectionError) return true
+  return false
+}
+
+function abortableSleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) return reject(signal.reason)
+    const timer = setTimeout(resolve, ms)
+    signal.addEventListener('abort', () => { clearTimeout(timer); reject(signal.reason) }, { once: true })
+  })
+}
+
 // ── Concurrency ───────────────────────────────────────────────────────────────
 
 // Max number of lessons to generate simultaneously. Each lesson makes 2 API
@@ -222,52 +242,90 @@ export async function runCourseGeneration(
       .where(eq(chapterLessons.id, input.chapterLessonId))
 
     try {
-      const outline = await generateOutline({
-        title: input.title,
-        audience: input.audience || 'General',
-        level: input.level || 'beginner',
-        documentText: input.sourceText,
-        focus: input.focus,
-        model,
-        skipHero,
-        passiveLesson,
-        videoUrl: input.videoUrl,
-        videoStartTime: input.videoStartTime,
-        videoEndTime: input.videoEndTime,
-        signal: lessonCtrl.signal,
-      })
+      for (let attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
+        try {
+          const outline = await generateOutline({
+            title: input.title,
+            audience: input.audience || 'General',
+            level: input.level || 'beginner',
+            documentText: input.sourceText,
+            focus: input.focus,
+            model,
+            skipHero,
+            passiveLesson,
+            videoUrl: input.videoUrl,
+            videoStartTime: input.videoStartTime,
+            videoEndTime: input.videoEndTime,
+            signal: lessonCtrl.signal,
+          })
 
-      const lessonId = await generateLesson({
-        outline,
-        documentText: input.sourceText,
-        userId,
-        focus: input.focus,
-        model,
-        passiveLesson,
-        skipHero,
-        includeImages,
-        videoUrl: input.videoUrl,
-        videoStartTime: input.videoStartTime,
-        videoEndTime: input.videoEndTime,
-        signal: lessonCtrl.signal,
-      })
+          const lessonId = await generateLesson({
+            outline,
+            documentText: input.sourceText,
+            userId,
+            focus: input.focus,
+            model,
+            passiveLesson,
+            skipHero,
+            includeImages,
+            videoUrl: input.videoUrl,
+            videoStartTime: input.videoStartTime,
+            videoEndTime: input.videoEndTime,
+            signal: lessonCtrl.signal,
+          })
 
-      await db.update(chapterLessons)
-        .set({ generationStatus: 'done', lessonId })
-        .where(eq(chapterLessons.id, input.chapterLessonId))
+          await db.update(chapterLessons)
+            .set({ generationStatus: 'done', lessonId })
+            .where(eq(chapterLessons.id, input.chapterLessonId))
 
-      console.log(`[course-gen] Done: "${input.title}" → lesson ${lessonId}`)
-    } catch (err) {
-      // Course cancelled — other workers will also see the aborted signal
-      if (courseCtrl.signal.aborted) return
+          console.log(`[course-gen] Done: "${input.title}" → lesson ${lessonId}`)
+          break // success — exit retry loop
+        } catch (err) {
+          // Course cancelled — other workers will also see the aborted signal
+          if (courseCtrl.signal.aborted) return
 
-      // Lesson individually cancelled or errored — mark failed, worker continues
-      const wasCancelled = lessonCtrl.signal.aborted
-      console.error(`[course-gen] ${wasCancelled ? 'Cancelled' : 'Failed'}: "${input.title}"`, wasCancelled ? '' : err)
-      await db.update(chapterLessons)
-        .set({ generationStatus: 'failed' })
-        .where(eq(chapterLessons.id, input.chapterLessonId))
-      failedIds.add(input.chapterLessonId)
+          // Lesson individually cancelled — no retry
+          if (lessonCtrl.signal.aborted) {
+            console.log(`[course-gen] Cancelled: "${input.title}"`)
+            await db.update(chapterLessons)
+              .set({ generationStatus: 'failed' })
+              .where(eq(chapterLessons.id, input.chapterLessonId))
+            failedIds.add(input.chapterLessonId)
+            break
+          }
+
+          const canRetry = isRetryableError(err) && attempt < MAX_RETRY_ATTEMPTS
+          if (canRetry) {
+            const backoffMs = INITIAL_BACKOFF_MS * Math.pow(2, attempt - 1)
+            console.warn(`[course-gen] Retryable error on "${input.title}" (attempt ${attempt}/${MAX_RETRY_ATTEMPTS}), retrying in ${backoffMs}ms`, err)
+            await db.update(chapterLessons)
+              .set({ generationStatus: 'retrying' })
+              .where(eq(chapterLessons.id, input.chapterLessonId))
+            try {
+              await abortableSleep(backoffMs, lessonCtrl.signal)
+            } catch {
+              // Aborted during sleep — mark failed and exit
+              await db.update(chapterLessons)
+                .set({ generationStatus: 'failed' })
+                .where(eq(chapterLessons.id, input.chapterLessonId))
+              failedIds.add(input.chapterLessonId)
+              break
+            }
+            await db.update(chapterLessons)
+              .set({ generationStatus: 'generating' })
+              .where(eq(chapterLessons.id, input.chapterLessonId))
+            continue
+          }
+
+          // Non-retryable or final attempt — mark failed
+          console.error(`[course-gen] Failed: "${input.title}" (attempt ${attempt}/${MAX_RETRY_ATTEMPTS})`, err)
+          await db.update(chapterLessons)
+            .set({ generationStatus: 'failed' })
+            .where(eq(chapterLessons.id, input.chapterLessonId))
+          failedIds.add(input.chapterLessonId)
+          break
+        }
+      }
     } finally {
       courseCtrl.signal.removeEventListener('abort', onCourseAbort)
       lessonControllers.delete(input.chapterLessonId)

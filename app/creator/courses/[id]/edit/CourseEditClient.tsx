@@ -34,6 +34,7 @@ function statusIcon(status: string): StatusIcon {
     case 'done': return { label: '✓', cls: styles.statusDone }
     case 'failed': return { label: '✗', cls: styles.statusFailed }
     case 'generating': return { label: '⟳', cls: styles.statusGenerating }
+    case 'retrying': return { label: '⟳', cls: styles.statusRetrying }
     default: return { label: '·', cls: styles.statusPending }
   }
 }
@@ -97,7 +98,7 @@ export default function CourseEditClient({ course, plan, internalRole }: { cours
         })
 
         const anyActive = data.lessons.some(
-          (l: { generationStatus: string }) => l.generationStatus === 'generating' || l.generationStatus === 'pending'
+          (l: { generationStatus: string }) => l.generationStatus === 'generating' || l.generationStatus === 'pending' || l.generationStatus === 'retrying'
         )
         if (!anyActive && pollingRef.current) {
           clearInterval(pollingRef.current)
@@ -109,7 +110,7 @@ export default function CourseEditClient({ course, plan, internalRole }: { cours
 
   useEffect(() => {
     const hasActive = [...lessonStatuses.values()].some(
-      s => s.generationStatus === 'generating' || s.generationStatus === 'pending'
+      s => s.generationStatus === 'generating' || s.generationStatus === 'pending' || s.generationStatus === 'retrying'
     )
     if (hasActive) startPolling()
     return () => { if (pollingRef.current) clearInterval(pollingRef.current) }
@@ -233,7 +234,7 @@ export default function CourseEditClient({ course, plan, internalRole }: { cours
               const statuses = [...lessonStatuses.values()]
               const total = statuses.length
               const done = statuses.filter(s => s.generationStatus === 'done').length
-              const generating = statuses.some(s => s.generationStatus === 'generating' || s.generationStatus === 'pending')
+              const generating = statuses.some(s => s.generationStatus === 'generating' || s.generationStatus === 'pending' || s.generationStatus === 'retrying')
               if (!generating && done === total) return null
               return (
                 <span className={`${styles.progressPill} ${generating ? styles.progressPillActive : ''}`}>
@@ -344,7 +345,8 @@ export default function CourseEditClient({ course, plan, internalRole }: { cours
         {!loadingLesson && !manifest && !loadError && (() => {
           const selStatus = selectedClId ? lessonStatuses.get(selectedClId) : null
           const isFailed = selStatus?.generationStatus === 'failed'
-          const isGenerating = selStatus?.generationStatus === 'generating' || selStatus?.generationStatus === 'pending'
+          const isRetrying = selStatus?.generationStatus === 'retrying'
+          const isGenerating = selStatus?.generationStatus === 'generating' || selStatus?.generationStatus === 'pending' || isRetrying
           return (
             <div className={styles.editorArea}>
               <div className={styles.centerState}>

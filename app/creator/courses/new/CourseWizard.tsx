@@ -818,7 +818,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
                   </div>
                   <div className={styles.progressStatus}>
                     {lesson.generationStatus === 'done' && <span className={styles.statusDone}>✓</span>}
-                    {lesson.generationStatus === 'generating' && <span className={styles.statusGenerating}><span className={styles.pulse} /></span>}
+                    {(lesson.generationStatus === 'generating' || lesson.generationStatus === 'retrying') && <span className={lesson.generationStatus === 'retrying' ? styles.statusRetrying : styles.statusGenerating}><span className={styles.pulse} /></span>}
                     {lesson.generationStatus === 'pending' && <span className={styles.statusPending}>—</span>}
                     {lesson.generationStatus === 'failed' && (
                       <>

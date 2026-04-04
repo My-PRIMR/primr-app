@@ -295,6 +295,7 @@
 .statusDone    { color: var(--green); }
 .statusFailed  { color: var(--red); }
 .statusGenerating { color: var(--accent); animation: spin 1.2s linear infinite; display: inline-block; }
+.statusRetrying { color: var(--color-amber, #f59e0b); animation: spin 1.2s linear infinite; display: inline-block; }
 .statusPending { color: var(--ink-muted); }
 
 @keyframes spin {

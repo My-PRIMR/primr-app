@@ -52,7 +52,7 @@ export interface ParsedCourseTree {
 
 // ── DB-backed types (from API responses) ─────────────────────────────────────
 
-export type GenerationStatus = 'pending' | 'generating' | 'done' | 'failed'
+export type GenerationStatus = 'pending' | 'generating' | 'done' | 'failed' | 'retrying'
 export type CourseStatus = 'draft' | 'generating' | 'ready' | 'published'
 
 export interface FlatLesson {

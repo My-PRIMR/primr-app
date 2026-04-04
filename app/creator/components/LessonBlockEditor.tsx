@@ -132,7 +132,16 @@ export default function LessonBlockEditor({
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerPosition, setPickerPosition] = useState<'before' | 'after'>('after')
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [panelAnchored, setPanelAnchored] = useState(false)
+  const [panelAnchored, setPanelAnchoredRaw] = useState(() => {
+    try {
+      const v = localStorage.getItem('primr:panel-anchored')
+      return v === null ? true : v === 'true'
+    } catch { return true }
+  })
+  function setPanelAnchored(val: boolean): void {
+    setPanelAnchoredRaw(val)
+    try { localStorage.setItem('primr:panel-anchored', String(val)) } catch (_) {}
+  }
   const [disabledIds, setDisabledIds] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -265,7 +274,7 @@ export default function LessonBlockEditor({
   const dockToggle = panelMode === 'float' ? (
     <button
       className={`${styles.panelDockBtn} ${panelAnchored ? styles.panelDockBtnActive : ''}`}
-      onClick={() => setPanelAnchored(v => !v)}
+      onClick={() => setPanelAnchored(!panelAnchored)}
       title={panelAnchored ? 'Switch to floating panel' : 'Anchor panel to right'}
     >
       {panelAnchored ? '⊟ Docked' : '⊞ Dock'}
@@ -325,7 +334,7 @@ export default function LessonBlockEditor({
                   className={`${styles.editToggleBtn} ${panelOpen ? styles.editToggleBtnActive : ''}`}
                   onClick={() => setPanelOpen(v => !v)}
                 >
-                  {panelOpen ? 'Close editor' : 'Edit block'}
+                  {panelOpen ? 'Close editor' : 'Open editor'}
                 </button>
                 <button
                   className={`${styles.saveBtn} ${saved ? styles.saveBtnSaved : ''}`}

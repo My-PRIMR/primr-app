@@ -5,9 +5,10 @@ import type { BlockConfig } from '@/types/outline'
 import styles from './BlockEditPanel.module.css'
 import { PAGE_ARRAY_KEY } from '../../lib/pageArrayKey'
 import { EMPTY_PROPS } from '../../components/LessonBlockEditor'
-import { ALL_BLOCK_TYPES } from '@/lib/block-schemas'
 import ImageSection from './ImageSection'
 import type { ImageValue } from './ImageSection'
+import BlockPickerModal from '../../components/BlockPickerModal'
+import { BLOCK_REGISTRY } from '../../components/blockRegistry'
 
 const IMAGE_BLOCKS = ['hero', 'narrative', 'step-navigator']
 
@@ -325,10 +326,13 @@ export default function BlockEditPanel({ block, blockIndex, lessonTitle, activeP
   }, [block.props])
 
   const [jsonOpen, setJsonOpen] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
 
   // AI rewrite / type conversion
   const [originalBlock, setOriginalBlock] = useState<{ type: string; props: Record<string, unknown> } | null>(null)
   const [selectedType, setSelectedType] = useState<string>(block.type)
+
+  const typeLabel = BLOCK_REGISTRY.find(e => e.type === selectedType)?.label ?? selectedType
   const [instruction, setInstruction] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
@@ -431,16 +435,23 @@ export default function BlockEditPanel({ block, blockIndex, lessonTitle, activeP
               {/* Type selector — all users */}
               <label className={styles.aiLabel}>
                 Block type
-                <select
+                <button
+                  type="button"
                   className={styles.aiSelect}
-                  value={selectedType}
-                  onChange={e => handleTypeChange(e.target.value)}
+                  onClick={() => setPickerOpen(true)}
                 >
-                  {ALL_BLOCK_TYPES.map(t => (
-                    <option key={t} value={t}>{formatLabel(t)}</option>
-                  ))}
-                </select>
+                  {typeLabel}
+                </button>
               </label>
+              <BlockPickerModal
+                open={pickerOpen}
+                onClose={() => setPickerOpen(false)}
+                onSelect={(type) => {
+                  handleTypeChange(type)
+                  setPickerOpen(false)
+                }}
+                mode="change"
+              />
 
               {/* Guidance — Pro only */}
               <label className={[styles.aiLabel, !canAiEdit ? styles.aiLabelDisabled : ''].join(' ')}>

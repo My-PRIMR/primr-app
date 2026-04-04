@@ -426,6 +426,7 @@
   background: var(--surface);
   color: var(--ink);
   cursor: pointer;
+  text-align: left;
 }
 
 .aiTextarea {

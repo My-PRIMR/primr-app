@@ -176,6 +176,11 @@ export default function LessonBlockEditor({
     setSaved(false)
   }
 
+  function handleInlinePropsChange(blockIndex: number, partial: Record<string, unknown>) {
+    const b = blocks[blockIndex]
+    handleBlockUpdate(blockIndex, { ...b, props: { ...(b.props as object), ...partial } })
+  }
+
   function insertBlock(type: BlockType) {
     const id = `block-${Date.now().toString(36)}`
     const newBlock: BlockConfig = { id, type, props: { ...EMPTY_PROPS[type] } }
@@ -340,6 +345,7 @@ export default function LessonBlockEditor({
                     {...pageProps}
                     isEditor={true}
                     onComplete={() => {}}
+                    onPropsChange={(partial: Record<string, unknown>) => handleInlinePropsChange(currentBlock, partial)}
                   />
                 )}
                 {isDisabled && (

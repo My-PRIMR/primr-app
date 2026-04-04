@@ -9,7 +9,7 @@ import {
   SqlSandbox, AudioPronunciation, FinancialCalculator, StatuteAnnotator, PhysicsSimulator,
   Exam,
 } from '@primr/components'
-import type { LessonManifest, BlockConfig, BlockType } from '@/types/outline'
+import type { LessonManifest, BlockConfig } from '@/types/outline'
 import BlockEditPanel from '../new/components/BlockEditPanel'
 import BlockPickerModal from './BlockPickerModal'
 import { PAGE_ARRAY_KEY } from '../lib/pageArrayKey'
@@ -46,15 +46,6 @@ const BLOCK_COMPONENTS: Record<string, React.ComponentType<any>> = {
   'physics-simulator':    PhysicsSimulator,
   'exam':                 Exam,
 }
-
-export const INSERTABLE_TYPES: { type: BlockType; label: string; icon: string }[] = [
-  { type: 'narrative', label: 'Narrative', icon: '¶' },
-  { type: 'step-navigator', label: 'Step Walkthrough', icon: '→' },
-  { type: 'quiz', label: 'Quiz', icon: '?' },
-  { type: 'flashcard', label: 'Flashcards', icon: '⟳' },
-  { type: 'fill-in-the-blank', label: 'Fill in the Blank', icon: '⎵' },
-  { type: 'media', label: 'Video', icon: '▶' },
-]
 
 export const EMPTY_PROPS: Record<string, Record<string, unknown>> = {
   // Core
@@ -183,7 +174,7 @@ export default function LessonBlockEditor({
     handleBlockUpdate(blockIndex, { ...b, props: { ...(b.props as object), ...partial } })
   }
 
-  function insertBlock(type: BlockType) {
+  function insertBlock(type: BlockConfig['type']) {
     const id = `block-${Date.now().toString(36)}`
     const newBlock: BlockConfig = { id, type, props: { ...EMPTY_PROPS[type] } }
     const next = [...blocks]
@@ -367,8 +358,7 @@ export default function LessonBlockEditor({
                   open={pickerOpen}
                   onClose={() => setPickerOpen(false)}
                   onSelect={(type) => {
-                    insertBlock(type as BlockType)
-                    setPickerOpen(false)
+                    insertBlock(type)
                   }}
                   mode="insert"
                 />

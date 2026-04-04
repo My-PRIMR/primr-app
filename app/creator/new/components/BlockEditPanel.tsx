@@ -448,7 +448,6 @@ export default function BlockEditPanel({ block, blockIndex, lessonTitle, activeP
                 onClose={() => setPickerOpen(false)}
                 onSelect={(type) => {
                   handleTypeChange(type)
-                  setPickerOpen(false)
                 }}
                 mode="change"
               />

@@ -341,6 +341,7 @@ export default function LessonBlockEditor({
               <div className={`${styles.blockWrap} ${isDisabled ? styles.blockWrapDisabled : ''}`}>
                 {Component && !isDisabled && (
                   <Component
+                    key={block.id}
                     {...(block.props as Record<string, unknown>)}
                     {...pageProps}
                     isEditor={true}

@@ -214,6 +214,15 @@ function TipButton({ cls, tip, disabled, onClick, children }: {
 function FieldInput({ label, value, onChange }: { label: string; value: unknown; onChange: (v: unknown) => void }) {
   const tip = FIELD_TOOLTIPS[label]
   const focusedRef = useRef(false)
+  // Track whether the original value was an object/array so we can parse it back on commit
+  const isJsonRef = useRef(typeof value === 'object' && value !== null)
+
+  function commitString(s: string) {
+    if (isJsonRef.current) {
+      try { onChange(JSON.parse(s)); return } catch { /* fall through */ }
+    }
+    onChange(s)
+  }
 
   const [draft, setDraft] = useState(
     typeof value === 'boolean' ? value
@@ -275,7 +284,7 @@ function FieldInput({ label, value, onChange }: { label: string; value: unknown;
           value={strDraft}
           onChange={e => setDraft(e.target.value)}
           onFocus={() => { focusedRef.current = true }}
-          onBlur={() => { focusedRef.current = false; onChange(strDraft) }}
+          onBlur={() => { focusedRef.current = false; commitString(strDraft) }}
           rows={Math.min(8, Math.ceil(strDraft.length / 60))}
         />
       ) : (
@@ -285,7 +294,7 @@ function FieldInput({ label, value, onChange }: { label: string; value: unknown;
           value={strDraft}
           onChange={e => setDraft(e.target.value)}
           onFocus={() => { focusedRef.current = true }}
-          onBlur={() => { focusedRef.current = false; onChange(strDraft) }}
+          onBlur={() => { focusedRef.current = false; commitString(strDraft) }}
         />
       )}
     </label>

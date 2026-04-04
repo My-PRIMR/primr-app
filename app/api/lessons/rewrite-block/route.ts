@@ -22,6 +22,9 @@ export async function POST(req: NextRequest) {
   const targetType: string = body.targetType
   const instruction: string | undefined = body.instruction
 
+  // Sanitize block.id for safe prompt interpolation — strip anything outside [a-zA-Z0-9_-]
+  const safeBlockId = typeof block.id === 'string' ? block.id.replace(/[^a-zA-Z0-9_-]/g, '') : 'unknown'
+
   if (!ALL_BLOCK_TYPES.includes(targetType)) {
     return NextResponse.json({ error: `Unknown block type: ${targetType}` }, { status: 400 })
   }
@@ -34,9 +37,9 @@ export async function POST(req: NextRequest) {
     isSameType
       ? `Rewrite the given lesson block, improving its content.`
       : `Convert the given lesson block from type "${block.type}" to type "${targetType}", preserving the educational content and intent.`,
-    `\n\nReturn this exact structure:\n{ "id": "${block.id}", "type": "${targetType}", "props": { ... } }`,
+    `\n\nReturn this exact structure:\n{ "id": "${safeBlockId}", "type": "${targetType}", "props": { ... } }`,
     `\n\nTarget block schema:\n${targetSchema}`,
-    `\n\nRules:\n- Preserve the id: "${block.id}" exactly\n- Body/prompt fields support markdown: **bold**, *italic*, \`code\`\n- Return ONLY valid JSON. No explanation, no markdown fences, no preamble. Start with { and end with }.`,
+    `\n\nRules:\n- Preserve the id: "${safeBlockId}" exactly\n- Body/prompt fields support markdown: **bold**, *italic*, \`code\`\n- Return ONLY valid JSON. No explanation, no markdown fences, no preamble. Start with { and end with }.`,
   ].join('')
 
   const userMessage = [

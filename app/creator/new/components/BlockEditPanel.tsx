@@ -368,9 +368,8 @@ export default function BlockEditPanel({ block, blockIndex, lessonTitle, activeP
             className={styles.aiToggle}
             onClick={() => setAiOpen(o => !o)}
           >
-            <span className={styles.aiIcon}>✦</span>
-            <span>AI rewrite</span>
-            {!canAiEdit && <span className={styles.aiBadge}>Pro</span>}
+            {canAiEdit && <span className={styles.aiIcon}>✦</span>}
+            <span>{canAiEdit ? 'AI rewrite' : 'Change Block Type'}</span>
             <span className={styles.aiChevron}>{aiOpen ? '▲' : '▼'}</span>
           </button>
 
@@ -392,7 +391,7 @@ export default function BlockEditPanel({ block, blockIndex, lessonTitle, activeP
 
               {/* Guidance — Pro only */}
               <label className={[styles.aiLabel, !canAiEdit ? styles.aiLabelDisabled : ''].join(' ')}>
-                What should change? <span className={styles.aiOptional}>(optional)</span>
+                What should change? {!canAiEdit ? <span className={styles.aiBadge}>Pro</span> : <span className={styles.aiOptional}>(optional)</span>}
                 <textarea
                   className={styles.aiTextarea}
                   placeholder={canAiEdit ? 'e.g. "make it harder", "focus on compliance"' : 'Available on Pro'}

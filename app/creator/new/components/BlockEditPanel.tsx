@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import type { BlockConfig } from '@/types/outline'
 import styles from './BlockEditPanel.module.css'
 import { PAGE_ARRAY_KEY } from '../../lib/pageArrayKey'
+import { EMPTY_PROPS, INSERTABLE_TYPES } from '../../components/LessonBlockEditor'
 import ImageSection from './ImageSection'
 import type { ImageValue } from './ImageSection'
 
@@ -271,10 +272,72 @@ export default function BlockEditPanel({ block, blockIndex, lessonTitle, activeP
   const [localProps, setLocalProps] = useState<Record<string, unknown>>(block.props as Record<string, unknown>)
   const [jsonOpen, setJsonOpen] = useState(false)
 
+  // AI rewrite / type conversion
+  const [originalBlock, setOriginalBlock] = useState<{ type: string; props: Record<string, unknown> } | null>(null)
+  const [selectedType, setSelectedType] = useState<string>(block.type)
+  const [instruction, setInstruction] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
+  const [aiOpen, setAiOpen] = useState(false)
+
   function handleFieldChange(key: string, value: unknown) {
     const next = { ...localProps, [key]: value }
     setLocalProps(next)
     onUpdate(blockIndex, { ...block, props: next })
+  }
+
+  function handleTypeChange(newType: string) {
+    if (!originalBlock) {
+      setOriginalBlock({ type: block.type, props: { ...localProps } })
+    }
+    setSelectedType(newType)
+    const emptyProps = (EMPTY_PROPS as Record<string, Record<string, unknown>>)[newType] ?? {}
+    setLocalProps(emptyProps)
+    onUpdate(blockIndex, { ...block, type: newType as BlockConfig['type'], props: emptyProps })
+    setAiError('')
+  }
+
+  function handleRevert() {
+    if (!originalBlock) return
+    setSelectedType(originalBlock.type)
+    setLocalProps(originalBlock.props)
+    onUpdate(blockIndex, { ...block, type: originalBlock.type as BlockConfig['type'], props: originalBlock.props })
+    setOriginalBlock(null)
+    setInstruction('')
+    setAiError('')
+  }
+
+  async function handleAiRewrite() {
+    const sourceProps = originalBlock?.props ?? localProps
+    const sourceType = originalBlock?.type ?? block.type
+    if (!originalBlock) {
+      setOriginalBlock({ type: block.type, props: { ...localProps } })
+    }
+    setAiLoading(true)
+    setAiError('')
+    try {
+      const res = await fetch('/api/lessons/rewrite-block', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          block: { id: block.id, type: sourceType, props: sourceProps },
+          targetType: selectedType,
+          instruction: instruction.trim() || undefined,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setAiError(data.error ?? 'Generation failed')
+        return
+      }
+      const newProps = data.block.props as Record<string, unknown>
+      setLocalProps(newProps)
+      onUpdate(blockIndex, { ...block, type: selectedType as BlockConfig['type'], props: newProps })
+    } catch {
+      setAiError('Network error. Please try again.')
+    } finally {
+      setAiLoading(false)
+    }
   }
 
   return (
@@ -292,13 +355,77 @@ export default function BlockEditPanel({ block, blockIndex, lessonTitle, activeP
       <div className={styles.scrollArea}>
         <PropsEditor blockType={block.type} props={localProps} onChange={handleFieldChange} activePage={activePage} onPageChange={onPageChange} canPexels={canPexels} />
 
-        {/* AI rewrite — disabled for now */}
+        {/* AI rewrite / type conversion */}
         <div className={styles.aiSection}>
-          <div className={styles.aiDisabled}>
+          <button
+            type="button"
+            className={styles.aiToggle}
+            onClick={() => setAiOpen(o => !o)}
+          >
             <span className={styles.aiIcon}>✦</span>
             <span>AI rewrite</span>
-            <span className={styles.aiBadge}>Pro</span>
-          </div>
+            {!canAiEdit && <span className={styles.aiBadge}>Pro</span>}
+            <span className={styles.aiChevron}>{aiOpen ? '▲' : '▼'}</span>
+          </button>
+
+          {aiOpen && (
+            <div className={styles.aiBody}>
+              {/* Type selector — all users */}
+              <label className={styles.aiLabel}>
+                Block type
+                <select
+                  className={styles.aiSelect}
+                  value={selectedType}
+                  onChange={e => handleTypeChange(e.target.value)}
+                >
+                  {INSERTABLE_TYPES.map(t => (
+                    <option key={t.type} value={t.type}>{t.label}</option>
+                  ))}
+                </select>
+              </label>
+
+              {/* Guidance — Pro only */}
+              <label className={[styles.aiLabel, !canAiEdit ? styles.aiLabelDisabled : ''].join(' ')}>
+                What should change? <span className={styles.aiOptional}>(optional)</span>
+                <textarea
+                  className={styles.aiTextarea}
+                  placeholder={canAiEdit ? 'e.g. "make it harder", "focus on compliance"' : 'Available on Pro'}
+                  value={instruction}
+                  onChange={e => setInstruction(e.target.value)}
+                  disabled={!canAiEdit}
+                  rows={2}
+                />
+              </label>
+
+              {/* Actions */}
+              <div className={styles.aiActions}>
+                {originalBlock && (
+                  <button
+                    type="button"
+                    className={styles.aiRevertBtn}
+                    onClick={handleRevert}
+                    disabled={aiLoading}
+                  >
+                    ↩ Revert to {originalBlock.type}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={styles.aiBtn}
+                  onClick={handleAiRewrite}
+                  disabled={!canAiEdit || aiLoading}
+                >
+                  {aiLoading
+                    ? '✦ Generating…'
+                    : selectedType !== (originalBlock?.type ?? block.type)
+                      ? '✦ Generate with AI'
+                      : '✦ Rewrite'}
+                </button>
+              </div>
+
+              {aiError && <p className={styles.aiError}>{aiError}</p>}
+            </div>
+          )}
         </div>
 
         {/* Collapsible raw JSON */}

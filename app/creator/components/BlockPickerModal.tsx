@@ -10,9 +10,12 @@ interface BlockPickerModalProps {
   onClose: () => void
   onSelect: (type: BlockConfig['type']) => void
   mode: 'insert' | 'change'
+  plan?: string
+  isInternal?: boolean
 }
 
-export default function BlockPickerModal({ open, onClose, onSelect, mode }: BlockPickerModalProps) {
+export default function BlockPickerModal({ open, onClose, onSelect, mode, plan, isInternal = false }: BlockPickerModalProps) {
+  const isPro = plan === 'pro' || plan === 'enterprise' || isInternal
   const [query, setQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('core')
   const searchRef = useRef<HTMLInputElement>(null)
@@ -58,6 +61,7 @@ export default function BlockPickerModal({ open, onClose, onSelect, mode }: Bloc
   const activeCategoryDef = BLOCK_CATEGORIES.find(c => c.id === activeCategory)
   const cols = isSearching ? 2 : (activeCategoryDef?.cols ?? 2)
   const gridClass = cols === 3 ? styles.grid3 : styles.grid2
+  const showComingSoon = !isSearching && !isInternal && !!activeCategoryDef?.proOnly && isPro
 
   function handleSelect(type: BlockConfig['type']) {
     onSelect(type)
@@ -87,15 +91,28 @@ export default function BlockPickerModal({ open, onClose, onSelect, mode }: Bloc
         {/* Category tabs — hidden during search */}
         {!isSearching && (
           <div className={styles.tabs}>
-            {BLOCK_CATEGORIES.map(cat => (
-              <button
-                key={cat.id}
-                className={`${styles.tab} ${activeCategory === cat.id ? styles.tabActive : ''}`}
-                onClick={() => setActiveCategory(cat.id)}
-              >
-                {cat.label}
-              </button>
-            ))}
+            {BLOCK_CATEGORIES.map(cat => {
+              const locked = !!cat.proOnly && !isPro
+              return (
+                <button
+                  key={cat.id}
+                  className={`${styles.tab} ${activeCategory === cat.id ? styles.tabActive : ''} ${locked ? styles.tabLocked : ''}`}
+                  onClick={() => { if (!locked) setActiveCategory(cat.id) }}
+                  disabled={locked}
+                  aria-disabled={locked}
+                >
+                  {cat.label}
+                  {locked && <span className={styles.proPill}>Pro</span>}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Coming Soon banner — shown for Pro users in gated categories (non-internal) */}
+        {showComingSoon && (
+          <div className={styles.comingSoon}>
+            🚧 Under Construction — these blocks are in active development
           </div>
         )}
 
@@ -104,19 +121,28 @@ export default function BlockPickerModal({ open, onClose, onSelect, mode }: Bloc
           {visibleEntries.length === 0 ? (
             <div className={styles.empty}>No blocks match &ldquo;{trimmed}&rdquo;</div>
           ) : (
-            visibleEntries.map(entry => (
-              <button
-                key={entry.type}
-                className={styles.card}
-                onClick={() => handleSelect(entry.type)}
-              >
-                <div className={styles.cardIcon}>{entry.icon}</div>
-                <div className={styles.cardInfo}>
-                  <div className={styles.cardName}>{entry.label}</div>
-                  <div className={styles.cardDesc}>{entry.description}</div>
-                </div>
-              </button>
-            ))
+            visibleEntries.map(entry => {
+              const entryCat = BLOCK_CATEGORIES.find(c => c.id === entry.category)
+              const entryLocked = !!entryCat?.proOnly && !isPro
+              const entryDisabled = !!entryCat?.proOnly && isPro && !isInternal
+              return (
+                <button
+                  key={entry.type}
+                  className={`${styles.card} ${entryLocked ? styles.cardLocked : ''} ${entryDisabled ? styles.cardDisabled : ''}`}
+                  onClick={() => { if (!entryLocked && !entryDisabled) handleSelect(entry.type) }}
+                  disabled={entryLocked || entryDisabled}
+                >
+                  <div className={styles.cardIcon}>{entry.icon}</div>
+                  <div className={styles.cardInfo}>
+                    <div className={styles.cardName}>
+                      {entry.label}
+                      {entryLocked && <span className={styles.proPill}>Pro</span>}
+                    </div>
+                    <div className={styles.cardDesc}>{entry.description}</div>
+                  </div>
+                </button>
+              )
+            })
           )}
         </div>
       </div>

@@ -8,13 +8,13 @@ export interface BlockRegistryEntry {
   category: string
 }
 
-export const BLOCK_CATEGORIES: { id: string; label: string; cols: 2 | 3 }[] = [
+export const BLOCK_CATEGORIES: { id: string; label: string; cols: 2 | 3; proOnly?: true }[] = [
   { id: 'core',        label: 'Core',        cols: 3 },
   { id: 'interactive', label: 'Interactive',  cols: 3 },
-  { id: 'coding',      label: 'Coding',       cols: 2 },
-  { id: 'math',        label: 'Math',         cols: 2 },
-  { id: 'science',     label: 'Science',      cols: 2 },
-  { id: 'language',    label: 'Language',     cols: 2 },
+  { id: 'coding',      label: 'Coding',       cols: 2, proOnly: true },
+  { id: 'math',        label: 'Math',         cols: 2, proOnly: true },
+  { id: 'science',     label: 'Science',      cols: 2, proOnly: true },
+  { id: 'language',    label: 'Language',     cols: 2, proOnly: true },
 ]
 
 export const BLOCK_REGISTRY: BlockRegistryEntry[] = [

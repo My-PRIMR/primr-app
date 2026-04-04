@@ -108,6 +108,10 @@ interface LessonBlockEditorProps {
   canPexels?: boolean
   /** Whether the current user can use AI rewrite/conversion features. */
   canAiEdit?: boolean
+  /** User's plan — used to gate Pro-only block types. */
+  plan?: string
+  /** Whether the current user is internal staff/admin — bypasses all gating. */
+  isInternal?: boolean
 }
 
 export default function LessonBlockEditor({
@@ -119,6 +123,8 @@ export default function LessonBlockEditor({
   paginatorLeft = 0,
   canPexels = false,
   canAiEdit = false,
+  plan,
+  isInternal = false,
 }: LessonBlockEditorProps) {
   const [manifest, setManifest] = useState(initialManifest)
   const [currentBlock, setCurrentBlock] = useState(0)
@@ -256,6 +262,8 @@ export default function LessonBlockEditor({
       headerAction={dockToggle}
       canPexels={canPexels}
       canAiEdit={canAiEdit}
+      plan={plan}
+      isInternal={isInternal}
     />
   ) : null
 
@@ -361,6 +369,8 @@ export default function LessonBlockEditor({
                     insertBlock(type)
                   }}
                   mode="insert"
+                  plan={plan}
+                  isInternal={isInternal}
                 />
               </div>
             </div>

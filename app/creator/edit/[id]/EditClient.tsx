@@ -125,6 +125,8 @@ export default function EditClient({
           rightPanelExtra={sharePanel}
           canPexels={canPexels}
           canAiEdit={aiEditEnabled}
+          plan={plan}
+          isInternal={!!internalRole}
         />
       </div>
     </div>

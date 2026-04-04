@@ -24,6 +24,10 @@ interface Props {
   canPexels?: boolean
   /** Whether the current user can use AI rewrite/conversion features. */
   canAiEdit?: boolean
+  /** User's plan — used to gate Pro-only block types in the picker. */
+  plan?: string
+  /** Whether the current user is internal staff/admin — bypasses all gating. */
+  isInternal?: boolean
 }
 
 /** Render labeled form fields for a block's props based on its type */
@@ -310,7 +314,7 @@ function formatLabel(key: string): string {
     .trim()
 }
 
-export default function BlockEditPanel({ block, blockIndex, lessonTitle, activePage, onPageChange, onUpdate, onClose, headerAction, canPexels = false, canAiEdit = false }: Props) {
+export default function BlockEditPanel({ block, blockIndex, lessonTitle, activePage, onPageChange, onUpdate, onClose, headerAction, canPexels = false, canAiEdit = false, plan, isInternal = false }: Props) {
   const [localProps, setLocalProps] = useState<Record<string, unknown>>(block.props as Record<string, unknown>)
 
   // Sync localProps when block.props is updated externally (e.g. from inline edits)
@@ -450,6 +454,8 @@ export default function BlockEditPanel({ block, blockIndex, lessonTitle, activeP
                   handleTypeChange(type)
                 }}
                 mode="change"
+                plan={plan}
+                isInternal={isInternal}
               />
 
               {/* Guidance — Pro only */}

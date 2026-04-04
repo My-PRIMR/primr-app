@@ -104,6 +104,23 @@
 }
 .tab:hover { color: var(--ink-soft); }
 .tabActive { color: var(--ink); border-bottom-color: var(--accent); }
+.tabLocked { opacity: 0.5; cursor: not-allowed; }
+.tabLocked:hover { color: var(--ink-muted); }
+
+.proPill {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 1px 5px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  background: var(--color-amber, #f0a500);
+  color: #000;
+  vertical-align: middle;
+  line-height: 1.4;
+}
 
 /* ── Block grid ───────────────────────────────────────────────────────────── */
 .grid {
@@ -160,6 +177,30 @@
   font-size: 11px;
   color: var(--ink-muted);
   line-height: 1.4;
+}
+
+/* ── Coming Soon banner ───────────────────────────────────────────────────── */
+.comingSoon {
+  flex-shrink: 0;
+  margin: 8px 20px 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+/* ── Locked / disabled cards ──────────────────────────────────────────────── */
+.cardLocked,
+.cardDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.cardLocked:hover,
+.cardDisabled:hover {
+  border-color: var(--border);
+  background: var(--surface-alt);
 }
 
 /* ── Empty state ──────────────────────────────────────────────────────────── */

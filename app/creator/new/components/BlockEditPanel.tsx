@@ -213,6 +213,8 @@ function TipButton({ cls, tip, disabled, onClick, children }: {
 
 function FieldInput({ label, value, onChange }: { label: string; value: unknown; onChange: (v: unknown) => void }) {
   const tip = FIELD_TOOLTIPS[label]
+  const focusedRef = useRef(false)
+
   const [draft, setDraft] = useState(
     typeof value === 'boolean' ? value
       : typeof value === 'number' ? value
@@ -221,6 +223,7 @@ function FieldInput({ label, value, onChange }: { label: string; value: unknown;
   )
 
   useEffect(() => {
+    if (focusedRef.current) return
     setDraft(
       typeof value === 'boolean' ? value
         : typeof value === 'number' ? value
@@ -236,6 +239,8 @@ function FieldInput({ label, value, onChange }: { label: string; value: unknown;
           type="checkbox"
           checked={draft as boolean}
           onChange={e => { setDraft(e.target.checked); onChange(e.target.checked) }}
+          onFocus={() => { focusedRef.current = true }}
+          onBlur={() => { focusedRef.current = false }}
         />
         {label}{tip && <Tooltip text={tip} />}
       </label>
@@ -251,7 +256,8 @@ function FieldInput({ label, value, onChange }: { label: string; value: unknown;
           className={styles.fieldInput}
           value={draft as number}
           onChange={e => setDraft(parseFloat(e.target.value) || 0)}
-          onBlur={() => onChange(draft)}
+          onFocus={() => { focusedRef.current = true }}
+          onBlur={() => { focusedRef.current = false; onChange(draft) }}
         />
       </label>
     )
@@ -268,7 +274,8 @@ function FieldInput({ label, value, onChange }: { label: string; value: unknown;
           className={styles.fieldTextarea}
           value={strDraft}
           onChange={e => setDraft(e.target.value)}
-          onBlur={() => onChange(strDraft)}
+          onFocus={() => { focusedRef.current = true }}
+          onBlur={() => { focusedRef.current = false; onChange(strDraft) }}
           rows={Math.min(8, Math.ceil(strDraft.length / 60))}
         />
       ) : (
@@ -277,7 +284,8 @@ function FieldInput({ label, value, onChange }: { label: string; value: unknown;
           className={styles.fieldInput}
           value={strDraft}
           onChange={e => setDraft(e.target.value)}
-          onBlur={() => onChange(strDraft)}
+          onFocus={() => { focusedRef.current = true }}
+          onBlur={() => { focusedRef.current = false; onChange(strDraft) }}
         />
       )}
     </label>

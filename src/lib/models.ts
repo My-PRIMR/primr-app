@@ -72,3 +72,10 @@ export function canUseRichIngest(
 ): boolean {
   return plan === 'pro' || plan === 'enterprise' || internalRole != null
 }
+
+export function canAiEdit(
+  plan: string | null | undefined,
+  internalRole: string | null | undefined
+): boolean {
+  return plan === 'pro' || plan === 'enterprise' || internalRole != null
+}

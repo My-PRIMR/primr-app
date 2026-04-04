@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from 'react'
 import type { BlockConfig } from '@/types/outline'
 import styles from './BlockEditPanel.module.css'
 import { PAGE_ARRAY_KEY } from '../../lib/pageArrayKey'
-import { EMPTY_PROPS, INSERTABLE_TYPES } from '../../components/LessonBlockEditor'
+import { EMPTY_PROPS } from '../../components/LessonBlockEditor'
+import { ALL_BLOCK_TYPES } from '@/lib/block-schemas'
 import ImageSection from './ImageSection'
 import type { ImageValue } from './ImageSection'
 
@@ -383,8 +384,8 @@ export default function BlockEditPanel({ block, blockIndex, lessonTitle, activeP
                   value={selectedType}
                   onChange={e => handleTypeChange(e.target.value)}
                 >
-                  {INSERTABLE_TYPES.map(t => (
-                    <option key={t.type} value={t.type}>{t.label}</option>
+                  {ALL_BLOCK_TYPES.map(t => (
+                    <option key={t} value={t}>{formatLabel(t)}</option>
                   ))}
                 </select>
               </label>

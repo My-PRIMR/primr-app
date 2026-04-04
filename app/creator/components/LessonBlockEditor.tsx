@@ -381,13 +381,13 @@ export default function LessonBlockEditor({
                   className={styles.addBlockBtn}
                   onClick={() => { setPickerPosition('before'); setPickerOpen(true) }}
                 >
-                  ↑ Insert before
+                  ← Insert before
                 </button>
                 <button
                   className={styles.addBlockBtn}
                   onClick={() => { setPickerPosition('after'); setPickerOpen(true) }}
                 >
-                  ↓ Insert after
+                  Insert after →
                 </button>
                 <div className={styles.insertBarSpacer} />
                 {block.type !== 'hero' && (

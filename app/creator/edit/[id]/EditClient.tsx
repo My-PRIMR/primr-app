@@ -5,7 +5,7 @@ import Link from 'next/link'
 import type { LessonManifest } from '@/types/outline'
 import LessonBlockEditor from '../../components/LessonBlockEditor'
 import styles from './EditClient.module.css'
-import { canUsePexels } from '@/lib/models'
+import { canUsePexels, canAiEdit as canAiEditFn } from '@/lib/models'
 
 export default function EditClient({
   lessonId,
@@ -19,6 +19,7 @@ export default function EditClient({
   internalRole: string | null
 }) {
   const canPexels = canUsePexels(plan, internalRole)
+  const aiEditEnabled = canAiEditFn(plan, internalRole)
   const [inviteEmails, setInviteEmails] = useState('')
   const [invitedList, setInvitedList] = useState<{ id: string; email: string }[]>([])
   const [inviteLink, setInviteLink] = useState<string | null>(null)
@@ -123,6 +124,7 @@ export default function EditClient({
           panelMode="float"
           rightPanelExtra={sharePanel}
           canPexels={canPexels}
+          canAiEdit={aiEditEnabled}
         />
       </div>
     </div>

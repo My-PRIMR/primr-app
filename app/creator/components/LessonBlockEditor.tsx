@@ -93,6 +93,8 @@ interface LessonBlockEditorProps {
   paginatorLeft?: number
   /** Whether the current user can use Pexels image search. */
   canPexels?: boolean
+  /** Whether the current user can use AI rewrite/conversion features. */
+  canAiEdit?: boolean
 }
 
 export default function LessonBlockEditor({
@@ -103,6 +105,7 @@ export default function LessonBlockEditor({
   rightPanelExtra,
   paginatorLeft = 0,
   canPexels = false,
+  canAiEdit = false,
 }: LessonBlockEditorProps) {
   const [manifest, setManifest] = useState(initialManifest)
   const [currentBlock, setCurrentBlock] = useState(0)
@@ -233,6 +236,7 @@ export default function LessonBlockEditor({
       onClose={() => setPanelOpen(false)}
       headerAction={dockToggle}
       canPexels={canPexels}
+      canAiEdit={canAiEdit}
     />
   ) : null
 

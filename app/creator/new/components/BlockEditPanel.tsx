@@ -19,6 +19,8 @@ interface Props {
   activePage?: number
   onPageChange?: (index: number) => void
   canPexels?: boolean
+  /** Whether the current user can use AI rewrite/conversion features. */
+  canAiEdit?: boolean
 }
 
 /** Render labeled form fields for a block's props based on its type */
@@ -265,7 +267,7 @@ function formatLabel(key: string): string {
     .trim()
 }
 
-export default function BlockEditPanel({ block, blockIndex, lessonTitle, activePage, onPageChange, onUpdate, onClose, headerAction, canPexels = false }: Props) {
+export default function BlockEditPanel({ block, blockIndex, lessonTitle, activePage, onPageChange, onUpdate, onClose, headerAction, canPexels = false, canAiEdit = false }: Props) {
   const [localProps, setLocalProps] = useState<Record<string, unknown>>(block.props as Record<string, unknown>)
   const [jsonOpen, setJsonOpen] = useState(false)
 

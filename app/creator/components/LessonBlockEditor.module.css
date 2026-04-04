@@ -147,6 +147,22 @@
 }
 .addBlockBtn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 
+.insertBarSpacer { flex: 1; }
+
+.deleteBtn {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms;
+}
+.deleteBtn:hover { color: var(--color-coral, #e05252); border-color: var(--color-coral, #e05252); }
+
 /* ── Docked right panel ──────────────────────────────────────────────────── */
 .dockedPanel {
   width: 360px;

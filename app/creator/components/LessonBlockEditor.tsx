@@ -130,6 +130,7 @@ export default function LessonBlockEditor({
   const [currentBlock, setCurrentBlock] = useState(0)
   const [panelOpen, setPanelOpen] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [pickerPosition, setPickerPosition] = useState<'before' | 'after'>('after')
   const [panelAnchored, setPanelAnchored] = useState(false)
   const [disabledIds, setDisabledIds] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
@@ -188,6 +189,27 @@ export default function LessonBlockEditor({
     setManifest({ ...manifest, blocks: next })
     setCurrentBlock(currentBlock + 1)
     setPanelOpen(true)
+    setSaved(false)
+  }
+
+  function insertBlockBefore(type: BlockConfig['type']) {
+    const id = `block-${Date.now().toString(36)}`
+    const newBlock: BlockConfig = { id, type, props: { ...EMPTY_PROPS[type] } }
+    const next = [...blocks]
+    next.splice(currentBlock, 0, newBlock)
+    setManifest({ ...manifest, blocks: next })
+    // currentBlock index now points to the new block; no state change needed but
+    // we force a re-render by keeping the index (manifest change triggers it)
+    setPanelOpen(true)
+    setSaved(false)
+  }
+
+  function deleteBlock() {
+    if (blocks.length <= 1) return
+    const next = blocks.filter((_, i) => i !== currentBlock)
+    setManifest({ ...manifest, blocks: next })
+    setCurrentBlock(Math.max(0, currentBlock - 1))
+    setPanelOpen(false)
     setSaved(false)
   }
 
@@ -304,11 +326,6 @@ export default function LessonBlockEditor({
                 >
                   {panelOpen ? 'Close editor' : 'Edit block'}
                 </button>
-                {block.type !== 'hero' && (
-                  <button className={styles.disableBtn} onClick={() => toggleBlock(block.id)}>
-                    {isDisabled ? 'Enable' : 'Disable'}
-                  </button>
-                )}
                 <button
                   className={`${styles.saveBtn} ${saved ? styles.saveBtnSaved : ''}`}
                   onClick={saveLesson}
@@ -357,16 +374,36 @@ export default function LessonBlockEditor({
                 )}
               </div>
 
-              {/* Insert after current */}
+              {/* Block actions bar */}
               <div className={styles.insertBar}>
-                <button className={styles.addBlockBtn} onClick={() => setPickerOpen(true)}>
-                  Add block →
+                <button
+                  className={styles.addBlockBtn}
+                  onClick={() => { setPickerPosition('before'); setPickerOpen(true) }}
+                >
+                  ↑ Insert before
                 </button>
+                <button
+                  className={styles.addBlockBtn}
+                  onClick={() => { setPickerPosition('after'); setPickerOpen(true) }}
+                >
+                  ↓ Insert after
+                </button>
+                <div className={styles.insertBarSpacer} />
+                {block.type !== 'hero' && (
+                  <button className={styles.disableBtn} onClick={() => toggleBlock(block.id)}>
+                    {isDisabled ? 'Enable' : 'Disable'}
+                  </button>
+                )}
+                {blocks.length > 1 && (
+                  <button className={styles.deleteBtn} onClick={deleteBlock}>
+                    Delete block
+                  </button>
+                )}
                 <BlockPickerModal
                   open={pickerOpen}
                   onClose={() => setPickerOpen(false)}
                   onSelect={(type) => {
-                    insertBlock(type)
+                    pickerPosition === 'before' ? insertBlockBefore(type) : insertBlock(type)
                   }}
                   mode="insert"
                   plan={plan}

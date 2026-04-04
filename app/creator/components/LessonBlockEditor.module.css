@@ -133,26 +133,19 @@
   flex-wrap: wrap;
 }
 
-.insertLabel {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-muted);
-}
-
-.insertChip {
+.addBlockBtn {
   font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 12px;
-  color: var(--ink-soft);
-  background: var(--surface-alt);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 4px 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 5px 16px;
+  border-radius: 6px;
+  border: 1px dashed var(--border-mid);
+  background: transparent;
+  color: var(--ink-muted);
   cursor: pointer;
-  transition: border-color 120ms, color 120ms;
+  transition: border-color 150ms, color 150ms, background 150ms;
 }
-.insertChip:hover { border-color: var(--accent); color: var(--accent); }
+.addBlockBtn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 
 /* ── Docked right panel ──────────────────────────────────────────────────── */
 .dockedPanel {

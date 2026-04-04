@@ -11,6 +11,7 @@ import {
 } from '@primr/components'
 import type { LessonManifest, BlockConfig, BlockType } from '@/types/outline'
 import BlockEditPanel from '../new/components/BlockEditPanel'
+import BlockPickerModal from './BlockPickerModal'
 import { PAGE_ARRAY_KEY } from '../lib/pageArrayKey'
 import styles from './LessonBlockEditor.module.css'
 
@@ -131,6 +132,7 @@ export default function LessonBlockEditor({
   const [manifest, setManifest] = useState(initialManifest)
   const [currentBlock, setCurrentBlock] = useState(0)
   const [panelOpen, setPanelOpen] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [panelAnchored, setPanelAnchored] = useState(false)
   const [disabledIds, setDisabledIds] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
@@ -358,12 +360,18 @@ export default function LessonBlockEditor({
 
               {/* Insert after current */}
               <div className={styles.insertBar}>
-                <span className={styles.insertLabel}>Insert after</span>
-                {INSERTABLE_TYPES.map(t => (
-                  <button key={t.type} className={styles.insertChip} onClick={() => insertBlock(t.type)}>
-                    {t.icon} {t.label}
-                  </button>
-                ))}
+                <button className={styles.addBlockBtn} onClick={() => setPickerOpen(true)}>
+                  Add block →
+                </button>
+                <BlockPickerModal
+                  open={pickerOpen}
+                  onClose={() => setPickerOpen(false)}
+                  onSelect={(type) => {
+                    insertBlock(type as BlockType)
+                    setPickerOpen(false)
+                  }}
+                  mode="insert"
+                />
               </div>
             </div>
           )}

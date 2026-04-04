@@ -4,11 +4,15 @@ import { eq, and } from 'drizzle-orm'
 
 /**
  * Check if a user can access a lesson:
+ * - They are internal staff/admin, OR
  * - They created it, OR
  * - They have an invitation (by email), OR
  * - They are enrolled in a course that contains the lesson
  */
-export async function canAccessLesson(lessonId: string, userId: string, userEmail: string): Promise<boolean> {
+export async function canAccessLesson(lessonId: string, userId: string, userEmail: string, internalRole?: string | null): Promise<boolean> {
+  // Internal staff and admins can view any lesson without an explicit invitation
+  if (internalRole === 'staff' || internalRole === 'admin') return true
+
   const lesson = await db.query.lessons.findFirst({
     where: eq(lessons.id, lessonId),
   })

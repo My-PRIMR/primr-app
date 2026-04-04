@@ -21,7 +21,7 @@ export default async function LearnPage({ params, searchParams }: { params: Prom
   const session = await getSession()
   if (!session?.user?.id || !session.user.email) notFound()
 
-  const hasAccess = await canAccessLesson(id, session.user.id, session.user.email)
+  const hasAccess = await canAccessLesson(id, session.user.id, session.user.email, session.user.internalRole)
   if (!hasAccess) {
     return (
       <main style={{ padding: '4rem', textAlign: 'center' }}>

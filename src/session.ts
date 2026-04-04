@@ -1,5 +1,8 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
+import { db } from '@/db'
+import { users } from '@/db/schema'
+import { eq } from 'drizzle-orm'
 
 const COOKIE_NAME = 'primr_session'
 const EXPIRES_IN = 60 * 60 * 24 * 30 // 30 days
@@ -57,14 +60,20 @@ export async function getSession(): Promise<PrimrSession | null> {
   if (!token) return null
   try {
     const { payload } = await jwtVerify(token, getSecret())
+    const userId = payload.sub as string
+    // plan and internalRole can change in the DB after JWT issuance — always read fresh
+    const freshUser = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+      columns: { plan: true, internalRole: true },
+    })
     return {
       user: {
-        id:           payload.sub as string,
+        id:           userId,
         email:        payload.email as string,
         name:         (payload.name as string | null) ?? null,
         productRole:  (payload.productRole as string) ?? 'learner',
-        plan:         (payload.plan as string) ?? 'free',
-        internalRole: (payload.internalRole as string | null) ?? null,
+        plan:         freshUser?.plan ?? (payload.plan as string) ?? 'free',
+        internalRole: freshUser?.internalRole ?? (payload.internalRole as string | null) ?? null,
       },
     }
   } catch {

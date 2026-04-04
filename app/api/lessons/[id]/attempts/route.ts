@@ -14,7 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id: lessonId } = await params
 
-  const hasAccess = await canAccessLesson(lessonId, session.user.id, session.user.email)
+  const hasAccess = await canAccessLesson(lessonId, session.user.id, session.user.email, session.user.internalRole)
   if (!hasAccess) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }

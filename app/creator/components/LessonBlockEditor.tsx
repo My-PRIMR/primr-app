@@ -131,6 +131,7 @@ export default function LessonBlockEditor({
   const [panelOpen, setPanelOpen] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerPosition, setPickerPosition] = useState<'before' | 'after'>('after')
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [panelAnchored, setPanelAnchored] = useState(false)
   const [disabledIds, setDisabledIds] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
@@ -154,7 +155,7 @@ export default function LessonBlockEditor({
     dot?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [currentBlock, useDotPaginator])
 
-  useEffect(() => { setActivePage(0) }, [block?.id])
+  useEffect(() => { setActivePage(0); setConfirmDelete(false) }, [block?.id])
 
   function goTo(idx: number) {
     setCurrentBlock(Math.max(0, Math.min(blocks.length - 1, idx)))
@@ -395,9 +396,20 @@ export default function LessonBlockEditor({
                   </button>
                 )}
                 {blocks.length > 1 && (
-                  <button className={styles.deleteBtn} onClick={deleteBlock}>
-                    Delete block
-                  </button>
+                  confirmDelete ? (
+                    <>
+                      <button className={styles.deleteBtnConfirm} onClick={deleteBlock}>
+                        Delete?
+                      </button>
+                      <button className={styles.deleteBtnCancel} onClick={() => setConfirmDelete(false)}>
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <button className={styles.deleteBtn} onClick={() => setConfirmDelete(true)}>
+                      Delete block
+                    </button>
+                  )
                 )}
                 <BlockPickerModal
                   open={pickerOpen}

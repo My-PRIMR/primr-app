@@ -163,6 +163,33 @@
 }
 .deleteBtn:hover { color: var(--color-coral, #e05252); border-color: var(--color-coral, #e05252); }
 
+.deleteBtnConfirm {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--color-coral, #e05252);
+  background: var(--color-coral, #e05252);
+  color: #fff;
+  cursor: pointer;
+}
+.deleteBtnConfirm:hover { opacity: 0.85; }
+
+.deleteBtnCancel {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: color 150ms;
+}
+.deleteBtnCancel:hover { color: var(--ink); }
+
 /* ── Docked right panel ──────────────────────────────────────────────────── */
 .dockedPanel {
   width: 360px;

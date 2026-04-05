@@ -6,7 +6,9 @@ import styles from './page.module.css'
 export default async function Home() {
   const session = await getSession()
   if (session) redirect('/creator')
-  redirect(process.env.PRIMR_AUTH_URL ?? 'http://localhost:3001')
+  const authUrl = process.env.PRIMR_AUTH_URL ?? 'http://localhost:3001'
+  const appUrl = process.env.PRIMR_APP_URL ?? 'http://localhost:3000'
+  redirect(`${authUrl}/login?callbackUrl=${encodeURIComponent(`${appUrl}/creator`)}`)
   return (
     <main className={styles.main}>
       <nav className={styles.nav}>

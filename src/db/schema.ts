@@ -216,6 +216,18 @@ export const internalUsageLog = pgTable('internal_usage_log', {
 export type InternalUsageLog = typeof internalUsageLog.$inferSelect
 export type NewInternalUsageLog = typeof internalUsageLog.$inferInsert
 
+// ── Login Log ─────────────────────────────────────────────────────────────────
+export const loginLog = pgTable('login_log', {
+  id:            uuid('id').primaryKey().defaultRandom(),
+  userId:        uuid('user_id').references(() => users.id),
+  email:         text('email').notNull(),
+  success:       boolean('success').notNull(),
+  failureReason: text('failure_reason'),
+  ipAddress:     text('ip_address'),
+  userAgent:     text('user_agent'),
+  createdAt:     timestamp('created_at').notNull().defaultNow(),
+})
+
 // ── Lesson Feedback ───────────────────────────────────────────────────────────
 export const lessonFeedback = pgTable('lesson_feedback', {
   id:          uuid('id').primaryKey().defaultRandom(),

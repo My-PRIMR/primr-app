@@ -191,6 +191,7 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
       language:     { type: '"javascript" | "python"', default: '"javascript"' },
       starterCode:  { type: 'string', description: 'initial code in the editor' },
       instructions: { type: 'string', description: 'text shown above the editor' },
+      context:      { type: 'string', description: 'optional markdown (1–3 sentences) explaining what this tool does and how the learner should interact with it. Use when the interface needs orientation beyond what the preceding narrative already covers.' },
       ...common,
     },
   },
@@ -199,6 +200,7 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
     isInteractive: false,
     props: {
       equations: { type: 'Array<{ latex: string, label?: string, explanation?: string, displayMode?: boolean }>', required: true, description: 'latex is a LaTeX expression string' },
+      context:   { type: 'string', description: 'optional markdown (1–3 sentences) explaining what this tool does and how the learner should interact with it. Use when the interface needs orientation beyond what the preceding narrative already covers.' },
       ...common,
     },
   },
@@ -211,6 +213,7 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
       xMax:      { type: 'number', default: '10' },
       yMin:      { type: 'number', default: '-10' },
       yMax:      { type: 'number', default: '10' },
+      context:   { type: 'string', description: 'optional markdown (1–3 sentences) explaining what this tool does and how the learner should interact with it. Use when the interface needs orientation beyond what the preceding narrative already covers.' },
       ...common,
     },
   },
@@ -221,6 +224,7 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
     props: {
       reactants: { type: 'Array<{ id: string, formula: string, name?: string }>', required: true, description: 'left-side species, formula like "H2O"' },
       products:  { type: 'Array<{ id: string, formula: string, name?: string }>', required: true, description: 'right-side species' },
+      context:   { type: 'string', description: 'optional markdown (1–3 sentences) explaining what this tool does and how the learner should interact with it. Use when the interface needs orientation beyond what the preceding narrative already covers.' },
       ...common,
     },
   },
@@ -239,6 +243,7 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
     isInteractive: true,
     props: {
       availableComponents: { type: 'Array<{ type: string, label?: string }>', required: true, description: 'types: "battery", "resistor", "led", "bulb", "switch", "wire"' },
+      context:             { type: 'string', description: 'optional markdown (1–3 sentences) explaining what this tool does and how the learner should interact with it. Use when the interface needs orientation beyond what the preceding narrative already covers.' },
       ...common,
     },
   },
@@ -269,6 +274,7 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
     props: {
       tables:       { type: 'Array<{ name: string, columns: Array<{ name: string, type: string }>, rows: Array<Record<string, string|number|null>> }>', required: true },
       starterQuery: { type: 'string', description: 'initial SQL shown in editor' },
+      context:      { type: 'string', description: 'optional markdown (1–3 sentences) explaining what this tool does and how the learner should interact with it. Use when the interface needs orientation beyond what the preceding narrative already covers.' },
       ...common,
     },
   },
@@ -295,6 +301,7 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
       defaultLoanTermMonths: { type: 'number' },
       defaultInvestment:     { type: 'number' },
       defaultGain:           { type: 'number' },
+      context:               { type: 'string', description: 'optional markdown (1–3 sentences) explaining what this tool does and how the learner should interact with it. Use when the interface needs orientation beyond what the preceding narrative already covers.' },
       ...common,
     },
   },
@@ -312,6 +319,7 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
     isInteractive: false,
     props: {
       simulation: { type: '"projectile" | "pendulum" | "spring"', default: '"projectile"' },
+      context:    { type: 'string', description: 'optional markdown (1–3 sentences) explaining what this tool does and how the learner should interact with it. Use when the interface needs orientation beyond what the preceding narrative already covers.' },
       ...common,
     },
   },

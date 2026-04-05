@@ -30,6 +30,7 @@ export const users = pgTable('users', {
   organizationId: uuid('organization_id').references(() => organizations.id),
   createdAt:      timestamp('created_at').notNull().defaultNow(),
   updatedAt:      timestamp('updated_at').notNull().defaultNow(),
+  lastLoginAt:    timestamp('last_login_at'),
 })
 
 export type User = typeof users.$inferSelect

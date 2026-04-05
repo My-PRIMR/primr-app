@@ -1,6 +1,6 @@
 import type { LessonManifest, BlockConfig } from '@primr/components'
 
-export type BlockType = 'hero' | 'narrative' | 'step-navigator' | 'quiz' | 'flashcard' | 'fill-in-the-blank' | 'media'
+export type BlockType = 'hero' | 'narrative' | 'step-navigator' | 'media' | 'equation-renderer' | 'equation-fill-in-the-blank' | 'graph-plotter' | 'physics-simulator' | 'financial-calculator' | 'reaction-balancer' | 'circuit-builder' | 'code-runner' | 'sql-sandbox' | 'hotspot-image' | 'sort-rank' | 'quiz' | 'flashcard' | 'fill-in-the-blank'
 
 export interface OutlineBlock {
   id: string

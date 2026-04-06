@@ -44,8 +44,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const blocked = assertMutableLesson(existing)
-  if (blocked) return blocked
+  // System content protects the educational content (manifest) from edits, but
+  // operational flags (examEnforced, showcase, publishedAt) remain toggleable so
+  // admins can manage how a system lesson is graded, embedded, and distributed.
+  if (manifest && existing.isSystem) {
+    const blocked = assertMutableLesson(existing)
+    if (blocked) return blocked
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateFields: Record<string, any> = { updatedAt: new Date() }

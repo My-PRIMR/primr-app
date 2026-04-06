@@ -158,14 +158,14 @@ export default async function CourseResultsPage({
   const lessonCompletionMap = new Map(lessonCompletionCounts.map(r => [r.lessonId, r.completedCount]))
 
   return (
-    <main className={styles.main}>
+    <>
       <PageHeaderServer
         leftSlot={
           <Link href="/creator" className={styles.backLink}>← Back to results</Link>
         }
       />
-
-      <h1 className={styles.pageTitle}>{course.title}</h1>
+      <main className={styles.main}>
+        <h1 className={styles.pageTitle}>{course.title}</h1>
       <p className={styles.pageMeta}>Course · {totalLessons} lesson{totalLessons !== 1 ? 's' : ''} · {enrolledCount} enrolled learner{enrolledCount !== 1 ? 's' : ''}</p>
 
       {/* Stat strip */}
@@ -299,6 +299,6 @@ export default async function CourseResultsPage({
           </div>
         </div>
       )}
-    </main>
+    </main></>
   )
 }

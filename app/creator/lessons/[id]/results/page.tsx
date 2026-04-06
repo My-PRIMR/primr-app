@@ -165,14 +165,14 @@ export default async function LessonResultsPage({
   ].filter(Boolean).join(' · ')
 
   return (
-    <main className={styles.main}>
+    <>
       <PageHeaderServer
         leftSlot={
           <Link href="/creator" className={styles.backLink}>← Back to lessons</Link>
         }
       />
-
-      <h1 className={styles.pageTitle}>{lesson.title}</h1>
+      <main className={styles.main}>
+        <h1 className={styles.pageTitle}>{lesson.title}</h1>
       <p className={styles.pageMeta}>{metaParts}</p>
 
       {/* Stat strip */}
@@ -419,6 +419,6 @@ export default async function LessonResultsPage({
         </div>
       )}
 
-    </main>
+    </main></>
   )
 }

@@ -39,10 +39,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // Teacher tier student cap enforcement. Other plans skip the check entirely.
   // Dedupe the batch first so re-inviting the same address twice doesn't double-count.
+  // Use session.user.id (non-null, narrowed by the auth check above) rather than
+  // lesson.createdBy (typed as string | null in the schema even though verifyOwner
+  // proves it equals session.user.id at this point).
   if (session.user.plan === 'teacher') {
     const uniqueEmails = [...new Set(normalized)]
     for (const email of uniqueEmails) {
-      const result = await checkStudentCap(lesson.createdBy, email)
+      const result = await checkStudentCap(session.user.id, email)
       if (result.capped) {
         return NextResponse.json({
           error: `${TEACHER_STUDENT_CAP}-student limit reached. Upgrade to a paid plan for unlimited seats.`,

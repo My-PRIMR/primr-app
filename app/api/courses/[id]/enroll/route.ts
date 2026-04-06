@@ -44,7 +44,9 @@ export async function POST(
   const normalizedEmail = email.trim().toLowerCase()
 
   if (session.user.plan === 'teacher') {
-    const result = await checkStudentCap(course.createdBy, normalizedEmail)
+    // Use session.user.id (non-null) rather than course.createdBy (typed string | null
+    // even though the ownership check above proves it equals session.user.id here).
+    const result = await checkStudentCap(session.user.id, normalizedEmail)
     if (result.capped) {
       return NextResponse.json({
         error: `${TEACHER_STUDENT_CAP}-student limit reached. Upgrade to a paid plan for unlimited seats.`,

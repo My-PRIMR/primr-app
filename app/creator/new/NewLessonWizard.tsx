@@ -9,6 +9,7 @@ import { canUseRichIngest } from '@/lib/models'
 import StepIndicator from './components/StepIndicator'
 import Step1Form from './components/Step1Form'
 import LessonBlockEditor from '../components/LessonBlockEditor'
+import { PageHeader, type PageHeaderUser } from '../../components/PageHeader'
 import styles from './page.module.css'
 
 const initialState: WizardState = {
@@ -52,12 +53,13 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
 }
 
 interface NewLessonWizardProps {
+  user: PageHeaderUser
   internalRole: string | null
   productRole: string | null
   plan: string | null
 }
 
-export default function NewLessonWizard({ internalRole, productRole, plan }: NewLessonWizardProps) {
+export default function NewLessonWizard({ user, internalRole, productRole, plan }: NewLessonWizardProps) {
   const router = useRouter()
   const [state, dispatch] = useReducer(reducer, initialState)
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL)
@@ -133,9 +135,7 @@ export default function NewLessonWizard({ internalRole, productRole, plan }: New
 
   return (
     <main className={styles.main}>
-      <nav className={styles.nav}>
-        <Link href="/" className={styles.wordmark}>Primr</Link>
-      </nav>
+      <PageHeader user={user} title="New lesson" />
 
       <div className={styles.stepBar}>
         <StepIndicator current={state.step} />

@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { uploadBuffer } from '@/lib/cloudinary'
 import type { LessonManifest } from '@primr/components'
+import { assertMutableLesson } from '@/lib/system-content'
 
 const LOCAL_ASSET_PREFIX = '/api/assets/'
 
@@ -45,6 +46,9 @@ export async function POST(
   const [lesson] = await db.select().from(lessons).where(eq(lessons.id, id)).limit(1)
   if (!lesson) return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
   if (lesson.createdBy !== userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const blocked = assertMutableLesson(lesson)
+  if (blocked) return blocked
 
   let manifest = lesson.manifest as LessonManifest
 
@@ -101,6 +105,9 @@ export async function DELETE(
   const [lesson] = await db.select().from(lessons).where(eq(lessons.id, id)).limit(1)
   if (!lesson) return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
   if (lesson.createdBy !== userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const blocked = assertMutableLesson(lesson)
+  if (blocked) return blocked
 
   await db.update(lessons)
     .set({ publishedAt: null, updatedAt: new Date() })

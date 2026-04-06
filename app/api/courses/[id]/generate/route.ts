@@ -11,6 +11,7 @@ import { getSession } from '@/session'
 import { resolveModel, DEFAULT_MODEL, modelById, canSelectModels } from '@/lib/models'
 import { checkCap, logUsage } from '@/lib/usage-cap'
 import { runCourseGeneration, type LessonGenInput } from '@/lib/course-gen'
+import { assertMutableCourse } from '@/lib/system-content'
 import { users } from '@/db/schema'
 import type { CourseTree } from '@/types/course'
 
@@ -26,6 +27,8 @@ export async function POST(
   const course = await db.query.courses.findFirst({ where: eq(courses.id, courseId) })
   if (!course) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (course.createdBy !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const blocked = assertMutableCourse(course)
+  if (blocked) return blocked
 
   const body = await req.json() as { tree: CourseTree, model?: string, passiveLesson?: boolean, skipHero?: boolean, notifyEmail?: boolean, includeImages?: boolean }
   const { tree, model, passiveLesson, skipHero, notifyEmail, includeImages } = body

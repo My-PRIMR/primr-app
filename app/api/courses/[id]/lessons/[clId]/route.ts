@@ -4,6 +4,7 @@ import { chapterLessons, courseChapters, courseSections, courses } from '@/db/sc
 import { eq } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { cancelLessonGeneration } from '@/lib/course-gen'
+import { assertMutableCourse } from '@/lib/system-content'
 
 // PATCH /api/courses/[id]/lessons/[clId] — toggle isDisabled on a chapter lesson
 export async function PATCH(
@@ -19,6 +20,8 @@ export async function PATCH(
   const course = await db.query.courses.findFirst({ where: eq(courses.id, courseId) })
   if (!course) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (course.createdBy !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const blocked = assertMutableCourse(course)
+  if (blocked) return blocked
 
   const body = await req.json()
   if (typeof body.isDisabled !== 'boolean') {
@@ -48,6 +51,8 @@ export async function DELETE(
   const course = await db.query.courses.findFirst({ where: eq(courses.id, courseId) })
   if (!course) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (course.createdBy !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const blocked = assertMutableCourse(course)
+  if (blocked) return blocked
 
   cancelLessonGeneration(clId)
   await db.delete(chapterLessons).where(eq(chapterLessons.id, clId))

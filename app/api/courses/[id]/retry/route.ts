@@ -8,6 +8,7 @@ import { courses, chapterLessons } from '@/db/schema'
 import { eq, inArray } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { runCourseGeneration, type LessonGenInput } from '@/lib/course-gen'
+import { assertMutableCourse } from '@/lib/system-content'
 
 export async function POST(
   req: NextRequest,
@@ -20,6 +21,8 @@ export async function POST(
   const course = await db.query.courses.findFirst({ where: eq(courses.id, courseId) })
   if (!course) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (course.createdBy !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const blocked = assertMutableCourse(course)
+  if (blocked) return blocked
 
   const { chapterLessonIds } = await req.json() as { chapterLessonIds: string[] }
   if (!chapterLessonIds?.length) return NextResponse.json({ error: 'chapterLessonIds required' }, { status: 400 })

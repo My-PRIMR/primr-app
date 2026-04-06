@@ -148,6 +148,13 @@
       "when": 1775504153150,
       "tag": "0020_round_white_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1775504402746,
+      "tag": "0021_empty_daimon_hellstrom",
+      "breakpoints": true
     }
   ]
 }

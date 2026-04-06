@@ -1,4 +1,5 @@
-import { pgTable, pgEnum, text, jsonb, timestamp, uuid, real, integer, smallint, boolean, unique } from 'drizzle-orm/pg-core'
+import { pgTable, pgEnum, text, jsonb, timestamp, uuid, real, integer, smallint, boolean, unique, uniqueIndex } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 import type { LessonManifest } from '@primr/components'
 
 // ── Enums ────────────────────────────────────────────────────────────────────
@@ -262,9 +263,18 @@ export const teacherApplications = pgTable('teacher_applications', {
   status:           teacherApplicationStatusEnum('status').notNull().default('pending'),
   submittedAt:      timestamp('submitted_at').notNull().defaultNow(),
   reviewedAt:       timestamp('reviewed_at'),
+  /** Admin who reviewed. Intentionally NOT cascade-on-delete: we preserve the audit trail
+   *  even if the reviewing admin's account is later removed. */
   reviewedBy:       uuid('reviewed_by').references(() => users.id),
   rejectionReason:  text('rejection_reason'),
-})
+}, (t) => [
+  // At most one pending application per user. Historical (approved/rejected) rows are
+  // unconstrained, so users can reapply after rejection. Enforced at the DB layer to
+  // make the apply route's duplicate check race-free.
+  uniqueIndex('teacher_applications_one_pending_per_user')
+    .on(t.userId)
+    .where(sql`status = 'pending'`),
+])
 
 export type TeacherApplication = typeof teacherApplications.$inferSelect
 export type NewTeacherApplication = typeof teacherApplications.$inferInsert

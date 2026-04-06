@@ -7,7 +7,7 @@ import {
 } from '@/db/schema'
 import { eq, and, inArray, sql } from 'drizzle-orm'
 import { getSession } from '@/session'
-import { UserMenu } from '../../../../components/UserMenu'
+import PageHeaderServer from '../../../../components/PageHeaderServer'
 import styles from './page.module.css'
 
 export const dynamic = 'force-dynamic'
@@ -159,18 +159,11 @@ export default async function CourseResultsPage({
 
   return (
     <main className={styles.main}>
-      <nav className={styles.nav}>
-        <Link href="/" className={styles.wordmark}>Primr</Link>
-        <UserMenu
-          userName={session.user.name}
-          userEmail={session.user.email}
-          role={session.user.productRole}
-          internalRole={session.user.internalRole}
-          internalUrl={process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004'}
-        />
-      </nav>
-
-      <Link href="/creator" className={styles.backLink}>← Back to results</Link>
+      <PageHeaderServer
+        leftSlot={
+          <Link href="/creator" className={styles.backLink}>← Back to results</Link>
+        }
+      />
 
       <h1 className={styles.pageTitle}>{course.title}</h1>
       <p className={styles.pageMeta}>Course · {totalLessons} lesson{totalLessons !== 1 ? 's' : ''} · {enrolledCount} enrolled learner{enrolledCount !== 1 ? 's' : ''}</p>

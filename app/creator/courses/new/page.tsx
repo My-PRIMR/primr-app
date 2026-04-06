@@ -1,5 +1,6 @@
 import { getSession } from '@/session'
 import { redirect } from 'next/navigation'
+import { toPageHeaderUser } from '../../../components/PageHeader'
 import CourseWizard from './CourseWizard'
 
 export default async function NewCoursePage() {
@@ -11,6 +12,7 @@ export default async function NewCoursePage() {
 
   return (
     <CourseWizard
+      user={toPageHeaderUser(session.user)}
       internalRole={session.user.internalRole ?? null}
       productRole={session.user.productRole ?? null}
     />

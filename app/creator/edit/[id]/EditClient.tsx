@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import type { LessonManifest } from '@/types/outline'
 import LessonBlockEditor from '../../components/LessonBlockEditor'
+import { PageHeader } from '../../../components/PageHeader'
+import { type PageHeaderUser } from '../../../components/pageHeaderUser'
 import styles from './EditClient.module.css'
 import { canUsePexels, canAiEdit as canAiEditFn } from '@/lib/models'
 
@@ -12,11 +14,13 @@ export default function EditClient({
   manifest,
   plan,
   internalRole,
+  user,
 }: {
   lessonId: string
   manifest: LessonManifest
   plan: string
   internalRole: string | null
+  user: PageHeaderUser
 }) {
   const canPexels = canUsePexels(plan, internalRole)
   const aiEditEnabled = canAiEditFn(plan, internalRole)
@@ -107,14 +111,15 @@ export default function EditClient({
   return (
     <div className={styles.root}>
       {/* ── Nav ── */}
-      <nav className={styles.nav}>
-        <Link href="/" className={styles.wordmark}>Primr</Link>
-        <div className={styles.navSep} />
-        <div className={styles.navRight}>
-          <Link href={`/creator/preview/${lessonId}`} className={styles.navLink}>Preview →</Link>
-          <Link href={`/learn/${lessonId}`} className={styles.navLink}>Take lesson →</Link>
-        </div>
-      </nav>
+      <PageHeader
+        user={user}
+        rightSlot={
+          <>
+            <Link href={`/creator/preview/${lessonId}`} className={styles.navLink}>Preview →</Link>
+            <Link href={`/learn/${lessonId}`} className={styles.navLink}>Take lesson →</Link>
+          </>
+        }
+      />
 
       {/* ── Body ── */}
       <div className={styles.body}>

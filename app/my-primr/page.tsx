@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { UserMenu } from '../components/UserMenu'
+import PageHeaderServer from '../components/PageHeaderServer'
 import { UpgradeCTA } from '../components/UpgradeCTA'
 import { db } from '@/db'
 import {
@@ -119,12 +119,7 @@ export default async function MyPrimrPage() {
 
   return (
     <main className={styles.main}>
-      <nav className={styles.nav}>
-        <Link href="/" className={styles.wordmark}>Primr</Link>
-        <div className={styles.navActions}>
-          <UserMenu userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} internalRole={session.user.internalRole} internalUrl={process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004'} />
-        </div>
-      </nav>
+      <PageHeaderServer />
 
       <div className={styles.content}>
 

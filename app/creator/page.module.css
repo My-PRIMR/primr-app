@@ -24,27 +24,6 @@
   }
 }
 
-.nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.25rem 2.5rem;
-  border-bottom: 0.5px solid var(--border);
-}
-
-.wordmark {
-  font-family: 'DM Serif Display', Georgia, serif;
-  font-size: 22px;
-  font-weight: 400;
-  color: var(--ink);
-}
-
-.navActions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
 .newBtn {
   font-size: 13.5px;
   font-weight: 500;
@@ -66,18 +45,6 @@
   transition: opacity 150ms;
 }
 .newCourseBtn:hover { opacity: 0.85; }
-
-.logoutBtn {
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--ink-muted);
-  background: none;
-  border: none;
-  padding: 8px 4px;
-  cursor: pointer;
-  transition: color 150ms;
-}
-.logoutBtn:hover { color: var(--ink); }
 
 .content {
   max-width: 720px;

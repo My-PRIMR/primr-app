@@ -4,6 +4,7 @@ import { courses, courseSections, courseChapters, chapterLessons, lessons } from
 import { eq, asc, inArray } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { cancelCourseGeneration } from '@/lib/course-gen'
+import { assertMutableCourse } from '@/lib/system-content'
 import type { FullCourseTree } from '@/types/course'
 
 // GET /api/courses/[id] — full course tree
@@ -102,6 +103,9 @@ export async function PATCH(
   if (!course) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (course.createdBy !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+  const blocked = assertMutableCourse(course)
+  if (blocked) return blocked
+
   const body = await req.json()
   const updates: Partial<typeof course> = {}
   if (body.title !== undefined) updates.title = body.title
@@ -129,6 +133,9 @@ export async function DELETE(
   const course = await db.query.courses.findFirst({ where: eq(courses.id, id) })
   if (!course) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (course.createdBy !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const blocked = assertMutableCourse(course)
+  if (blocked) return blocked
 
   cancelCourseGeneration(id)
 

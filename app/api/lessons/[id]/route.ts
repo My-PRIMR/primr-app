@@ -3,6 +3,7 @@ import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getSession } from '@/session'
+import { assertMutableLesson } from '@/lib/system-content'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -43,6 +44,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  const blocked = assertMutableLesson(existing)
+  if (blocked) return blocked
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateFields: Record<string, any> = { updatedAt: new Date() }
   if (manifest) { updateFields.manifest = manifest; updateFields.title = manifest.title }
@@ -69,6 +73,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const [lesson] = await db.select().from(lessons).where(eq(lessons.id, id)).limit(1)
   if (!lesson) return NextResponse.json({ error: 'lesson not found' }, { status: 404 })
   if (lesson.createdBy !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const blocked = assertMutableLesson(lesson)
+  if (blocked) return blocked
 
   await db.delete(lessons).where(eq(lessons.id, id))
   return NextResponse.json({ ok: true })

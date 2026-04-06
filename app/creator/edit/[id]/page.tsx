@@ -1,8 +1,9 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getSession } from '@/session'
+import { toPageHeaderUser } from '../../../components/pageHeaderUser'
 import EditClient from './EditClient'
 
 export default async function EditPage({ params }: { params: Promise<{ id: string }> }) {
@@ -14,6 +15,7 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
   ])
 
   if (!lesson) notFound()
+  if (!session?.user?.id) redirect('/login')
 
   return (
     <EditClient
@@ -22,6 +24,7 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
       publishedAt={lesson.publishedAt?.toISOString() ?? null}
       plan={session?.user.plan ?? 'free'}
       internalRole={session?.user.internalRole ?? null}
+      user={toPageHeaderUser(session.user)}
     />
   )
 }

@@ -4,19 +4,6 @@
   flex-direction: column;
 }
 
-/* ── Nav ─────────────────────────────────────────────────────────────────── */
-.nav {
-  padding: 1.25rem 2.5rem;
-  border-bottom: 0.5px solid var(--border);
-}
-
-.wordmark {
-  font-family: 'DM Serif Display', Georgia, serif;
-  font-size: 22px;
-  font-weight: 400;
-  color: var(--ink);
-}
-
 /* ── Tab bar ─────────────────────────────────────────────────────────────── */
 .tabBar {
   display: flex;

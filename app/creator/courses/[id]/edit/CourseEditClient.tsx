@@ -5,7 +5,10 @@ import Link from 'next/link'
 import type { LessonManifest } from '@/types/outline'
 import type { FullCourseTree } from '@/types/course'
 import LessonBlockEditor from '../../../components/LessonBlockEditor'
+import { PageHeader } from '../../../../components/PageHeader'
+import { type PageHeaderUser } from '../../../../components/pageHeaderUser'
 import { canUsePexels, canAiEdit as canAiEditFn } from '@/lib/models'
+
 import styles from './CourseEditClient.module.css'
 
 type LessonStatus = { generationStatus: string; lessonId: string | null }
@@ -39,7 +42,7 @@ function statusIcon(status: string): StatusIcon {
   }
 }
 
-export default function CourseEditClient({ course, plan, internalRole }: { course: FullCourseTree; plan: string; internalRole: string | null }) {
+export default function CourseEditClient({ course, plan, internalRole, user }: { course: FullCourseTree; plan: string; internalRole: string | null; user: PageHeaderUser }) {
   const canPexels = canUsePexels(plan, internalRole)
   const aiEditEnabled = canAiEditFn(plan, internalRole)
   const isInternal = internalRole != null
@@ -202,29 +205,33 @@ export default function CourseEditClient({ course, plan, internalRole }: { cours
   return (
     <div className={styles.root}>
       {/* ── Nav ── */}
-      <nav className={styles.nav}>
-        <Link href="/creator" className={styles.wordmark}>Primr</Link>
-        <span className={styles.navSep} />
-        <input
-          className={styles.navTitleInput}
-          value={courseTitle}
-          onChange={e => setCourseTitle(e.target.value)}
-          onBlur={e => saveCourseTitle(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && e.currentTarget.blur()}
-          aria-label="Course title"
-        />
-        {selectedLessonTitle && (
+      <PageHeader
+        user={user}
+        homeHref="/creator"
+        leftSlot={
           <>
-            <span className={styles.navCrumbSep}>›</span>
-            <span className={styles.navCrumbLesson}>{selectedLessonTitle}</span>
+            <input
+              className={styles.navTitleInput}
+              value={courseTitle}
+              onChange={e => setCourseTitle(e.target.value)}
+              onBlur={e => saveCourseTitle(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && e.currentTarget.blur()}
+              aria-label="Course title"
+            />
+            {selectedLessonTitle && (
+              <>
+                <span className={styles.navCrumbSep}>›</span>
+                <span className={styles.navCrumbLesson}>{selectedLessonTitle}</span>
+              </>
+            )}
           </>
-        )}
-        <div className={styles.navRight}>
-          {lessonId && (
+        }
+        rightSlot={
+          lessonId ? (
             <Link href={`/learn/${lessonId}`} className={styles.navLink}>Take lesson →</Link>
-          )}
-        </div>
-      </nav>
+          ) : null
+        }
+      />
 
       {/* ── Main layout ── */}
       <div className={styles.layout}>

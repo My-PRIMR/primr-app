@@ -5,7 +5,7 @@ import { lessons, lessonAttempts, lessonInvitations, users, lessonFeedback } fro
 import { eq, desc } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { computeBlockPerformance } from '@/lib/results'
-import { UserMenu } from '../../../../components/UserMenu'
+import PageHeaderServer from '../../../../components/PageHeaderServer'
 import styles from './page.module.css'
 
 export const dynamic = 'force-dynamic'
@@ -165,21 +165,14 @@ export default async function LessonResultsPage({
   ].filter(Boolean).join(' · ')
 
   return (
-    <main className={styles.main}>
-      <nav className={styles.nav}>
-        <Link href="/" className={styles.wordmark}>Primr</Link>
-        <UserMenu
-          userName={session.user.name}
-          userEmail={session.user.email}
-          role={session.user.productRole}
-          internalRole={session.user.internalRole}
-          internalUrl={process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004'}
-        />
-      </nav>
-
-      <Link href="/creator" className={styles.backLink}>← Back to lessons</Link>
-
-      <h1 className={styles.pageTitle}>{lesson.title}</h1>
+    <>
+      <PageHeaderServer
+        leftSlot={
+          <Link href="/creator" className={styles.backLink} style={{ marginBottom: 0 }}>← Back to lessons</Link>
+        }
+      />
+      <main className={styles.main}>
+        <h1 className={styles.pageTitle}>{lesson.title}</h1>
       <p className={styles.pageMeta}>{metaParts}</p>
 
       {/* Stat strip */}
@@ -426,6 +419,6 @@ export default async function LessonResultsPage({
         </div>
       )}
 
-    </main>
+    </main></>
   )
 }

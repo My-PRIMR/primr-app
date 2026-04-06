@@ -1,8 +1,8 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import PageHeaderServer from '../../../components/PageHeaderServer'
 import LessonView from './LessonView'
 import styles from '../../new/page.module.css'
 
@@ -17,9 +17,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
 
   return (
     <main className={styles.main}>
-      <nav className={styles.nav}>
-        <Link href="/creator" className={styles.wordmark}>Primr</Link>
-      </nav>
+      <PageHeaderServer />
       <div className={styles.content}>
         <LessonView manifest={lesson.manifest} />
       </div>

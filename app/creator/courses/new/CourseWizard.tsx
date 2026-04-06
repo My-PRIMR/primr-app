@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import type { CourseTree, CourseSection, CourseChapter, CourseLesson, FlatLesson } from '@/types/course'
+import { PageHeader, type PageHeaderUser } from '../../../components/PageHeader'
 import styles from './CourseWizard.module.css'
 import { DEFAULT_MODEL, MODELS, canSelectModels, canSelectOpus } from '@/lib/models'
 
@@ -60,11 +61,12 @@ function genId() {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 interface CourseWizardProps {
+  user: PageHeaderUser
   internalRole: string | null
   productRole: string | null
 }
 
-export default function CourseWizard({ internalRole, productRole }: CourseWizardProps) {
+export default function CourseWizard({ user, internalRole, productRole }: CourseWizardProps) {
   const [state, setState] = useState<WizardState>(initialState)
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL)
   const [passiveLesson, setPassiveLesson] = useState(false)
@@ -391,10 +393,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
 
   return (
     <div className={styles.wrapper}>
-      <nav className={styles.nav}>
-        <Link href="/creator" className={styles.wordmark}>Primr</Link>
-        <span className={styles.navTitle}>New Course</span>
-      </nav>
+      <PageHeader user={user} title="New course" homeHref="/creator" />
 
       <div className={styles.content}>
         {/* Step indicator */}

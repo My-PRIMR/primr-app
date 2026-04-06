@@ -5,22 +5,6 @@
   font-family: 'DM Sans', system-ui, sans-serif;
 }
 
-.nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 1.25rem;
-  margin-bottom: 1.25rem;
-  border-bottom: 1.5px solid var(--border);
-}
-
-.wordmark {
-  font-family: 'DM Serif Display', Georgia, serif;
-  font-size: 20px;
-  color: var(--ink);
-  text-decoration: none;
-}
-
 .backLink {
   display: inline-flex;
   align-items: center;

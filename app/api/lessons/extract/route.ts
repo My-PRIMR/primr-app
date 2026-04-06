@@ -41,7 +41,8 @@ export async function POST(req: NextRequest) {
     let assets: DocumentAsset[] = []
 
     if (name.endsWith('.pdf')) {
-      text = await extractTextWithLiteParse(Buffer.from(new Uint8Array(bytes)))
+      const buffer = Buffer.from(new Uint8Array(bytes))
+      text = await extractTextWithLiteParse(buffer)
 
       // Always extract hyperlinked YouTube URLs from text (free, no plan check needed)
       const ytUrls = extractYouTubeUrls(text)

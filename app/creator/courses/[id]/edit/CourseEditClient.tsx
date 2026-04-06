@@ -7,7 +7,8 @@ import type { FullCourseTree } from '@/types/course'
 import LessonBlockEditor from '../../../components/LessonBlockEditor'
 import { PageHeader } from '../../../../components/PageHeader'
 import { type PageHeaderUser } from '../../../../components/pageHeaderUser'
-import { canUsePexels } from '@/lib/models'
+import { canUsePexels, canAiEdit as canAiEditFn } from '@/lib/models'
+
 import styles from './CourseEditClient.module.css'
 
 type LessonStatus = { generationStatus: string; lessonId: string | null }
@@ -43,6 +44,8 @@ function statusIcon(status: string): StatusIcon {
 
 export default function CourseEditClient({ course, plan, internalRole, user }: { course: FullCourseTree; plan: string; internalRole: string | null; user: PageHeaderUser }) {
   const canPexels = canUsePexels(plan, internalRole)
+  const aiEditEnabled = canAiEditFn(plan, internalRole)
+  const isInternal = internalRole != null
   // ── Course title editing ───────────────────────────────────────────────────
   const [courseTitle, setCourseTitle] = useState(course.title)
 
@@ -389,6 +392,9 @@ export default function CourseEditClient({ course, plan, internalRole, user }: {
             panelMode="dock"
             paginatorLeft={240}
             canPexels={canPexels}
+            canAiEdit={aiEditEnabled}
+            plan={plan}
+            isInternal={isInternal}
           />
         )}
       </div>

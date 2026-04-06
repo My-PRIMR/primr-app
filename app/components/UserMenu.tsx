@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import styles from './UserMenu.module.css'
 import { UpgradeModal } from './UpgradeModal'
+import { useTheme } from './useTheme'
+import type { Theme } from './useTheme'
 
 interface UserMenuProps {
   userName: string | null
@@ -25,6 +27,7 @@ function roleLabel(role: string) {
 export function UserMenu({ userName, userEmail, role, internalRole, internalUrl }: UserMenuProps) {
   const [open, setOpen] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const { theme, setTheme } = useTheme()
   const ref = useRef<HTMLDivElement>(null)
   const initial = (userName ?? userEmail).charAt(0).toUpperCase()
   const displayName = userName || userEmail
@@ -88,10 +91,20 @@ export function UserMenu({ userName, userEmail, role, internalRole, internalUrl 
             </>
           )}
 
-          {/* Security */}
-          <a href="/account/security" className={styles.logoutItem}>
-            Change password
-          </a>
+          {/* Theme toggle */}
+          <div className={styles.themeRow}>
+            {(['light', 'system', 'dark'] as Theme[]).map(t => (
+              <button
+                key={t}
+                className={`${styles.themeBtn} ${theme === t ? styles.themeBtnActive : ''}`}
+                onClick={() => setTheme(t)}
+                title={t.charAt(0).toUpperCase() + t.slice(1)}
+              >
+                {t === 'light' ? '☀' : t === 'dark' ? '☾' : '⊙'}
+              </button>
+            ))}
+          </div>
+
           <div className={styles.divider} />
 
           {/* Logout */}

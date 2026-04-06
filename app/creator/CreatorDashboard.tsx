@@ -8,6 +8,8 @@ import type { EnrolledCourse, InvitedLesson, HistoryLesson } from './LearnerDash
 import styles from './CreatorDashboard.module.css'
 import ResultsTab, { type ResultsData } from './ResultsTab'
 import ResultsTabBoundary from './ResultsTabBoundary'
+import StudentsTable from './students/StudentsTable'
+import type { TeacherRosterRow } from '@/lib/teacher-roster'
 
 export type LearnerData = {
   courses: EnrolledCourse[]
@@ -35,7 +37,7 @@ export type LessonItem = {
   showcase: boolean
 }
 
-type Tab = 'courses' | 'lessons' | 'results' | 'learning'
+type Tab = 'courses' | 'lessons' | 'results' | 'learning' | 'students'
 type View = 'card' | 'list'
 
 function courseLabel(status: string, doneCount: number, lessonCount: number) {
@@ -63,11 +65,15 @@ export default function CreatorDashboard({
   lessons,
   learner,
   results,
+  plan,
+  roster,
 }: {
   courses: CourseItem[]
   lessons: LessonItem[]
   learner?: LearnerData
   results?: ResultsData
+  plan?: string
+  roster?: TeacherRosterRow[]
 }) {
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('lessons')
@@ -82,7 +88,7 @@ export default function CreatorDashboard({
   const selected = isCourses ? selectedCourses : selectedLessons
   const setSelected = isCourses ? setSelectedCourses : setSelectedLessons
 
-  const allSelected = tab !== 'learning' && tab !== 'results' && items.length > 0 && selected.size === items.length
+  const allSelected = tab !== 'learning' && tab !== 'results' && tab !== 'students' && items.length > 0 && selected.size === items.length
 
   function toggle(id: string) {
     setSelected(prev => {
@@ -181,10 +187,20 @@ export default function CreatorDashboard({
             )}
           </button>
         )}
+        {plan === 'teacher' && (
+          <button
+            className={`${styles.tab} ${tab === 'students' ? styles.tabActive : ''}`}
+            onClick={() => setTab('students')}
+            title="Students enrolled in your lessons and courses"
+          >
+            Students
+            {roster && roster.length > 0 && <span className={styles.tabBadge}>{roster.length}</span>}
+          </button>
+        )}
       </div>
 
       {/* ── Toolbar ── */}
-      {tab !== 'results' && tab !== 'learning' && <div className={styles.toolbar}>
+      {tab !== 'results' && tab !== 'learning' && tab !== 'students' && <div className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
           {selected.size > 0 && (
             <button className={styles.deleteBulkBtn} onClick={deleteSelected} disabled={deleting}>
@@ -455,6 +471,11 @@ export default function CreatorDashboard({
         <ResultsTabBoundary>
           <ResultsTab results={results} />
         </ResultsTabBoundary>
+      )}
+
+      {/* ── Students tab ── */}
+      {tab === 'students' && plan === 'teacher' && (
+        <StudentsTable roster={roster ?? []} />
       )}
 
       {/* ── Learning tab ── */}

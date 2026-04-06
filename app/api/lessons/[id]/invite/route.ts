@@ -6,6 +6,7 @@ import { lessons, lessonInvitations, lessonInviteLinks } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { sendEmail } from '@/lib/email'
 import { lessonInviteEmail } from '@/lib/email-templates'
+import { checkStudentCap, TEACHER_STUDENT_CAP } from '@/lib/student-cap'
 
 async function verifyOwner(lessonId: string, userId: string) {
   const lesson = await db.query.lessons.findFirst({
@@ -25,12 +26,35 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  if (!lesson.publishedAt) {
+    return NextResponse.json({ error: 'Lesson must be published before inviting learners.' }, { status: 422 })
+  }
+
   const { emails } = await req.json() as { emails: string[] }
   if (!Array.isArray(emails) || emails.length === 0) {
     return NextResponse.json({ error: 'emails required' }, { status: 400 })
   }
 
   const normalized = emails.map(e => e.trim().toLowerCase()).filter(Boolean)
+
+  // Teacher tier student cap enforcement. Other plans skip the check entirely.
+  // Dedupe the batch first so re-inviting the same address twice doesn't double-count.
+  // Use session.user.id (non-null, narrowed by the auth check above) rather than
+  // lesson.createdBy (typed as string | null in the schema even though verifyOwner
+  // proves it equals session.user.id at this point).
+  if (session.user.plan === 'teacher') {
+    const uniqueEmails = [...new Set(normalized)]
+    for (const email of uniqueEmails) {
+      const result = await checkStudentCap(session.user.id, email)
+      if (result.capped) {
+        return NextResponse.json({
+          error: `${TEACHER_STUDENT_CAP}-student limit reached. Upgrade to a paid plan for unlimited seats.`,
+          currentCount: result.count,
+          cap: result.cap,
+        }, { status: 402 })
+      }
+    }
+  }
 
   const results = await db
     .insert(lessonInvitations)

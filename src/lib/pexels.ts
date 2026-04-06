@@ -83,7 +83,7 @@ export async function enrichWithPexelsImages(
     const photo = result.status === 'fulfilled' ? result.value : null
 
     if (target.kind === 'block') {
-      if (photo) target.props.image = { src: photo.src, alt: photo.alt }
+      if (photo && !target.props.image) target.props.image = { src: photo.src, alt: photo.alt }
       delete target.props.pexelsQuery
     } else {
       if (photo) target.step.image = { src: photo.src, alt: photo.alt, layout: 'beside' }

@@ -10,6 +10,7 @@ import {
 import { desc, eq, and, sql, inArray, max, isNull, gte } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { fillDailyActivity } from '@/lib/results'
+import { listTeacherRoster } from '@/lib/teacher-roster'
 import type { ResultsData, CourseResultRow, CourseLearnerRow } from './ResultsTab'
 import { redirect } from 'next/navigation'
 import styles from './page.module.css'
@@ -24,6 +25,12 @@ export default async function DashboardPage() {
   const isCreator = role === 'creator' || role === 'lnd_manager' || role === 'org_admin'
   const email = session.user.email.toLowerCase()
   const userId = session.user.id
+  const plan = session.user.plan
+
+  // ── Teacher: per-student roster (only for plan='teacher') ───────────────────
+  const roster = (isCreator && plan === 'teacher')
+    ? await listTeacherRoster(userId)
+    : []
 
   // ── Creator: courses they made ──────────────────────────────────────────────
   const createdCourses = isCreator
@@ -417,6 +424,8 @@ export default async function DashboardPage() {
           <>
             <h1 className={styles.heading}>Your content</h1>
             <CreatorDashboard
+              plan={plan}
+              roster={roster}
               results={resultsData}
               courses={createdCourses.map(c => ({
                 id: c.id,

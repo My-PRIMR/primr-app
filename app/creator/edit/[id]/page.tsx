@@ -21,8 +21,9 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
     <EditClient
       lessonId={lesson.id}
       manifest={lesson.manifest}
-      plan={session.user.plan}
-      internalRole={session.user.internalRole}
+      publishedAt={lesson.publishedAt?.toISOString() ?? null}
+      plan={session?.user.plan ?? 'free'}
+      internalRole={session?.user.internalRole ?? null}
       user={toPageHeaderUser(session.user)}
     />
   )

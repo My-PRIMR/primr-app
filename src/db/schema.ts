@@ -1,9 +1,10 @@
-import { pgTable, pgEnum, text, jsonb, timestamp, uuid, real, integer, smallint, boolean, unique } from 'drizzle-orm/pg-core'
+import { pgTable, pgEnum, text, jsonb, timestamp, uuid, real, integer, smallint, boolean, unique, uniqueIndex } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 import type { LessonManifest } from '@primr/components'
 
 // ── Enums ────────────────────────────────────────────────────────────────────
 export const productRoleEnum = pgEnum('product_role', ['learner', 'creator', 'lnd_manager', 'org_admin'])
-export const planEnum         = pgEnum('plan',         ['free', 'pro', 'enterprise'])
+export const planEnum         = pgEnum('plan',         ['free', 'teacher', 'pro', 'enterprise'])
 export const internalRoleEnum = pgEnum('internal_role', ['staff', 'admin'])
 
 // ── Organizations ────────────────────────────────────────────────────────────
@@ -27,6 +28,10 @@ export const users = pgTable('users', {
   productRole:  productRoleEnum('product_role').notNull().default('learner'),
   plan:         planEnum('plan').notNull().default('free'),
   internalRole: internalRoleEnum('internal_role'),
+  /** Set when an admin approves a teacher application. Source of truth for whether the user qualifies as a verified K-12 teacher. */
+  teacherVerifiedAt: timestamp('teacher_verified_at'),
+  /** Captured during teacher application; useful for support and analytics. Null for non-teachers. */
+  schoolName: text('school_name'),
   organizationId: uuid('organization_id').references(() => organizations.id),
   createdAt:      timestamp('created_at').notNull().defaultNow(),
   updatedAt:      timestamp('updated_at').notNull().defaultNow(),
@@ -245,3 +250,31 @@ export const lessonFeedback = pgTable('lesson_feedback', {
 
 export type LessonFeedback = typeof lessonFeedback.$inferSelect
 export type NewLessonFeedback = typeof lessonFeedback.$inferInsert
+
+// ── Teacher Applications ──────────────────────────────────────────────────────
+export const teacherApplicationStatusEnum = pgEnum('teacher_application_status', ['pending', 'approved', 'rejected'])
+
+export const teacherApplications = pgTable('teacher_applications', {
+  id:               uuid('id').primaryKey().defaultRandom(),
+  userId:           uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  schoolName:       text('school_name').notNull(),
+  gradeLevel:       text('grade_level').notNull(),
+  proofDocumentUrl: text('proof_document_url').notNull(),
+  status:           teacherApplicationStatusEnum('status').notNull().default('pending'),
+  submittedAt:      timestamp('submitted_at').notNull().defaultNow(),
+  reviewedAt:       timestamp('reviewed_at'),
+  /** Admin who reviewed. Intentionally NOT cascade-on-delete: we preserve the audit trail
+   *  even if the reviewing admin's account is later removed. */
+  reviewedBy:       uuid('reviewed_by').references(() => users.id),
+  rejectionReason:  text('rejection_reason'),
+}, (t) => [
+  // At most one pending application per user. Historical (approved/rejected) rows are
+  // unconstrained, so users can reapply after rejection. Enforced at the DB layer to
+  // make the apply route's duplicate check race-free.
+  uniqueIndex('teacher_applications_one_pending_per_user')
+    .on(t.userId)
+    .where(sql`status = 'pending'`),
+])
+
+export type TeacherApplication = typeof teacherApplications.$inferSelect
+export type NewTeacherApplication = typeof teacherApplications.$inferInsert

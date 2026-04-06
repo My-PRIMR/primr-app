@@ -1,7 +1,7 @@
 import { writeFile, unlink, mkdir, access } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join, resolve } from 'path'
-import { createHash } from 'crypto'
+import { createHash, randomBytes } from 'crypto'
 import type { DocumentAsset } from '@/types/outline'
 
 // Minimum embedded image dimension (px) to skip icons, bullets, decorations.
@@ -67,10 +67,6 @@ export async function enrichPdf(
     const images = await extractEmbeddedImages(pdfBuffer)
     console.log(`[extract/pipeline] found ${images.length} embedded images across all pages`)
 
-    // Screenshot up to MAX_SCREENSHOT_PAGES pages (1-indexed).
-    // We don't know total page count upfront, so pass a page range and let LiteParse cap it.
-    const pageRange = Array.from({ length: MAX_SCREENSHOT_PAGES }, (_, i) => i + 1)
-    const screenshots = await parser.screenshot(freshCopy(pdfBuffer), pageRange)
     const stashDir = resolve(process.cwd(), 'uploads', 'assets', opts.userId)
     await mkdir(stashDir, { recursive: true })
 

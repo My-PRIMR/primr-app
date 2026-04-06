@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       if (wantEnrichment) {
         try {
           const slug = file.name.replace(/\.pdf$/i, '').replace(/\s+/g, '-').toLowerCase().slice(0, 40)
-          const enriched = await enrichPdf(buffer, { extractImages, decodeQr, slug })
+          const enriched = await enrichPdf(buffer, { extractImages, decodeQr, slug, userId: userId! })
           assets.push(...enriched)
         } catch (enrichErr) {
           console.warn('[extract] enrichPdf failed (non-fatal):', enrichErr instanceof Error ? enrichErr.message : enrichErr)

@@ -7,7 +7,6 @@ import { eq } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { uploadBuffer } from '@/lib/cloudinary'
 import type { LessonManifest } from '@primr/components'
-import { assertMutableLesson } from '@/lib/system-content'
 
 const LOCAL_ASSET_PREFIX = '/api/assets/'
 
@@ -47,8 +46,8 @@ export async function POST(
   if (!lesson) return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
   if (lesson.createdBy !== userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const blocked = assertMutableLesson(lesson)
-  if (blocked) return blocked
+  // Note: publish/unpublish are intentionally allowed on system content. Visibility is
+  // operational metadata, not educational content — admins must be able to flip it.
 
   let manifest = lesson.manifest as LessonManifest
 
@@ -106,8 +105,7 @@ export async function DELETE(
   if (!lesson) return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
   if (lesson.createdBy !== userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const blocked = assertMutableLesson(lesson)
-  if (blocked) return blocked
+  // Allowed on system content (visibility metadata, see POST handler comment).
 
   await db.update(lessons)
     .set({ publishedAt: null, updatedAt: new Date() })

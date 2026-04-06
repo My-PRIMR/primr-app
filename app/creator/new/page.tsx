@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/session'
+import { toPageHeaderUser } from '../../components/PageHeader'
 import NewLessonWizard from './NewLessonWizard'
 
 export default async function NewLessonPage() {
@@ -8,12 +9,7 @@ export default async function NewLessonPage() {
 
   return (
     <NewLessonWizard
-      user={{
-        name: session.user.name,
-        email: session.user.email,
-        productRole: session.user.productRole,
-        internalRole: session.user.internalRole,
-      }}
+      user={toPageHeaderUser(session.user)}
       internalRole={session.user.internalRole}
       productRole={session.user.productRole}
       plan={session.user.plan}

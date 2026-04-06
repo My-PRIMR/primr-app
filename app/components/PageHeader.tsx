@@ -13,6 +13,21 @@ export interface PageHeaderUser {
   internalRole?: string | null
 }
 
+/** Picks the fields PageHeader needs from a PrimrSession user. */
+export function toPageHeaderUser(user: {
+  name: string | null
+  email: string
+  productRole: string
+  internalRole: string | null
+}): PageHeaderUser {
+  return {
+    name: user.name,
+    email: user.email,
+    productRole: user.productRole,
+    internalRole: user.internalRole,
+  }
+}
+
 export interface PageHeaderProps {
   user: PageHeaderUser
   internalUrl?: string

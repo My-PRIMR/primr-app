@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { UserMenu } from '../components/UserMenu'
+import PageHeaderServer from '../components/PageHeaderServer'
 import CreatorDashboard from './CreatorDashboard'
 import LearnerDashboard from './LearnerDashboard'
 import { db } from '@/db'
@@ -401,18 +401,14 @@ export default async function DashboardPage() {
 
   return (
     <main className={styles.main}>
-      <nav className={styles.nav}>
-        <Link href="/" className={styles.wordmark}>Primr</Link>
-        <div className={styles.navActions}>
-          {isCreator && (
-            <>
-<Link href="/creator/courses/new" className={styles.newCourseBtn}>+ New course</Link>
-              <Link href="/creator/new" className={styles.newBtn}>+ New lesson</Link>
-            </>
-          )}
-          <UserMenu userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} internalRole={session.user.internalRole} internalUrl={process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004'} />
-        </div>
-      </nav>
+      <PageHeaderServer
+        rightSlot={isCreator && (
+          <>
+            <Link href="/creator/courses/new" className={styles.newCourseBtn}>+ New course</Link>
+            <Link href="/creator/new" className={styles.newBtn}>+ New lesson</Link>
+          </>
+        )}
+      />
 
       <div className={styles.content}>
 

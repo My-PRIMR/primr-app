@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/session'
-import { PageHeader, toPageHeaderUser, type PageHeaderProps } from './PageHeader'
+import { PageHeader, type PageHeaderProps } from './PageHeader'
+import { toPageHeaderUser } from './pageHeaderUser'
 
 type Props = Omit<PageHeaderProps, 'user' | 'internalUrl'>
 

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/session'
-import { toPageHeaderUser } from '../../components/PageHeader'
+import { toPageHeaderUser } from '../../components/pageHeaderUser'
 import NewLessonWizard from './NewLessonWizard'
 
 export default async function NewLessonPage() {

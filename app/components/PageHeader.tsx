@@ -4,29 +4,10 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { UserMenu } from './UserMenu'
 import { ThemeToggle } from './ThemeToggle'
+import { type PageHeaderUser } from './pageHeaderUser'
 import styles from './PageHeader.module.css'
 
-export interface PageHeaderUser {
-  name: string | null
-  email: string
-  productRole: string
-  internalRole?: string | null
-}
-
-/** Picks the fields PageHeader needs from a PrimrSession user. */
-export function toPageHeaderUser(user: {
-  name: string | null
-  email: string
-  productRole: string
-  internalRole: string | null
-}): PageHeaderUser {
-  return {
-    name: user.name,
-    email: user.email,
-    productRole: user.productRole,
-    internalRole: user.internalRole,
-  }
-}
+export type { PageHeaderUser }
 
 export interface PageHeaderProps {
   user: PageHeaderUser

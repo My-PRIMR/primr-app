@@ -55,6 +55,8 @@ export const lessons = pgTable('lessons', {
   examEnforced:     boolean('exam_enforced').notNull().default(true),
   /** When true, lesson is publicly accessible without authentication and renders without chrome */
   showcase:         boolean('showcase').notNull().default(false),
+  /** When true, this lesson is system content: immutable, marked "System" in internal UI. Toggleable only by internal admins. */
+  isSystem:         boolean('is_system').notNull().default(false),
   createdAt:        timestamp('created_at').notNull().defaultNow(),
   updatedAt:        timestamp('updated_at').notNull().defaultNow(),
 })
@@ -121,6 +123,8 @@ export const courses = pgTable('courses', {
   description: text('description'),
   isPublic:    boolean('is_public').notNull().default(false),
   status:      courseStatusEnum('status').notNull().default('draft'),
+  /** When true, this course is system content: immutable, marked "System" in internal UI. Toggleable only by internal admins. Cascades to all contained lessons on toggle. */
+  isSystem:    boolean('is_system').notNull().default(false),
   createdBy:   uuid('created_by').references(() => users.id),
   createdAt:   timestamp('created_at').notNull().defaultNow(),
   updatedAt:   timestamp('updated_at').notNull().defaultNow(),

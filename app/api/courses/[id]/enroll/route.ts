@@ -6,6 +6,7 @@ import { eq, and } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { sendEmail } from '@/lib/email'
 import { courseInviteEmail } from '@/lib/email-templates'
+import { checkStudentCap, TEACHER_STUDENT_CAP } from '@/lib/student-cap'
 
 // GET /api/courses/[id]/enroll — list enrollments
 export async function GET(
@@ -41,6 +42,17 @@ export async function POST(
   if (!email?.trim()) return NextResponse.json({ error: 'email is required' }, { status: 400 })
 
   const normalizedEmail = email.trim().toLowerCase()
+
+  if (session.user.plan === 'teacher') {
+    const result = await checkStudentCap(course.createdBy, normalizedEmail)
+    if (result.capped) {
+      return NextResponse.json({
+        error: `${TEACHER_STUDENT_CAP}-student limit reached. Upgrade to a paid plan for unlimited seats.`,
+        currentCount: result.count,
+        cap: result.cap,
+      }, { status: 402 })
+    }
+  }
 
   try {
     const [enrollment] = await db.insert(courseEnrollments).values({

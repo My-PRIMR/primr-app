@@ -161,7 +161,7 @@ export default async function CourseResultsPage({
     <>
       <PageHeaderServer
         leftSlot={
-          <Link href="/creator" className={styles.backLink}>← Back to results</Link>
+          <Link href="/creator" className={styles.backLink} style={{ marginBottom: 0 }}>← Back to results</Link>
         }
       />
       <main className={styles.main}>

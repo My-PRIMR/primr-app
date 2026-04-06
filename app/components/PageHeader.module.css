@@ -29,7 +29,6 @@
   font-family: 'DM Serif Display', Georgia, serif;
   font-size: 22px;
   font-weight: 400;
-  line-height: 1;
   color: var(--ink, #0F1117);
   text-decoration: none;
   flex-shrink: 0;

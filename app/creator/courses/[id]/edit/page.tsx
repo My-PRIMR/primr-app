@@ -3,6 +3,7 @@ import { db } from '@/db'
 import { courses, courseSections, courseChapters, chapterLessons } from '@/db/schema'
 import { eq, asc } from 'drizzle-orm'
 import { getSession } from '@/session'
+import { toPageHeaderUser } from '../../../../components/pageHeaderUser'
 import CourseEditClient from './CourseEditClient'
 import type { FullCourseTree } from '@/types/course'
 
@@ -84,8 +85,9 @@ export default async function CourseEditPage({ params }: { params: Promise<{ id:
   return (
     <CourseEditClient
       course={tree}
-      plan={session.user.plan ?? 'free'}
-      internalRole={session.user.internalRole ?? null}
+      plan={session.user.plan}
+      internalRole={session.user.internalRole}
+      user={toPageHeaderUser(session.user)}
     />
   )
 }

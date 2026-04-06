@@ -67,15 +67,12 @@ export async function enrichPdf(
     const images = await extractEmbeddedImages(pdfBuffer)
     console.log(`[extract/pipeline] found ${images.length} embedded images across all pages`)
 
-<<<<<<< Updated upstream
-  // Screenshot up to MAX_SCREENSHOT_PAGES pages (1-indexed).
-  // We don't know total page count upfront, so pass a page range and let LiteParse cap it.
-  const pageRange = Array.from({ length: MAX_SCREENSHOT_PAGES }, (_, i) => i + 1)
-  const screenshots = await parser.screenshot(freshCopy(pdfBuffer), pageRange)
-=======
+    // Screenshot up to MAX_SCREENSHOT_PAGES pages (1-indexed).
+    // We don't know total page count upfront, so pass a page range and let LiteParse cap it.
+    const pageRange = Array.from({ length: MAX_SCREENSHOT_PAGES }, (_, i) => i + 1)
+    const screenshots = await parser.screenshot(freshCopy(pdfBuffer), pageRange)
     const stashDir = resolve(process.cwd(), 'uploads', 'assets', opts.userId)
     await mkdir(stashDir, { recursive: true })
->>>>>>> Stashed changes
 
     for (const { page, pngBuffer } of images) {
       // Content-addressed filename — same image from same or different PDF reuses the stashed file

@@ -63,19 +63,37 @@ export function canUsePexels(
   plan: string | null | undefined,
   internalRole: string | null | undefined
 ): boolean {
-  return plan === 'pro' || plan === 'enterprise' || internalRole != null
+  return plan === 'teacher' || plan === 'pro' || plan === 'enterprise' || internalRole != null
 }
 
 export function canUseRichIngest(
   plan: string | null | undefined,
   internalRole: string | null | undefined
 ): boolean {
-  return plan === 'pro' || plan === 'enterprise' || internalRole != null
+  return plan === 'teacher' || plan === 'pro' || plan === 'enterprise' || internalRole != null
 }
 
 export function canAiEdit(
   plan: string | null | undefined,
   internalRole: string | null | undefined
 ): boolean {
-  return plan === 'pro' || plan === 'enterprise' || internalRole != null
+  return plan === 'teacher' || plan === 'pro' || plan === 'enterprise' || internalRole != null
+}
+
+/** Per-learner progress tracking — Teacher and Pro-and-up tiers can see who's done what. */
+export function canTrackLearners(
+  plan: string | null | undefined,
+  internalRole: string | null | undefined,
+): boolean {
+  return plan === 'teacher' || plan === 'pro' || plan === 'enterprise' || internalRole != null
+}
+
+/** Lesson monetization (selling content). Excludes Teacher tier — non-commercial use only. */
+export function canMonetize(plan: string | null | undefined): boolean {
+  return plan === 'pro' || plan === 'enterprise'
+}
+
+/** Multi-admin / multi-teacher workspaces. Currently only Enterprise — paid Teams isn't a real plan in DB yet. */
+export function canHaveMultipleAdmins(plan: string | null | undefined): boolean {
+  return plan === 'enterprise'
 }

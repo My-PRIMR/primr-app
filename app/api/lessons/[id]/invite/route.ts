@@ -25,6 +25,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  if (!lesson.publishedAt) {
+    return NextResponse.json({ error: 'Lesson must be published before inviting learners.' }, { status: 422 })
+  }
+
   const { emails } = await req.json() as { emails: string[] }
   if (!Array.isArray(emails) || emails.length === 0) {
     return NextResponse.json({ error: 'emails required' }, { status: 400 })

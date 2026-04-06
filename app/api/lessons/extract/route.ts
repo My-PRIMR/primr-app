@@ -16,25 +16,32 @@ export async function POST(req: NextRequest) {
     const decodeQr = formData.get('decodeQr') === 'true'
     const wantEnrichment = extractImages || decodeQr
 
-    // Auth-gate enrichment options
+    // Auth-gate enrichment options; also need userId for local asset stash
+    const session = await getSession()
+    const userId = session?.user?.id ?? null
     if (wantEnrichment) {
-      const session = await getSession()
       const plan = session?.user?.plan ?? null
       const internalRole = session?.user?.internalRole ?? null
       if (!canUseRichIngest(plan, internalRole)) {
         return NextResponse.json({ error: 'Rich ingestion requires Creator Pro or higher.' }, { status: 403 })
       }
+      if (!userId) {
+        return NextResponse.json({ error: 'Authentication required for image extraction.' }, { status: 401 })
+      }
     }
 
     const name = file.name.toLowerCase()
+    // Keep raw bytes as an ArrayBuffer. For each LiteParse call we construct a
+    // fresh Buffer via Buffer.from(new Uint8Array(bytes)), which copies the data.
+    // This is necessary because LiteParse transfers its input's backing ArrayBuffer
+    // to a worker thread (detaching it), so each call must receive its own copy.
     const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
 
     let text = ''
     let assets: DocumentAsset[] = []
 
     if (name.endsWith('.pdf')) {
-      text = await extractTextWithLiteParse(buffer)
+      text = await extractTextWithLiteParse(Buffer.from(new Uint8Array(bytes)))
 
       // Always extract hyperlinked YouTube URLs from text (free, no plan check needed)
       const ytUrls = extractYouTubeUrls(text)
@@ -51,11 +58,12 @@ export async function POST(req: NextRequest) {
         }
       }
     } else if (name.endsWith('.docx')) {
+      const buffer = Buffer.from(new Uint8Array(bytes))
       const mammoth = await import('mammoth')
       const result = await mammoth.extractRawText({ buffer })
       text = result.value
     } else if (name.endsWith('.txt') || name.endsWith('.md')) {
-      text = buffer.toString('utf-8')
+      text = Buffer.from(new Uint8Array(bytes)).toString('utf-8')
     } else {
       return NextResponse.json({ error: 'Unsupported file type. Use PDF, DOCX, TXT, or MD.' }, { status: 400 })
     }

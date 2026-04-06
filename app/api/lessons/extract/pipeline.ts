@@ -1,11 +1,13 @@
+import { writeFile, unlink, mkdir, access } from 'fs/promises'
+import { tmpdir } from 'os'
+import { join, resolve } from 'path'
+import { createHash } from 'crypto'
 import type { DocumentAsset } from '@/types/outline'
-import { uploadBuffer } from '@/lib/cloudinary'
 
-// Minimum screenshot file size to consider a page "visual" (bytes).
-// Pages that are blank or text-only produce small PNGs; real figures are larger.
-const MIN_IMAGE_BYTES = 30_000
+// Minimum embedded image dimension (px) to skip icons, bullets, decorations.
+const MIN_IMAGE_DIM = 100
 
-// Maximum pages to screenshot per document to avoid excessive processing.
+// Maximum pages to screenshot per document when scanning for QR codes.
 const MAX_SCREENSHOT_PAGES = 30
 
 /**
@@ -42,23 +44,18 @@ export function extractYouTubeUrls(text: string): string[] {
   return [...new Set(matches)]
 }
 
-/**
- * Generate a unique Cloudinary public_id for a document image asset.
- * Format: {slug}_p{page}_i{index}_{timestamp}
- */
-export function buildPublicId(slug: string, page: number, index: number): string {
-  return `${slug}_p${page}_i${index}_${Date.now().toString(36)}`
-}
-
 export interface EnrichmentOptions {
   extractImages: boolean
   decodeQr: boolean
   slug: string
+  /** Session user ID — used to scope the local asset stash directory. */
+  userId: string
 }
 
 /**
  * Run the full enrichment pipeline on a PDF buffer.
- * Returns DocumentAsset[] to be stored alongside the extracted text.
+ * - extractImages: extracts embedded raster images via pdfjs-dist
+ * - decodeQr: takes page screenshots via LiteParse and scans for QR codes
  */
 export async function enrichPdf(
   pdfBuffer: Buffer,
@@ -66,45 +63,131 @@ export async function enrichPdf(
 ): Promise<DocumentAsset[]> {
   const assets: DocumentAsset[] = []
 
-  const { LiteParse } = await import('@llamaindex/liteparse')
-  const parser = new LiteParse({ ocrEnabled: false })
+  if (opts.extractImages) {
+    const images = await extractEmbeddedImages(pdfBuffer)
+    console.log(`[extract/pipeline] found ${images.length} embedded images across all pages`)
 
+<<<<<<< Updated upstream
   // Screenshot up to MAX_SCREENSHOT_PAGES pages (1-indexed).
   // We don't know total page count upfront, so pass a page range and let LiteParse cap it.
   const pageRange = Array.from({ length: MAX_SCREENSHOT_PAGES }, (_, i) => i + 1)
   const screenshots = await parser.screenshot(freshCopy(pdfBuffer), pageRange)
+=======
+    const stashDir = resolve(process.cwd(), 'uploads', 'assets', opts.userId)
+    await mkdir(stashDir, { recursive: true })
+>>>>>>> Stashed changes
 
-  let imageIndex = 0
-  for (const shot of screenshots) {
-    const { pageNum, imageBuffer } = shot
+    for (const { page, pngBuffer } of images) {
+      // Content-addressed filename — same image from same or different PDF reuses the stashed file
+      const hash = createHash('sha256').update(pngBuffer).digest('hex').slice(0, 32)
+      const filename = `${hash}.png`
+      const filePath = join(stashDir, filename)
 
-    // QR decode
-    if (opts.decodeQr) {
+      // Only write if not already stashed
+      const exists = await access(filePath).then(() => true).catch(() => false)
+      if (!exists) {
+        await writeFile(filePath, pngBuffer)
+        console.log(`[extract/pipeline] page ${page}: stashed ${filename} (${pngBuffer.length} bytes)`)
+      } else {
+        console.log(`[extract/pipeline] page ${page}: reusing stashed ${filename}`)
+      }
+
+      assets.push({ type: 'image', url: `/api/assets/${opts.userId}/${filename}`, page })
+    }
+  }
+
+  if (opts.decodeQr) {
+    // QR codes may be vector graphics (not raster images), so we need page screenshots.
+    // Write to temp file to avoid pdfjs ArrayBuffer-transfer issues in screenshot().
+    const { LiteParse } = await import('@llamaindex/liteparse')
+    const parser = new LiteParse({ ocrEnabled: false })
+    const tmpPath = join(tmpdir(), `primr_${randomBytes(8).toString('hex')}.pdf`)
+    let screenshots: Awaited<ReturnType<InstanceType<typeof LiteParse>['screenshot']>>
+    try {
+      await writeFile(tmpPath, pdfBuffer)
+      const pageRange = Array.from({ length: MAX_SCREENSHOT_PAGES }, (_, i) => i + 1)
+      screenshots = await parser.screenshot(tmpPath, pageRange)
+      console.log(`[extract/pipeline] QR scan: got ${screenshots.length} page screenshots`)
+    } finally {
+      await unlink(tmpPath).catch(() => {})
+    }
+
+    for (const { pageNum, imageBuffer } of screenshots) {
       const decoded = await tryDecodeQr(imageBuffer)
       if (decoded) {
+        console.log(`[extract/pipeline] page ${pageNum}: QR decoded → ${decoded}`)
         if (isYouTubeUrl(decoded)) {
           assets.push({ type: 'video', url: decoded, page: pageNum })
         } else {
           assets.push({ type: 'link', url: decoded, page: pageNum })
         }
-        continue // page is a QR — skip image upload
-      }
-    }
-
-    // Image upload (skip small/blank pages)
-    if (opts.extractImages && imageBuffer.length >= MIN_IMAGE_BYTES) {
-      const publicId = buildPublicId(opts.slug, pageNum, imageIndex++)
-      try {
-        const url = await uploadBuffer(imageBuffer, 'png', publicId)
-        assets.push({ type: 'image', url, page: pageNum })
-      } catch (err) {
-        console.error(`[extract/pipeline] Cloudinary upload failed for page ${pageNum}:`, err)
-        // Non-fatal: skip this asset
       }
     }
   }
 
+  console.log(`[extract/pipeline] enrichment done: ${assets.length} assets (${assets.filter(a => a.type === 'image').length} images, ${assets.filter(a => a.type === 'video').length} videos, ${assets.filter(a => a.type === 'link').length} links)`)
   return assets
+}
+
+// ── Embedded image extraction ───────────────────────────────────────────────
+
+interface ExtractedImage {
+  page: number
+  pngBuffer: Buffer
+}
+
+/**
+ * Extract all embedded raster images from a PDF using pdfjs-dist.
+ * Skips images smaller than MIN_IMAGE_DIM in either dimension (icons, bullets, etc.).
+ */
+async function extractEmbeddedImages(pdfBuffer: Buffer): Promise<ExtractedImage[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { getDocument, GlobalWorkerOptions, ImageKind } = await import('pdfjs-dist/legacy/build/pdf.mjs') as any
+  // Point to the worker file — empty string isn't accepted by pdfjs v5.
+  // process.cwd() is the Next.js project root where node_modules lives.
+  GlobalWorkerOptions.workerSrc = `file://${resolve(process.cwd(), 'node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs')}`
+
+  const pdf = await getDocument({
+    data: new Uint8Array(pdfBuffer),
+    verbosity: 0,
+  }).promise
+  console.log(`[extract/pipeline] pdfjs loaded ${pdf.numPages} pages for image extraction`)
+
+  const { default: sharp } = await import('sharp')
+  const results: ExtractedImage[] = []
+
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum)
+    // getOperatorList triggers loading of all image XObjects into page.objs
+    await page.getOperatorList()
+
+    for (const [name, imgData] of page.objs) {
+      if (!imgData?.data || !imgData.width || !imgData.height) continue
+      // Only handle RGB and RGBA raster images
+      if (imgData.kind !== ImageKind.RGB_24BPP && imgData.kind !== ImageKind.RGBA_32BPP) continue
+      // Skip small images (icons, watermarks, decorations)
+      if (imgData.width < MIN_IMAGE_DIM || imgData.height < MIN_IMAGE_DIM) continue
+
+      console.log(`[extract/pipeline] page ${pageNum}: image ${name} ${imgData.width}×${imgData.height} kind=${imgData.kind === ImageKind.RGB_24BPP ? 'RGB' : 'RGBA'}`)
+
+      const channels: 3 | 4 = imgData.kind === ImageKind.RGB_24BPP ? 3 : 4
+      try {
+        // imgData.data is a Uint8ClampedArray — may be a view into a larger buffer
+        const raw = Buffer.from(imgData.data.buffer, imgData.data.byteOffset, imgData.data.byteLength)
+        const pngBuffer = await sharp(raw, {
+          raw: { width: imgData.width, height: imgData.height, channels },
+        }).png({ compressionLevel: 6 }).toBuffer()
+
+        results.push({ page: pageNum, pngBuffer })
+      } catch (err) {
+        console.error(`[extract/pipeline] page ${pageNum}: failed to convert image ${name}:`, err)
+      }
+    }
+
+    page.cleanup()
+  }
+
+  return results
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────

@@ -39,6 +39,9 @@ yarn-error.log*
 # generated email templates (built from src/email-templates/ at build time)
 /public/email-templates/
 
+# user asset stash (local images extracted from PDFs, pending Cloudinary publish)
+/uploads/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

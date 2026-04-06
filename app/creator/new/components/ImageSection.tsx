@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import styles from './ImageSection.module.css'
 
 export type ImageLayout = 'beside' | 'above' | 'below'
+export type ImageSize = 'small' | 'medium' | 'large'
 
 export interface ImageValue {
   src: string
@@ -11,6 +12,17 @@ export interface ImageValue {
   caption?: string
   layout?: ImageLayout
   photographer?: string
+  imageSize?: ImageSize
+}
+
+const MEDIUM_PX = 480
+const SMALL_PX = 240
+
+function getSizeOptions(naturalWidth: number | null): ImageSize[] {
+  if (!naturalWidth) return []
+  if (naturalWidth > MEDIUM_PX * 1.25) return ['small', 'medium', 'large']
+  if (naturalWidth > SMALL_PX * 1.25) return ['small', 'medium']
+  return []
 }
 
 interface PexelsPhoto {
@@ -37,10 +49,20 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
   const [searchError, setSearchError] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
+  const [naturalWidth, setNaturalWidth] = useState<number | null>(null)
 
   // Sync URL input when image.src changes externally (e.g. after Pexels pick)
   useEffect(() => {
     setUrlValue(image?.src ?? '')
+  }, [image?.src])
+
+  // Detect natural image width whenever src changes
+  useEffect(() => {
+    if (!image?.src) { setNaturalWidth(null); return }
+    const img = new window.Image()
+    img.onload = () => setNaturalWidth(img.naturalWidth)
+    img.onerror = () => setNaturalWidth(null)
+    img.src = image.src
   }, [image?.src])
 
   async function doSearch(page = 1) {
@@ -77,7 +99,9 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
 
   function selectPhoto(photo: PexelsPhoto) {
     const src = blockType === 'step-navigator' ? photo.medium : photo.large
-    onChange({ ...image, src, alt: searchQuery.trim() || image?.alt, photographer: photo.photographer })
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { imageSize: _, ...rest } = image ?? {}
+    onChange({ ...rest, src, alt: searchQuery.trim() || image?.alt, photographer: photo.photographer })
     setPickerOpen(false)
   }
 
@@ -86,7 +110,9 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
     if (!src) {
       onChange(undefined)
     } else if (src !== image?.src) {
-      onChange({ ...image, src })
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { imageSize: _, ...rest } = image ?? {}
+      onChange({ ...rest, src })
     }
   }
 
@@ -204,6 +230,31 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
               />
             </label>
           )}
+
+          {blockType === 'narrative' && (() => {
+            const options = getSizeOptions(naturalWidth)
+            if (options.length === 0) return null
+            const hasLarge = options.includes('large')
+            const currentSize = image.imageSize ?? (hasLarge ? 'large' : 'medium')
+            const labels: Record<ImageSize, string> = { small: 'Small', medium: 'Medium', large: 'Large' }
+            return (
+              <div className={styles.sizeSection}>
+                <div className={styles.sizeLabel}>Image size</div>
+                <div className={styles.sizeButtons}>
+                  {options.map(size => (
+                    <button
+                      type="button"
+                      key={size}
+                      className={`${styles.sizeBtn} ${currentSize === size ? styles.sizeBtnActive : ''}`}
+                      onClick={() => onChange({ ...image, imageSize: size })}
+                    >
+                      {labels[size]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
 
           {blockType === 'step-navigator' && (
             <div className={styles.layoutSection}>

@@ -10,11 +10,13 @@ import { canUsePexels, canAiEdit as canAiEditFn } from '@/lib/models'
 export default function EditClient({
   lessonId,
   manifest,
+  publishedAt,
   plan,
   internalRole,
 }: {
   lessonId: string
   manifest: LessonManifest
+  publishedAt: string | null
   plan: string
   internalRole: string | null
 }) {
@@ -121,6 +123,7 @@ export default function EditClient({
         <LessonBlockEditor
           lessonId={lessonId}
           initialManifest={manifest}
+          initialPublishedAt={publishedAt}
           panelMode="float"
           rightPanelExtra={sharePanel}
           canPexels={canPexels}

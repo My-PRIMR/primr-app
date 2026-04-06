@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "teacher_applications_one_pending_per_user" ON "teacher_applications" USING btree ("user_id") WHERE status = 'pending';

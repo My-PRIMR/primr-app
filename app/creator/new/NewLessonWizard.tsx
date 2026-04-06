@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { WizardState, WizardAction } from '@/types/outline'
 import { DEFAULT_MODEL } from '@/lib/models'
-import { canUseRichIngest } from '@/lib/models'
+import { canUseRichIngest, canUsePexels, canAiEdit as canAiEditFn } from '@/lib/models'
 import StepIndicator from './components/StepIndicator'
 import Step1Form from './components/Step1Form'
 import LessonBlockEditor from '../components/LessonBlockEditor'
@@ -65,6 +65,9 @@ export default function NewLessonWizard({ internalRole, productRole, plan }: New
   const [includeImages, setIncludeImages] = useState(false)
 
   const canRichIngest = canUseRichIngest(plan, internalRole)
+  const canPexels = canUsePexels(plan, internalRole)
+  const aiEditEnabled = canAiEditFn(plan, internalRole)
+  const isInternal = internalRole != null
 
   async function generateLesson() {
     // If a YouTube URL is provided, use the async video ingestion path
@@ -179,6 +182,10 @@ export default function NewLessonWizard({ internalRole, productRole, plan }: New
           <LessonBlockEditor
             lessonId={state.lessonId}
             initialManifest={state.manifest}
+            canPexels={canPexels}
+            canAiEdit={aiEditEnabled}
+            plan={plan ?? undefined}
+            isInternal={isInternal}
             rightPanelExtra={
               <Link href={`/creator/preview/${state.lessonId}`} className={styles.viewLink}>
                 View published →

@@ -31,4 +31,28 @@ describe('uploadBuffer', () => {
     const buf = Buffer.from('fake-png-data')
     await expect(uploadBuffer(buf, 'png', 'fail-asset')).rejects.toThrow('upload failed')
   })
+
+  it('uses resource_type=image for png uploads', async () => {
+    const { v2: cloudinary } = require('cloudinary')
+    const spy = cloudinary.uploader.upload_stream as jest.Mock
+    spy.mockClear()
+    const buf = Buffer.from('fake-png-data')
+    await uploadBuffer(buf, 'png', 'test-png')
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ resource_type: 'image', format: 'png' }),
+      expect.any(Function),
+    )
+  })
+
+  it('uses resource_type=raw for pdf uploads', async () => {
+    const { v2: cloudinary } = require('cloudinary')
+    const spy = cloudinary.uploader.upload_stream as jest.Mock
+    spy.mockClear()
+    const buf = Buffer.from('fake-pdf-data')
+    await uploadBuffer(buf, 'pdf', 'test-pdf')
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ resource_type: 'raw', format: 'pdf' }),
+      expect.any(Function),
+    )
+  })
 })

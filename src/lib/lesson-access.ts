@@ -18,8 +18,11 @@ export async function canAccessLesson(lessonId: string, userId: string, userEmai
   })
   if (!lesson) return false
 
-  // Creator always has access
+  // Creator always has access (draft or published)
   if (lesson.createdBy === userId) return true
+
+  // Non-creators can only access published lessons
+  if (!lesson.publishedAt) return false
 
   // Check direct invitation by email
   const invitation = await db.query.lessonInvitations.findFirst({

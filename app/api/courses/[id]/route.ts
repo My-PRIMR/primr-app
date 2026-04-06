@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
-import { courses, courseSections, courseChapters, chapterLessons } from '@/db/schema'
-import { eq, asc } from 'drizzle-orm'
+import { courses, courseSections, courseChapters, chapterLessons, lessons } from '@/db/schema'
+import { eq, asc, inArray } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { cancelCourseGeneration } from '@/lib/course-gen'
 import type { FullCourseTree } from '@/types/course'
@@ -131,6 +131,27 @@ export async function DELETE(
   if (course.createdBy !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   cancelCourseGeneration(id)
+
+  // Collect all lesson IDs belonging to this course before cascade deletes the join rows
+  const sections = await db.select({ id: courseSections.id }).from(courseSections).where(eq(courseSections.courseId, id))
+  const sectionIds = sections.map(s => s.id)
+  let lessonIds: string[] = []
+  if (sectionIds.length) {
+    const chapters = await db.select({ id: courseChapters.id }).from(courseChapters).where(inArray(courseChapters.sectionId, sectionIds))
+    const chapterIds = chapters.map(c => c.id)
+    if (chapterIds.length) {
+      const cls = await db.select({ lessonId: chapterLessons.lessonId }).from(chapterLessons).where(inArray(chapterLessons.chapterId, chapterIds))
+      lessonIds = cls.map(cl => cl.lessonId).filter((id): id is string => id != null)
+    }
+  }
+
+  // Delete the course (cascades to sections → chapters → chapter_lessons, enrollments, invite links)
   await db.delete(courses).where(eq(courses.id, id))
+
+  // Delete the underlying lessons (not covered by cascade)
+  if (lessonIds.length) {
+    await db.delete(lessons).where(inArray(lessons.id, lessonIds))
+  }
+
   return NextResponse.json({ ok: true })
 }

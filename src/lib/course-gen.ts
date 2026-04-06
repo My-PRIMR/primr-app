@@ -76,6 +76,7 @@ Rules:
 - Use at least 2 different interactive block types across the lesson (quiz, flashcard, fill-in-the-blank, etc...)
 - Use as many block groups (teaching + follow-up interactives) as needed to cover the topic effectively, but keep each group focused on a single concept or sub-topic
 - If a source document is provided, ALL block content must draw directly from it — do not introduce topics not in the document
+- If the source document contains a "[Block directive: ...]" instruction, follow it exactly — it overrides the default block type selection rules above (including the 2-different-types rule). Use ONLY the block types specified in the directive.
 - Return ONLY valid JSON. No markdown fences, no explanation, no preamble. Start your response with { and end with }.`
 
 async function generateOutline(params: {

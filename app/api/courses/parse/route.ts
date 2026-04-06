@@ -60,7 +60,8 @@ Rules:
 - Base ALL structure on the document — do not invent topics not in the document.
 - headingMarker must be an exact substring from the document text.
 - If the document only has 2-3 levels, synthesize the missing levels (set "inferred": true).
-- Each lesson covers a coherent sub-topic. Aim for 10-30 lessons total.
+- Each lesson covers a coherent sub-topic.
+- CRITICAL LESSON COUNT RULE: Before writing any JSON, scan the ENTIRE document end-to-end and count every "### " heading (third-level markdown heading). Each "### " heading represents exactly one lesson. Your output MUST contain exactly that many lessons — no more, no fewer. Do NOT truncate, summarize, or omit any. If the document has 53 "### " headings you must emit 53 lessons. This rule overrides any default lesson-count preference. Only fall back to "aim for 10-30 lessons" when the document has NO "### " headings at all.
 - Tailor to the specified audience and level.
 - If a Focus/Scope is provided, only include lessons relevant to that focus.${videoRule}
 - Return ONLY valid JSON. No markdown fences, no explanation. Start with { and end with }.`
@@ -103,7 +104,7 @@ Rules:
 - Each video chapter should map to at least one lesson. Use the chapter title as the headingMarker.
 - If the video has no chapters, create one lesson per major topic from the transcript.
 - If the source only has 2-3 levels, synthesize the missing levels (set "inferred": true).
-- Aim for 10-30 lessons total.
+- If the source has explicit lesson-level structure (e.g. chapters or numbered topics that clearly map 1:1 to lessons), create one lesson per such unit — do not cap the count. Otherwise aim for 10-30 lessons total.
 - Tailor to the specified audience and level.
 - If a Focus/Scope is provided, only include lessons relevant to that focus — skip chapters outside scope.${docRule}
 - Return ONLY valid JSON. No markdown fences, no explanation. Start with { and end with }.`
@@ -213,7 +214,7 @@ export async function POST(req: NextRequest) {
     const userParts: string[] = []
 
     if (structureSource === 'document') {
-      userParts.push(`Document:\n"""\n${docText.slice(0, 10000)}\n"""`)
+      userParts.push(`Document:\n"""\n${docText.slice(0, 200000)}\n"""`)
       if (videoData) {
         const chapterList = videoData.chapters.map((ch, i) => `  ${i}: "${ch.title}"`).join('\n')
         userParts.push(`Video chapters (for videoChapterIndex annotation):\n${chapterList}`)
@@ -237,13 +238,14 @@ export async function POST(req: NextRequest) {
 
     console.log(`[courses/parse] model=${resolvedModel.id} structureSource=${structureSource} video=${hasVideo} docs=${files.length} rawText=${!!rawText}`)
     const t0 = Date.now()
-    const message = await client.messages.create({
+    const stream = await client.messages.stream({
       model: resolvedModel.id,
-      max_tokens: 16384,
+      max_tokens: 32000,
       system: systemPrompt,
       messages: [{ role: 'user', content: userParts.filter(Boolean).join('\n\n') }],
     })
-    console.log(`[courses/parse] Claude responded in ${Date.now() - t0}ms`)
+    const message = await stream.finalMessage()
+    console.log(`[courses/parse] Claude responded in ${Date.now() - t0}ms stop_reason=${message.stop_reason} output_tokens=${message.usage.output_tokens}`)
 
     const raw = message.content[0].type === 'text' ? message.content[0].text : ''
     let parsed: {

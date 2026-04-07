@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import styles from './ImageSection.module.css'
+import type { ImageSizeConfig } from '@/lib/image-size-config'
 
 export type ImageLayout = 'beside' | 'above' | 'below'
-export type ImageSize = 'small' | 'medium' | 'large'
+export type { ImageSize } from '@/lib/image-size-config'
+import type { ImageSize } from '@/lib/image-size-config'
 
 export interface ImageValue {
   src: string
@@ -13,16 +15,12 @@ export interface ImageValue {
   layout?: ImageLayout
   photographer?: string
   imageSize?: ImageSize
-}
-
-const MEDIUM_PX = 480
-const SMALL_PX = 240
-
-function getSizeOptions(naturalWidth: number | null): ImageSize[] {
-  if (!naturalWidth) return []
-  if (naturalWidth > MEDIUM_PX * 1.25) return ['small', 'medium', 'large']
-  if (naturalWidth > SMALL_PX * 1.25) return ['small', 'medium']
-  return []
+  variants?: {
+    thumb?: string
+    small?: string
+    medium?: string
+    large?: string
+  }
 }
 
 interface PexelsPhoto {
@@ -33,36 +31,46 @@ interface PexelsPhoto {
   photographer: string
 }
 
+interface LibraryImage {
+  url: string
+  variants: {
+    thumb?: string
+    small?: string
+    medium?: string
+    large?: string
+  }
+}
+
 interface Props {
-  blockType: 'hero' | 'narrative' | 'step-navigator'
+  sizeConfig: ImageSizeConfig
+  showCaption?: boolean
+  showLayout?: boolean
+  lessonId: string
   image: ImageValue | undefined
   canPexels: boolean
   onChange: (image: ImageValue | undefined) => void
 }
 
-export default function ImageSection({ blockType, image, canPexels, onChange }: Props) {
+export default function ImageSection({ sizeConfig, showCaption, showLayout, lessonId, image, canPexels, onChange }: Props) {
+  const [activeTab, setActiveTab] = useState<'url' | 'upload' | 'pexels'>('url')
   const [urlValue, setUrlValue] = useState(image?.src ?? '')
-  const [pickerOpen, setPickerOpen] = useState(false)
+  // Pexels state
   const [searchQuery, setSearchQuery] = useState('')
   const [photos, setPhotos] = useState<PexelsPhoto[]>([])
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
-  const [naturalWidth, setNaturalWidth] = useState<number | null>(null)
+  // Upload/library state
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [library, setLibrary] = useState<LibraryImage[]>([])
+  const [libraryLoading, setLibraryLoading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Sync URL input when image.src changes externally (e.g. after Pexels pick)
   useEffect(() => {
     setUrlValue(image?.src ?? '')
-  }, [image?.src])
-
-  // Detect natural image width whenever src changes
-  useEffect(() => {
-    if (!image?.src) { setNaturalWidth(null); return }
-    const img = new window.Image()
-    img.onload = () => setNaturalWidth(img.naturalWidth)
-    img.onerror = () => setNaturalWidth(null)
-    img.src = image.src
   }, [image?.src])
 
   async function doSearch(page = 1) {
@@ -98,11 +106,10 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
   function nextPage() { doSearch(currentPage + 1) }
 
   function selectPhoto(photo: PexelsPhoto) {
-    const src = blockType === 'step-navigator' ? photo.medium : photo.large
+    const src = photo.large
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { imageSize: _, ...rest } = image ?? {}
+    const { imageSize: _, variants: __, ...rest } = image ?? {}
     onChange({ ...rest, src, alt: searchQuery.trim() || image?.alt, photographer: photo.photographer })
-    setPickerOpen(false)
   }
 
   function handleUrlBlur() {
@@ -118,49 +125,198 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
 
   function clearImage() {
     onChange(undefined)
-    setPickerOpen(false)
   }
 
-  const showCaption = blockType === 'narrative' || blockType === 'step-navigator'
+  const fetchLibrary = useCallback(async () => {
+    setLibraryLoading(true)
+    try {
+      const res = await fetch(`/api/assets/library?lessonId=${encodeURIComponent(lessonId)}`)
+      if (res.ok) {
+        const data = await res.json() as { images: LibraryImage[] }
+        setLibrary(data.images)
+      }
+    } catch {
+      // silent fail — library shows empty
+    } finally {
+      setLibraryLoading(false)
+    }
+  }, [lessonId])
+
+  useEffect(() => {
+    if (activeTab === 'upload') {
+      fetchLibrary()
+    }
+  }, [activeTab, fetchLibrary])
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadError(null)
+
+    const ALLOWED = ['image/png', 'image/jpeg', 'image/gif']
+    if (!ALLOWED.includes(file.type)) {
+      setUploadError('Only PNG, JPEG, and GIF files are supported.')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('File must be under 10 MB.')
+      return
+    }
+
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('lessonId', lessonId)
+      const res = await fetch('/api/assets/upload', { method: 'POST', body: fd })
+      if (!res.ok) {
+        setUploadError('Upload failed. Please try again.')
+        return
+      }
+      await fetchLibrary()
+    } catch {
+      setUploadError('Upload failed. Please try again.')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+    const file = e.dataTransfer.files?.[0]
+    if (!file || !fileInputRef.current) return
+    const dt = new DataTransfer()
+    dt.items.add(file)
+    fileInputRef.current.files = dt.files
+    fileInputRef.current.dispatchEvent(new Event('change', { bubbles: true }))
+  }
+
+  function selectFromLibrary(img: LibraryImage) {
+    const hasSizes = sizeConfig.sizes.length > 0
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { imageSize: _, variants: __, ...rest } = image ?? {}
+    const newImage: ImageValue = {
+      ...rest,
+      src: hasSizes ? (img.variants.large ?? img.url) : img.url,
+      variants: img.variants,
+      ...(hasSizes ? { imageSize: 'large' as const } : {}),
+    }
+    onChange(newImage)
+  }
 
   return (
     <div className={styles.section}>
       <div className={styles.sectionLabel}>Image</div>
 
-      {/* Preview card */}
-      <div className={styles.card}>
-        <div className={styles.preview}>
-          {image?.src ? (
-            <img src={image.src} alt={image.alt ?? ''} className={styles.previewImg} />
-          ) : (
-            <div className={styles.previewPlaceholder}>No image · paste URL to add</div>
-          )}
-        </div>
-        <div className={styles.urlRow}>
-          <input
-            type="text"
-            className={styles.urlInput}
-            value={urlValue}
-            placeholder="Paste image URL…"
-            onChange={e => setUrlValue(e.target.value)}
-            onBlur={handleUrlBlur}
-          />
-          {image?.src && (
-            <button type="button" className={styles.clearBtn} onClick={clearImage} title="Remove image">×</button>
-          )}
-          {canPexels && (
-            <button
-              type="button"
-              className={`${styles.searchBtn} ${pickerOpen ? styles.searchBtnActive : ''}`}
-              onClick={() => setPickerOpen(v => !v)}
-              title="Search Pexels"
-            >🔍</button>
-          )}
-        </div>
+      {/* Tab strip */}
+      <div className={styles.tabs}>
+        <button
+          type="button"
+          className={`${styles.tab} ${activeTab === 'url' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('url')}
+        >URL</button>
+        <button
+          type="button"
+          className={`${styles.tab} ${activeTab === 'upload' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('upload')}
+        >Upload</button>
+        {canPexels && (
+          <button
+            type="button"
+            className={`${styles.tab} ${activeTab === 'pexels' ? styles.tabActive : ''}`}
+            onClick={() => setActiveTab('pexels')}
+          >Pexels</button>
+        )}
       </div>
 
-      {/* Pexels picker — expands inline below the card */}
-      {canPexels && pickerOpen && (
+      {/* URL tab */}
+      {activeTab === 'url' && (
+        <div className={styles.card}>
+          <div className={styles.preview}>
+            {image?.src ? (
+              <img src={image.src} alt={image.alt ?? ''} className={styles.previewImg} />
+            ) : (
+              <div className={styles.previewPlaceholder}>No image · paste URL to add</div>
+            )}
+          </div>
+          <div className={styles.urlRow}>
+            <input
+              type="text"
+              className={styles.urlInput}
+              value={urlValue}
+              placeholder="Paste image URL…"
+              onChange={e => setUrlValue(e.target.value)}
+              onBlur={handleUrlBlur}
+            />
+            {image?.src && (
+              <button type="button" className={styles.clearBtn} onClick={clearImage} title="Remove image">×</button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Upload tab */}
+      {activeTab === 'upload' && (
+        <>
+          {/* Drop zone */}
+          <div
+            className={`${styles.dropZone} ${uploading ? styles.dropZoneUploading : ''}`}
+            onClick={() => !uploading && fileInputRef.current?.click()}
+            onDrop={handleDrop}
+            onDragOver={e => e.preventDefault()}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/gif"
+              className={styles.fileInput}
+              onChange={handleFileChange}
+            />
+            {uploading ? (
+              <div className={styles.dropZoneSpinner}>Uploading…</div>
+            ) : (
+              <>
+                <div className={styles.dropZoneIcon}>↑</div>
+                <div className={styles.dropZoneLabel}>Drop an image here or click to browse</div>
+                <div className={styles.dropZoneHint}>PNG, JPEG, GIF · max 10 MB</div>
+              </>
+            )}
+          </div>
+          {uploadError && <div className={styles.uploadError}>{uploadError}</div>}
+
+          {/* Image library picker */}
+          <div className={styles.librarySection}>
+            <div className={styles.libraryLabel}>Uploaded images</div>
+            {libraryLoading ? (
+              <div className={styles.libraryEmpty}>Loading…</div>
+            ) : library.length === 0 ? (
+              <div className={styles.libraryEmpty}>No images uploaded yet</div>
+            ) : (
+              <div className={styles.libraryGrid}>
+                {library.map((img) => (
+                  <button
+                    type="button"
+                    key={img.url}
+                    className={`${styles.libraryThumb} ${image?.variants?.thumb === img.variants.thumb ? styles.libraryThumbActive : ''}`}
+                    onClick={() => selectFromLibrary(img)}
+                    title="Use this image"
+                  >
+                    <img
+                      src={img.variants.thumb ?? img.url}
+                      alt=""
+                      className={styles.libraryThumbImg}
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Pexels tab */}
+      {activeTab === 'pexels' && canPexels && (
         <div className={styles.picker}>
           <div className={styles.pickerSearchRow}>
             <input
@@ -181,9 +337,7 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
           {photos.length > 0 && (
             <>
               {currentPage > 1 && (
-                <button type="button" className={styles.pickerPageBtn} onClick={prevPage} disabled={searching}>
-                  ↑
-                </button>
+                <button type="button" className={styles.pickerPageBtn} onClick={prevPage} disabled={searching}>↑</button>
               )}
               <div className={styles.pickerGrid}>
                 {photos.map((photo, i) => (
@@ -193,9 +347,7 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
                 ))}
               </div>
               {hasMore && (
-                <button type="button" className={styles.pickerPageBtn} onClick={nextPage} disabled={searching}>
-                  ↓
-                </button>
+                <button type="button" className={styles.pickerPageBtn} onClick={nextPage} disabled={searching}>↓</button>
               )}
               <div className={styles.pickerCredit}>Click an image to use it · Photos from Pexels</div>
             </>
@@ -203,9 +355,8 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
         </div>
       )}
 
-      {/* Alt / caption / layout — shown only when image is set */}
+      {/* Alt / caption / size / layout — shown when image is set */}
       {image?.src && (
-        // key forces remount (resetting uncontrolled inputs) when the image src changes
         <div key={image.src} className={styles.imageFields}>
           <label className={styles.fieldLabel}>
             <span>Alt text</span>
@@ -231,32 +382,30 @@ export default function ImageSection({ blockType, image, canPexels, onChange }: 
             </label>
           )}
 
-          {blockType === 'narrative' && (() => {
-            const options = getSizeOptions(naturalWidth)
-            if (options.length === 0) return null
-            const hasLarge = options.includes('large')
-            const currentSize = image.imageSize ?? (hasLarge ? 'large' : 'medium')
-            const labels: Record<ImageSize, string> = { small: 'Small', medium: 'Medium', large: 'Large' }
-            return (
-              <div className={styles.sizeSection}>
-                <div className={styles.sizeLabel}>Image size</div>
-                <div className={styles.sizeButtons}>
-                  {options.map(size => (
+          {sizeConfig.sizes.length > 0 && image.variants && (
+            <div className={styles.sizeSection}>
+              <div className={styles.sizeLabel}>Image size</div>
+              <div className={styles.sizeButtons}>
+                {sizeConfig.sizes.map(size => {
+                  const currentSize = image.imageSize ?? 'large'
+                  const labels: Record<ImageSize, string> = { small: 'Small', medium: 'Medium', large: 'Large' }
+                  return (
                     <button
                       type="button"
                       key={size}
                       className={`${styles.sizeBtn} ${currentSize === size ? styles.sizeBtnActive : ''}`}
-                      onClick={() => onChange({ ...image, imageSize: size })}
-                    >
-                      {labels[size]}
-                    </button>
-                  ))}
-                </div>
+                      onClick={() => {
+                        const variantUrl = image.variants?.[size]
+                        if (variantUrl) onChange({ ...image, imageSize: size, src: variantUrl })
+                      }}
+                    >{labels[size]}</button>
+                  )
+                })}
               </div>
-            )
-          })()}
+            </div>
+          )}
 
-          {blockType === 'step-navigator' && (
+          {showLayout && (
             <div className={styles.layoutSection}>
               <div className={styles.layoutLabel}>Image Layout</div>
               <div className={styles.layoutButtons}>

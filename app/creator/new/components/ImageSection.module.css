@@ -90,27 +90,6 @@
   border-color: var(--border-mid);
 }
 
-.searchBtn {
-  background: var(--surface-alt, #F7F6F3);
-  border: 1px solid var(--border-mid, rgba(15, 17, 23, 0.18));
-  border-radius: 4px;
-  color: var(--ink-soft);
-  cursor: pointer;
-  font-size: 12px;
-  padding: 3px 7px;
-  flex-shrink: 0;
-  transition: background 120ms, border-color 120ms;
-}
-
-.searchBtn:hover {
-  background: var(--accent-soft, #EAE7FB);
-  border-color: var(--accent);
-}
-
-.searchBtnActive {
-  background: var(--accent-soft, #EAE7FB);
-  border-color: var(--accent);
-}
 
 /* ── Pexels picker ───────────────────────────────────────────────────────── */
 .picker {
@@ -398,4 +377,153 @@
   background: var(--accent);
   border-radius: 2px;
   opacity: 0.5;
+}
+
+/* ── Tabs ────────────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border-mid, rgba(15, 17, 23, 0.18));
+  border-radius: 6px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.tab {
+  padding: 5px 14px;
+  background: var(--surface-alt, #F7F6F3);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-weight: 500;
+  border: none;
+  border-left: 1px solid var(--border-mid, rgba(15, 17, 23, 0.18));
+  cursor: pointer;
+  transition: background 100ms, color 100ms;
+}
+
+.tab:first-child {
+  border-left: none;
+}
+
+.tab:hover:not(.tabActive) {
+  background: var(--surface-raised, rgba(15, 17, 23, 0.04));
+  color: var(--ink);
+}
+
+.tabActive {
+  background: var(--ink, #0f1117);
+  color: #fff;
+}
+
+/* ── Upload drop zone ────────────────────────────────────────────────────── */
+.dropZone {
+  border: 2px dashed var(--border-mid, rgba(15, 17, 23, 0.25));
+  border-radius: 8px;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-alt, #F7F6F3);
+  cursor: pointer;
+  transition: border-color 120ms, background 120ms;
+}
+
+.dropZone:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft, #EAE7FB);
+}
+
+.dropZoneUploading {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.fileInput {
+  display: none;
+}
+
+.dropZoneIcon {
+  font-size: 18px;
+  color: var(--ink-muted);
+  line-height: 1;
+}
+
+.dropZoneLabel {
+  font-size: 12px;
+  color: var(--ink);
+  font-weight: 500;
+  text-align: center;
+}
+
+.dropZoneHint {
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
+.dropZoneSpinner {
+  font-size: 12px;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+.uploadError {
+  font-size: 11px;
+  color: #d94f4f;
+}
+
+/* ── Image library ───────────────────────────────────────────────────────── */
+.librarySection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.libraryLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+
+.libraryEmpty {
+  font-size: 12px;
+  color: var(--ink-muted);
+  font-style: italic;
+  padding: 8px 0;
+}
+
+.libraryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.libraryThumb {
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  overflow: hidden;
+  cursor: pointer;
+  background: none;
+  aspect-ratio: 1;
+  transition: border-color 100ms;
+}
+
+.libraryThumb:hover {
+  border-color: var(--accent);
+}
+
+.libraryThumbActive {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft, #EAE7FB);
+}
+
+.libraryThumbImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }

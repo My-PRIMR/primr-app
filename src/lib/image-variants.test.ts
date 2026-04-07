@@ -39,4 +39,12 @@ describe('generateVariants', () => {
     const meta = await sharp(result.small).metadata()
     expect(meta.format).toBe('jpeg')
   })
+
+  it('generates a thumb variant at 100px max width', async () => {
+    const input = await makePng(2000, 1000)
+    const result = await generateVariants(input, 'image/png')
+    expect(result.thumb).toBeDefined()
+    const thumbMeta = await sharp(result.thumb).metadata()
+    expect(thumbMeta.width).toBeLessThanOrEqual(100)
+  })
 })

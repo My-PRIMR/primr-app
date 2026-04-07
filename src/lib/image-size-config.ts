@@ -17,3 +17,5 @@ export const VARIANT_WIDTHS: Record<ImageSize, number> = {
   medium: 640,
   large:  1280,
 }
+
+export const THUMB_WIDTH = 100

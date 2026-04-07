@@ -79,6 +79,13 @@ export default function DocsPlayer({ courseTitle, userRole, tree }: Props) {
     setCurrentLesson(lesson)
   }
 
+  function handleLessonComplete() {
+    if (!currentLesson) return
+    const idx = flatLessons.findIndex(l => l.id === currentLesson.id)
+    const next = flatLessons.slice(idx + 1).find(l => isReady(l))
+    if (next) setCurrentLesson(next)
+  }
+
   const exitHref = defaultHomeHref(userRole)
 
   return (
@@ -143,6 +150,7 @@ export default function DocsPlayer({ courseTitle, userRole, tree }: Props) {
               mode="showcase"
               examEnforced={false}
               hideAutoAdvance
+              onLessonComplete={handleLessonComplete}
             />
           </div>
         ) : currentLesson?.generationStatus === 'pending' || currentLesson?.generationStatus === 'generating' ? (

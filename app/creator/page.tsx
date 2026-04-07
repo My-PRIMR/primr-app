@@ -63,10 +63,11 @@ export default async function DashboardPage() {
         publishedAt: lessons.publishedAt,
         examEnforced: lessons.examEnforced,
         showcase: lessons.showcase,
-        isStandalone: sql<boolean>`(${chapterLessons.id} IS NULL)`,
+        isStandalone: sql<boolean>`NOT EXISTS (
+          SELECT 1 FROM chapter_lessons cl WHERE cl.lesson_id = ${lessons.id}
+        )`,
       })
         .from(lessons)
-        .leftJoin(chapterLessons, eq(chapterLessons.lessonId, lessons.id))
         .where(eq(lessons.createdBy, userId))
         .orderBy(desc(lessons.updatedAt))
     : []

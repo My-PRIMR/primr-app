@@ -83,4 +83,5 @@ DATABASE_URL=          # postgres connection string
 AUTH_SECRET=           # JWT secret (must match primr-auth)
 PRIMR_AUTH_URL=        # primr-auth base URL (default: http://localhost:3001)
 ANTHROPIC_API_KEY=     # Claude API key for lesson generation
+PRIMR_DOCS_COURSE_ID=  # Course UUID for the in-product Documentation player (/docs)
 ```

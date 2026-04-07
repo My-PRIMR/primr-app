@@ -10,7 +10,6 @@ export default function LessonClient({ manifest }: { manifest: LessonManifest })
     function handleMessage(e: MessageEvent) {
       if (e.data?.type === 'theme-change' && (e.data.theme === 'light' || e.data.theme === 'dark')) {
         document.documentElement.setAttribute('data-theme', e.data.theme)
-        try { localStorage.setItem('primr_theme_preference', e.data.theme) } catch {}
       }
     }
     window.addEventListener('message', handleMessage)

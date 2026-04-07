@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import '@primr/components/dist/style.css'
 import { LessonRenderer } from '@primr/components'
 import type { LessonManifest } from '@primr/components'
@@ -79,6 +79,12 @@ export default function DocsPlayer({ courseTitle, userRole, tree }: Props) {
     setCurrentLesson(lesson)
   }
 
+  // Scroll the active lesson button into view whenever the current lesson changes
+  const activeLessonBtnRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    activeLessonBtnRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [currentLesson?.id])
+
   function handleLessonComplete() {
     if (!currentLesson) return
     const idx = flatLessons.findIndex(l => l.id === currentLesson.id)
@@ -117,6 +123,7 @@ export default function DocsPlayer({ courseTitle, userRole, tree }: Props) {
                     return (
                       <button
                         key={lesson.id}
+                        ref={isCurrent ? activeLessonBtnRef : null}
                         className={[
                           styles.lessonBtn,
                           isCurrent ? styles.lessonActive : '',

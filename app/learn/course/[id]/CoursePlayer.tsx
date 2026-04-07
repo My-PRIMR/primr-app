@@ -200,6 +200,12 @@ export default function CoursePlayer({ courseId, courseTitle, userId, tree, init
     l => l.lessonId && l.generationStatus === 'done'
   )
 
+  // Scroll the active lesson button into view whenever the current lesson changes
+  const activeLessonBtnRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    activeLessonBtnRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [currentLesson?.id])
+
   return (
     <div className={styles.layout}>
       {/* Sidebar */}
@@ -240,6 +246,7 @@ export default function CoursePlayer({ courseId, courseTitle, userId, tree, init
                     return (
                       <button
                         key={lesson.id}
+                        ref={isCurrent ? activeLessonBtnRef : null}
                         className={[
                           styles.lessonBtn,
                           isCurrent ? styles.lessonActive : '',

@@ -1,0 +1,83 @@
+/* ActionsDropdown — primr-app */
+
+.wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.trigger {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border-mid);
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms;
+}
+
+.trigger:hover,
+.triggerOpen {
+  background: var(--surface-alt);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 100;
+  min-width: 160px;
+  background: var(--surface);
+  border: 1px solid var(--border-mid);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+  padding: 4px 0;
+}
+
+.item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  padding: 8px 14px;
+  cursor: pointer;
+  text-decoration: none;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.item:hover {
+  background: var(--surface-alt);
+}
+
+.danger {
+  color: #c0392b;
+}
+
+.danger:hover {
+  color: #a93226;
+}
+
+.disabled {
+  color: var(--ink-muted);
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.disabled:hover {
+  background: transparent;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 4px 0;
+}

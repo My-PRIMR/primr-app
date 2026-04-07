@@ -271,7 +271,7 @@ export default function LessonBlockEditor({
     ? { activePage, onPageChange: setActivePage }
     : {}
 
-  const dockToggle = panelMode === 'float' ? (
+  const dockToggle = (
     <button
       className={`${styles.panelDockBtn} ${panelAnchored ? styles.panelDockBtnActive : ''}`}
       onClick={() => setPanelAnchored(!panelAnchored)}
@@ -279,7 +279,7 @@ export default function LessonBlockEditor({
     >
       {panelAnchored ? '⊟ Docked' : '⊞ Dock'}
     </button>
-  ) : null
+  )
 
   const editPanel = block ? (
     <BlockEditPanel
@@ -287,6 +287,7 @@ export default function LessonBlockEditor({
       block={block}
       blockIndex={currentBlock}
       lessonTitle={manifest.title}
+      lessonId={lessonId}
       activePage={activePage}
       onPageChange={setActivePage}
       onUpdate={handleBlockUpdate}
@@ -306,7 +307,7 @@ export default function LessonBlockEditor({
     </>
   )
 
-  const isDocked = panelMode === 'dock' || (panelMode === 'float' && panelAnchored)
+  const isDocked = panelAnchored
 
   return (
     <>
@@ -443,8 +444,8 @@ export default function LessonBlockEditor({
         )}
       </div>
 
-      {/* Floating panel overlay (float mode, not anchored) */}
-      {panelOpen && panelMode === 'float' && !panelAnchored && (
+      {/* Floating panel overlay (not anchored) */}
+      {panelOpen && !panelAnchored && (
         <div className={styles.floatingOverlay}>
           <div className={styles.floatingPanel}>
             {panelContent}

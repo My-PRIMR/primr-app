@@ -9,6 +9,7 @@ import ImageSection from './ImageSection'
 import type { ImageValue } from './ImageSection'
 import BlockPickerModal from '../../components/BlockPickerModal'
 import { BLOCK_REGISTRY } from '../../components/blockRegistry'
+import { IMAGE_SIZE_CONFIG } from '@/lib/image-size-config'
 
 const IMAGE_BLOCKS = ['hero', 'narrative', 'step-navigator']
 
@@ -16,6 +17,7 @@ interface Props {
   block: BlockConfig
   blockIndex: number
   lessonTitle: string
+  lessonId: string
   onUpdate: (index: number, block: BlockConfig) => void
   onClose: () => void
   headerAction?: React.ReactNode
@@ -31,13 +33,14 @@ interface Props {
 }
 
 /** Render labeled form fields for a block's props based on its type */
-function PropsEditor({ blockType, props, onChange, activePage, onPageChange, canPexels }: {
+function PropsEditor({ blockType, props, onChange, activePage, onPageChange, canPexels, lessonId }: {
   blockType: string
   props: Record<string, unknown>
   onChange: (key: string, value: unknown) => void
   activePage?: number
   onPageChange?: (index: number) => void
   canPexels?: boolean
+  lessonId: string
 }) {
   const pageArrayKey = PAGE_ARRAY_KEY[blockType]
   const pageItemRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -52,7 +55,9 @@ function PropsEditor({ blockType, props, onChange, activePage, onPageChange, can
       {/* Dedicated image editor for hero and narrative */}
       {(blockType === 'hero' || blockType === 'narrative') && (
         <ImageSection
-          blockType={blockType as 'hero' | 'narrative'}
+          sizeConfig={IMAGE_SIZE_CONFIG[blockType] ?? { sizes: [] }}
+          showCaption={blockType === 'narrative'}
+          lessonId={lessonId}
           image={props.image as ImageValue | undefined}
           canPexels={canPexels ?? false}
           onChange={(newImage) => onChange('image', newImage)}
@@ -145,7 +150,10 @@ function PropsEditor({ blockType, props, onChange, activePage, onPageChange, can
                       })}
                       {key === 'steps' && blockType === 'step-navigator' && (
                         <ImageSection
-                          blockType="step-navigator"
+                          sizeConfig={IMAGE_SIZE_CONFIG['step-navigator']}
+                          showCaption
+                          showLayout
+                          lessonId={lessonId}
                           image={(item as Record<string, unknown>).image as ImageValue | undefined}
                           canPexels={canPexels ?? false}
                           onChange={(newImage) => {
@@ -314,7 +322,7 @@ function formatLabel(key: string): string {
     .trim()
 }
 
-export default function BlockEditPanel({ block, blockIndex, lessonTitle, activePage, onPageChange, onUpdate, onClose, headerAction, canPexels = false, canAiEdit = false, plan, isInternal = false }: Props) {
+export default function BlockEditPanel({ block, blockIndex, lessonTitle, lessonId, activePage, onPageChange, onUpdate, onClose, headerAction, canPexels = false, canAiEdit = false, plan, isInternal = false }: Props) {
   const [localProps, setLocalProps] = useState<Record<string, unknown>>(block.props as Record<string, unknown>)
 
   // Sync localProps when block.props is updated externally (e.g. from inline edits)
@@ -420,7 +428,7 @@ export default function BlockEditPanel({ block, blockIndex, lessonTitle, activeP
       </div>
 
       <div className={styles.scrollArea}>
-        <PropsEditor blockType={block.type} props={localProps} onChange={handleFieldChange} activePage={activePage} onPageChange={onPageChange} canPexels={canPexels} />
+        <PropsEditor blockType={block.type} props={localProps} onChange={handleFieldChange} activePage={activePage} onPageChange={onPageChange} canPexels={canPexels} lessonId={lessonId} />
 
         {/* AI rewrite / type conversion */}
         <div className={styles.aiSection}>

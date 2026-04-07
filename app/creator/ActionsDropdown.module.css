@@ -24,6 +24,11 @@
   background: var(--surface-alt);
 }
 
+.trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .menu {
   position: absolute;
   top: calc(100% + 4px);
@@ -55,6 +60,12 @@
 }
 
 .item:hover {
+  background: var(--surface-alt);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
   background: var(--surface-alt);
 }
 

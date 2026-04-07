@@ -43,10 +43,10 @@ export default function ActionsDropdown({ items }: ActionsDropdownProps) {
       <button
         className={`${styles.trigger} ${open ? styles.triggerOpen : ''}`}
         onClick={() => setOpen(prev => !prev)}
-        aria-haspopup="true"
+        aria-haspopup="menu"
         aria-expanded={open}
       >
-        Actions ▾
+        Actions <span aria-hidden="true">▾</span>
       </button>
 
       {open && (

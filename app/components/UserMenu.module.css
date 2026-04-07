@@ -126,6 +126,21 @@
   background: var(--accent-soft);
 }
 
+/* ── Documentation ── */
+.docItem {
+  display: block;
+  padding: 11px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: background 120ms, color 120ms;
+}
+.docItem:hover {
+  background: var(--surface-alt);
+  color: var(--ink);
+}
+
 /* ── Theme toggle ── */
 .themeRow {
   display: flex;

@@ -91,6 +91,13 @@ export function UserMenu({ userName, userEmail, role, internalRole, internalUrl 
             </>
           )}
 
+          {/* Documentation */}
+          <a href="/docs" className={styles.docItem} onClick={() => setOpen(false)}>
+            Documentation
+          </a>
+
+          <div className={styles.divider} />
+
           {/* Theme toggle */}
           <div className={styles.themeRow}>
             {(['light', 'system', 'dark'] as Theme[]).map(t => (

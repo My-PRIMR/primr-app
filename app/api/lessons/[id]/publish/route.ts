@@ -5,7 +5,7 @@ import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getSession } from '@/session'
-import { uploadBuffer } from '@/lib/cloudinary'
+import { uploadBufferToLesson } from '@/lib/cloudinary'
 import type { LessonManifest } from '@primr/components'
 
 const LOCAL_ASSET_PREFIX = '/api/assets/'
@@ -60,18 +60,23 @@ export async function POST(
     const urlMap = new Map<string, string>()
 
     for (const localUrl of localUrls) {
+      // Support 2-part (legacy: userId/filename) and 3-part (userId/lessonId/filename) paths
       const parts = localUrl.replace(LOCAL_ASSET_PREFIX, '').split('/')
-      if (parts.length !== 2) continue
-      const [assetUserId, filename] = parts
+      if (parts.length !== 2 && parts.length !== 3) continue
+      const assetUserId = parts[0]
+      const filename = parts[parts.length - 1]
       if (assetUserId !== userId) continue
 
-      const filePath = resolve(join(stashRoot, assetUserId, filename))
+      const filePath = resolve(join(stashRoot, ...parts))
       if (!filePath.startsWith(normalize(stashRoot))) continue
+
+      const ext = filename.split('.').pop() ?? 'png'
+      const format = ext === 'jpg' ? 'jpg' : ext === 'gif' ? 'gif' : 'png'
+      const baseName = filename.replace(/\.[^.]+$/, '')
 
       try {
         const data = await readFile(filePath)
-        const publicId = `primr_documents/${assetUserId}_${filename.replace('.png', '')}`
-        const cloudUrl = await uploadBuffer(data, 'png', publicId)
+        const cloudUrl = await uploadBufferToLesson(data, format as 'png' | 'jpg' | 'gif', id, baseName)
         urlMap.set(localUrl, cloudUrl)
         console.log(`[publish] ${localUrl} → ${cloudUrl}`)
       } catch (err) {

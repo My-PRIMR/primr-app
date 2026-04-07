@@ -58,6 +58,17 @@
   gap: 8px;
 }
 
+.filterCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  user-select: none;
+}
+
 .deleteBulkBtn {
   font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 13px;

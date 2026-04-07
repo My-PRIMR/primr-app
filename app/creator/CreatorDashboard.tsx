@@ -36,6 +36,7 @@ export type LessonItem = {
   publishedAt: string | null
   examEnforced: boolean
   showcase: boolean
+  isStandalone: boolean
 }
 
 type Tab = 'courses' | 'lessons' | 'results' | 'learning' | 'students'
@@ -83,9 +84,11 @@ export default function CreatorDashboard({
   const [selectedLessons, setSelectedLessons] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState(false)
   const [publishingId, setPublishingId] = useState<string | null>(null)
+  const [standaloneOnly, setStandaloneOnly] = useState(true)
 
   const isCourses = tab === 'courses'
-  const items = isCourses ? courses : lessons
+  const visibleLessons = standaloneOnly ? lessons.filter(l => l.isStandalone) : lessons
+  const items = isCourses ? courses : visibleLessons
   const selected = isCourses ? selectedCourses : selectedLessons
   const setSelected = isCourses ? setSelectedCourses : setSelectedLessons
 
@@ -203,6 +206,16 @@ export default function CreatorDashboard({
       {/* ── Toolbar ── */}
       {tab !== 'results' && tab !== 'learning' && tab !== 'students' && <div className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
+          {tab === 'lessons' && (
+            <label className={styles.filterCheckbox}>
+              <input
+                type="checkbox"
+                checked={standaloneOnly}
+                onChange={e => setStandaloneOnly(e.target.checked)}
+              />
+              Standalone only
+            </label>
+          )}
           {selected.size > 0 && (
             <button className={styles.deleteBulkBtn} onClick={deleteSelected} disabled={deleting}>
               {deleting ? 'Deleting…' : `Delete ${selected.size} selected`}

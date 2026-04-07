@@ -52,7 +52,7 @@ export default async function DashboardPage() {
         .orderBy(desc(courses.createdAt))
     : []
 
-  // ── Creator: standalone lessons (not attached to any course) ────────────────
+  // ── Creator: all lessons they created, with isStandalone flag ───────────────
   const createdLessons = isCreator
     ? await db.select({
         id: lessons.id,
@@ -63,10 +63,11 @@ export default async function DashboardPage() {
         publishedAt: lessons.publishedAt,
         examEnforced: lessons.examEnforced,
         showcase: lessons.showcase,
+        isStandalone: sql<boolean>`(${chapterLessons.id} IS NULL)`,
       })
         .from(lessons)
         .leftJoin(chapterLessons, eq(chapterLessons.lessonId, lessons.id))
-        .where(and(eq(lessons.createdBy, userId), isNull(chapterLessons.id)))
+        .where(eq(lessons.createdBy, userId))
         .orderBy(desc(lessons.updatedAt))
     : []
 
@@ -74,7 +75,8 @@ export default async function DashboardPage() {
   let resultsData: ResultsData | undefined
 
   if (isCreator && (createdLessons.length > 0 || createdCourses.length > 0)) {
-    const createdLessonIds = createdLessons.map(l => l.id)
+    const standaloneLessons = createdLessons.filter(l => l.isStandalone)
+    const createdLessonIds = standaloneLessons.map(l => l.id)
     const courseIds = createdCourses.map(c => c.id)
 
     // Course lesson IDs (for aggregate stats)
@@ -298,7 +300,7 @@ export default async function DashboardPage() {
       avgScore: overallScoreRow[0]?.avgScore ?? null,
       lastActivityDate: overallScoreRow[0]?.lastActivity ?? null,
       dailyActivity: fillDailyActivity(dailyRows, 30),
-      lessonRows: createdLessons.map(l => {
+      lessonRows: standaloneLessons.map(l => {
         const stat = attemptStatMap.get(l.id)
         return {
           id: l.id,
@@ -444,6 +446,7 @@ export default async function DashboardPage() {
                 publishedAt: l.publishedAt?.toISOString() ?? null,
                 examEnforced: l.examEnforced,
                 showcase: l.showcase,
+                isStandalone: l.isStandalone,
               }))}
               learner={{
                 courses: enrolledCourses,

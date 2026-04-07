@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { UserMenu } from './UserMenu'
-import { ThemeToggle } from './ThemeToggle'
 import { type PageHeaderUser } from './pageHeaderUser'
 import styles from './PageHeader.module.css'
 
@@ -41,7 +40,6 @@ export function PageHeader({
       <div className={styles.spacer} />
       {rightSlot && <div className={styles.rightSlot}>{rightSlot}</div>}
       <div className={styles.right}>
-        <ThemeToggle />
         <UserMenu
           userName={user.name}
           userEmail={user.email}

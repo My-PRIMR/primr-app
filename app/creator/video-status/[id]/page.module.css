@@ -10,10 +10,15 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .main {
+  :root:not([data-theme="light"]) .main {
     --teal-soft:   rgba(13,158,138,0.15);
     --coral-soft:  rgba(232,93,58,0.15);
   }
+}
+
+:root[data-theme="dark"] .main {
+  --teal-soft:   rgba(13,158,138,0.15);
+  --coral-soft:  rgba(232,93,58,0.15);
 }
 
 .nav {

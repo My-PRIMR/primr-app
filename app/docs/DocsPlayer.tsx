@@ -142,6 +142,7 @@ export default function DocsPlayer({ courseTitle, userRole, tree }: Props) {
               adminMode={false}
               mode="showcase"
               examEnforced={false}
+              hideAutoAdvance
             />
           </div>
         ) : currentLesson?.generationStatus === 'pending' || currentLesson?.generationStatus === 'generating' ? (

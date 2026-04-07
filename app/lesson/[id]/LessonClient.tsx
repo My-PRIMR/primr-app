@@ -22,7 +22,7 @@ export default function LessonClient({ manifest }: { manifest: LessonManifest })
 
   return (
     <div style={{ width: '100%' }}>
-      <LessonRenderer manifest={manifest} adminMode={false} mode="showcase" examEnforced={false} onLessonComplete={handleComplete} />
+      <LessonRenderer manifest={manifest} adminMode={false} mode="showcase" examEnforced={false} onLessonComplete={handleComplete} hideAutoAdvance />
     </div>
   )
 }

@@ -13,18 +13,22 @@ export default async function DocsPage() {
   const session = await getSession()
   if (!session?.user?.id || !session.user.email) redirect('/login')
 
+  const header = (
+    <LearnHeader
+      userName={session.user.name}
+      userEmail={session.user.email}
+      role={session.user.productRole}
+      internalRole={session.user.internalRole}
+      internalUrl={process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004'}
+    />
+  )
+
   const courseId = process.env.PRIMR_DOCS_COURSE_ID
 
   if (!courseId) {
     return (
       <>
-        <LearnHeader
-          userName={session.user.name}
-          userEmail={session.user.email}
-          role={session.user.productRole}
-          internalRole={session.user.internalRole}
-          internalUrl={process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004'}
-        />
+        {header}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 60px)', color: 'var(--ink-muted)', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
           Documentation is not available.
         </div>
@@ -37,13 +41,7 @@ export default async function DocsPage() {
   if (!course) {
     return (
       <>
-        <LearnHeader
-          userName={session.user.name}
-          userEmail={session.user.email}
-          role={session.user.productRole}
-          internalRole={session.user.internalRole}
-          internalUrl={process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004'}
-        />
+        {header}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 60px)', color: 'var(--ink-muted)', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
           Documentation is not available.
         </div>
@@ -125,13 +123,7 @@ export default async function DocsPage() {
 
   return (
     <>
-      <LearnHeader
-        userName={session.user.name}
-        userEmail={session.user.email}
-        role={session.user.productRole}
-        internalRole={session.user.internalRole}
-        internalUrl={process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004'}
-      />
+      {header}
       <DocsPlayer
         courseTitle={course.title}
         userRole={session.user.productRole}

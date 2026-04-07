@@ -56,4 +56,23 @@ describe('GET /api/assets/library', () => {
     expect(body.images[0].variants.large).toBe('/api/assets/user-abc/lesson-1/abc123_large.png')
     expect(body.images[1].url).toBe('/api/assets/user-abc/lesson-1/def456.jpg')
   })
+
+  it('returns png variant URLs for gif originals', async () => {
+    mockReaddir.mockResolvedValueOnce([
+      'gif789.gif',
+      'gif789_thumb.png',
+      'gif789_small.png',
+      'gif789_medium.png',
+      'gif789_large.png',
+    ] as unknown as Awaited<ReturnType<typeof readdir>>)
+
+    const res = await GET(makeRequest('lesson-1'))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.images).toHaveLength(1)
+    expect(body.images[0].url).toBe('/api/assets/user-abc/lesson-1/gif789.gif')
+    // Variants are PNG even though the original is GIF
+    expect(body.images[0].variants.thumb).toBe('/api/assets/user-abc/lesson-1/gif789_thumb.png')
+    expect(body.images[0].variants.large).toBe('/api/assets/user-abc/lesson-1/gif789_large.png')
+  })
 })

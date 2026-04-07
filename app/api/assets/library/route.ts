@@ -50,14 +50,16 @@ export async function GET(req: NextRequest) {
       const extIdx = filename.lastIndexOf('.')
       const base = filename.slice(0, extIdx)
       const ext = filename.slice(extIdx + 1)
+      // GIF originals have PNG variants (sharp converts GIF→PNG during resize)
+      const variantExt = ext === 'gif' ? 'png' : ext
       const prefix = `/api/assets/${userId}/${lessonId}/${base}`
       return {
         url: `/api/assets/${userId}/${lessonId}/${filename}`,
         variants: {
-          thumb:  `${prefix}_thumb.${ext}`,
-          small:  `${prefix}_small.${ext}`,
-          medium: `${prefix}_medium.${ext}`,
-          large:  `${prefix}_large.${ext}`,
+          thumb:  `${prefix}_thumb.${variantExt}`,
+          small:  `${prefix}_small.${variantExt}`,
+          medium: `${prefix}_medium.${variantExt}`,
+          large:  `${prefix}_large.${variantExt}`,
         },
       }
     })

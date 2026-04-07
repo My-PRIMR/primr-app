@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { InvitePanel } from './InvitePanel'
 import type { EnrolledCourse, InvitedLesson, HistoryLesson } from './LearnerDashboard'
 import styles from './CreatorDashboard.module.css'
+import ActionsDropdown from './ActionsDropdown'
 import ResultsTab, { type ResultsData } from './ResultsTab'
 import ResultsTabBoundary from './ResultsTabBoundary'
 import StudentsTable from './students/StudentsTable'
@@ -301,17 +302,20 @@ export default function CreatorDashboard({
                   <td className={styles.tdMeta}>{courseLabel(course.status, course.doneCount, course.lessonCount)}</td>
                   <td className={styles.tdMeta}>{new Date(course.createdAt).toLocaleDateString()}</td>
                   <td className={styles.tdActions}>
-                    <div className={styles.rowActions}>
-                      {course.status === 'generating' ? (
-                        <Link href={`/creator/courses/${course.id}/edit`} className={styles.editLink}>View progress</Link>
-                      ) : (
-                        <>
-                          <Link href={`/creator/courses/${course.id}/edit`} className={styles.editLink}>Edit</Link>
-                          <Link href={`/learn/course/${course.id}`} className={styles.previewLink}>Preview</Link>
-                          <button className={styles.deleteBtn} onClick={() => deleteOne(course.id, 'course')}>Delete</button>
-                        </>
-                      )}
-                    </div>
+                    <ActionsDropdown
+                      items={
+                        course.status === 'generating'
+                          ? [
+                              { type: 'link', label: 'View progress', href: `/creator/courses/${course.id}/edit` },
+                            ]
+                          : [
+                              { type: 'link', label: 'Edit', href: `/creator/courses/${course.id}/edit` },
+                              { type: 'link', label: 'Preview', href: `/learn/course/${course.id}` },
+                              { type: 'divider' },
+                              { type: 'button', label: 'Delete', onClick: () => deleteOne(course.id, 'course'), danger: true },
+                            ]
+                      }
+                    />
                   </td>
                 </tr>
               ))}
@@ -423,41 +427,26 @@ export default function CreatorDashboard({
                   </td>
                   <td className={styles.tdMeta}>{new Date(lesson.updatedAt).toLocaleDateString()}</td>
                   <td className={styles.tdActions}>
-                    <div className={styles.rowActions}>
-                      <Link href={`/creator/edit/${lesson.id}`} className={styles.editLink}>Edit</Link>
-                      <Link href={`/creator/preview/${lesson.id}`} className={styles.previewLink}>Preview</Link>
-                      {lesson.publishedAt ? (
-                        <Link href={`/learn/${lesson.id}`} className={styles.previewLink}>Take</Link>
-                      ) : (
-                        <button
-                          className={styles.publishBtn}
-                          onClick={() => publishLesson(lesson.id)}
-                          disabled={publishingId === lesson.id}
-                        >
-                          {publishingId === lesson.id ? 'Publishing…' : 'Publish'}
-                        </button>
-                      )}
-                      {lesson.publishedAt && (
-                        <>
-                          <button
-                            className={lesson.examEnforced ? styles.examOnBtn : styles.examOffBtn}
-                            onClick={() => toggleExamEnforced(lesson.id, lesson.examEnforced)}
-                            title={lesson.examEnforced ? 'Exam is enforced — click to make it optional' : 'Exam is optional — click to enforce'}
-                          >
-                            {lesson.examEnforced ? 'Exam: on' : 'Exam: off'}
-                          </button>
-                          {/* TODO: re-enable showcase toggle */}
-                          {/* <button
-                            className={lesson.showcase ? styles.examOnBtn : styles.examOffBtn}
-                            onClick={() => toggleShowcase(lesson.id, !lesson.showcase)}
-                            title={lesson.showcase ? 'Lesson is showcase-only — click to make it normal' : 'Lesson is normal — click to make it showcase-only'}
-                          >
-                            {lesson.showcase ? 'Showcase Only' : 'Normal'}
-                          </button> */}
-                        </>
-                      )}
-                      <button className={styles.deleteBtn} onClick={() => deleteOne(lesson.id, 'lesson')}>Delete</button>
-                    </div>
+                    <ActionsDropdown
+                      items={[
+                        { type: 'link', label: 'Edit', href: `/creator/edit/${lesson.id}` },
+                        { type: 'link', label: 'Preview', href: `/creator/preview/${lesson.id}` },
+                        ...(lesson.publishedAt
+                          ? [{ type: 'link' as const, label: 'Take', href: `/learn/${lesson.id}` }]
+                          : [{ type: 'button' as const, label: publishingId === lesson.id ? 'Publishing…' : 'Publish', onClick: () => publishLesson(lesson.id), disabled: publishingId === lesson.id }]
+                        ),
+                        ...(lesson.publishedAt
+                          ? [{
+                              type: 'button' as const,
+                              label: lesson.examEnforced ? 'Exam: on' : 'Exam: off',
+                              onClick: () => toggleExamEnforced(lesson.id, lesson.examEnforced),
+                            }]
+                          : []
+                        ),
+                        { type: 'divider' as const },
+                        { type: 'button' as const, label: 'Delete', onClick: () => deleteOne(lesson.id, 'lesson'), danger: true },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

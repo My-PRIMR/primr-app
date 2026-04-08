@@ -6,7 +6,7 @@ import { LessonRenderer } from '@primr/components'
 import type { LessonManifest, LessonCompletePayload, LessonMode } from '@primr/components'
 import { FeedbackOverlay } from './FeedbackOverlay'
 
-export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforced = true, isEmbed = false }: { lessonId: string; manifest: LessonManifest; adminMode?: boolean; examEnforced?: boolean; isEmbed?: boolean }) {
+export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforced = true, isEmbed = false, dashboardUrl }: { lessonId: string; manifest: LessonManifest; adminMode?: boolean; examEnforced?: boolean; isEmbed?: boolean; dashboardUrl?: string }) {
   const [attemptId, setAttemptId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [mode, setMode] = useState<LessonMode>('interactive')
@@ -109,6 +109,7 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
         examEnforced={examEnforced}
         onLessonComplete={mode === 'interactive' ? handleLessonComplete : undefined}
         onBlockFlag={mode === 'interactive' && !adminMode ? handleBlockFlag : undefined}
+        dashboardUrl={dashboardUrl}
       />
       {phase === 'feedback' && (
         <FeedbackOverlay onDone={handleFeedbackDone} />

@@ -36,10 +36,16 @@ export default async function LearnPage({ params, searchParams }: { params: Prom
     session.user.internalRole != null ||
     lesson.createdBy === session.user.id
 
+  const dashboardUrl = isEmbed
+    ? undefined
+    : (session.user.productRole === 'creator' || session.user.productRole === 'lnd_manager' || session.user.productRole === 'org_admin')
+      ? '/creator'
+      : '/my-primr'
+
   return (
     <>
       {!isEmbed && <LearnHeader userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} internalRole={session.user.internalRole} />}
-      <LessonPlayer lessonId={lesson.id} manifest={lesson.manifest} adminMode={adminMode} examEnforced={lesson.examEnforced} isEmbed={isEmbed} />
+      <LessonPlayer lessonId={lesson.id} manifest={lesson.manifest} adminMode={adminMode} examEnforced={lesson.examEnforced} isEmbed={isEmbed} dashboardUrl={dashboardUrl} />
     </>
   )
 }

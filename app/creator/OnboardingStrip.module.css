@@ -1,6 +1,6 @@
 .strip {
-  background: var(--color-teal, #f0faf8);
-  border: 1px solid #b2dfdb;
+  background: color-mix(in srgb, var(--color-teal, #009688) 8%, var(--surface, #fff));
+  border: 1px solid color-mix(in srgb, var(--color-teal, #009688) 25%, var(--border, #b2dfdb));
   border-radius: 10px;
   padding: 14px 16px;
   margin-bottom: 16px;
@@ -16,11 +16,12 @@
 .title {
   font-weight: 600;
   font-size: 14px;
+  color: var(--ink, #212121);
 }
 
 .count {
   font-size: 12px;
-  color: #555;
+  color: var(--ink-soft, #555);
   flex: 1;
 }
 
@@ -28,13 +29,13 @@
   background: none;
   border: none;
   font-size: 12px;
-  color: #555;
+  color: var(--ink-soft, #555);
   cursor: pointer;
   padding: 0;
 }
 
 .dismiss:hover {
-  color: var(--color-ink, #212121);
+  color: var(--ink, #212121);
 }
 
 .cards {
@@ -46,47 +47,48 @@
 
 .card {
   flex: 0 0 170px;
-  background: #fff;
-  border: 1px solid #ddd;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-mid, #ddd);
   border-radius: 8px;
   padding: 12px;
   text-decoration: none;
-  color: var(--color-ink, #212121);
+  color: var(--ink, #212121);
   display: flex;
   flex-direction: column;
   gap: 5px;
 }
 
 .card:hover {
-  border-color: #26a69a;
+  border-color: var(--color-teal, #26a69a);
 }
 
 .card.in_progress {
-  border: 2px solid #00796b;
+  border: 2px solid var(--color-teal, #00796b);
 }
 
 .card.completed {
-  border-color: #a5d6a7;
+  border-color: color-mix(in srgb, var(--color-teal, #009688) 40%, var(--border-mid, #ddd));
 }
 
 .statusLabel {
   font-size: 11px;
   font-weight: 600;
-  color: #555;
+  color: var(--ink-soft, #555);
 }
 
-.card.completed .statusLabel { color: #388e3c; }
-.card.in_progress .statusLabel { color: #00796b; }
+.card.completed .statusLabel { color: var(--color-teal, #388e3c); }
+.card.in_progress .statusLabel { color: var(--color-teal, #00796b); }
 
 .lessonTitle {
   font-size: 13px;
   font-weight: 500;
   line-height: 1.3;
+  color: var(--ink, #212121);
 }
 
 .toast {
-  background: #fff8e1;
-  border: 1px solid #ffe082;
+  background: color-mix(in srgb, var(--color-amber, #ffc107) 12%, var(--surface, #fff));
+  border: 1px solid color-mix(in srgb, var(--color-amber, #ffc107) 40%, var(--border, #ddd));
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 16px;
@@ -94,14 +96,14 @@
   align-items: center;
   justify-content: space-between;
   font-size: 13px;
-  color: var(--color-ink, #212121);
+  color: var(--ink, #212121);
 }
 
 .toastClose {
   background: none;
   border: none;
   font-size: 16px;
-  color: #888;
+  color: var(--ink-soft, #888);
   cursor: pointer;
   padding: 0 0 0 12px;
   line-height: 1;

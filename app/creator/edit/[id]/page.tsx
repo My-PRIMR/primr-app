@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { notFound, redirect } from 'next/navigation'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'

@@ -339,14 +339,15 @@ export default function CreatorDashboard({
 
       {/* ── Lessons tab ── */}
       {tab === 'lessons' && (
-        lessons.length === 0 ? (
+        visibleLessons.length === 0 ? (
           <p className={styles.empty}>
-            No lessons yet.{' '}
-            <Link href="/creator/new" className={styles.link}>Create your first one →</Link>
+            {lessons.length === 0
+              ? <><Link href="/creator/new" className={styles.link}>Create your first lesson →</Link></>
+              : 'No standalone lessons. Uncheck "Standalone only" to see all lessons.'}
           </p>
         ) : view === 'card' ? (
           <div className={styles.cardGrid}>
-            {lessons.map(lesson => (
+            {visibleLessons.map(lesson => (
               <div
                 key={lesson.id}
                 className={`${styles.card} ${selectedLessons.has(lesson.id) ? styles.cardSelected : ''}`}
@@ -422,7 +423,7 @@ export default function CreatorDashboard({
               </tr>
             </thead>
             <tbody>
-              {lessons.map(lesson => (
+              {visibleLessons.map(lesson => (
                 <tr
                   key={lesson.id}
                   className={`${styles.row} ${selectedLessons.has(lesson.id) ? styles.rowSelected : ''}`}

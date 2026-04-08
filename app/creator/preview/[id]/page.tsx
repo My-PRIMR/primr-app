@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
@@ -17,7 +18,9 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
 
   return (
     <main className={styles.main}>
-      <PageHeaderServer />
+      <PageHeaderServer
+        leftSlot={<Link href={`/creator/edit/${id}`} style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink-muted)', textDecoration: 'none' }}>← Exit</Link>}
+      />
       <div className={styles.content}>
         <LessonView manifest={lesson.manifest} />
       </div>

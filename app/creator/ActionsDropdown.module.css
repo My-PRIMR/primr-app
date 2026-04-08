@@ -30,9 +30,6 @@
 }
 
 .menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
   z-index: 100;
   min-width: 160px;
   background: var(--surface);

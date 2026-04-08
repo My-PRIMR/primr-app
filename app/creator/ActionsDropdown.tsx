@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import styles from './ActionsDropdown.module.css'
 
@@ -15,13 +16,20 @@ interface ActionsDropdownProps {
 
 export default function ActionsDropdown({ items }: ActionsDropdownProps) {
   const [open, setOpen] = useState(false)
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 })
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     if (!open) return
 
     function handleMouseDown(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      if (
+        wrapperRef.current && !wrapperRef.current.contains(target) &&
+        menuRef.current && !menuRef.current.contains(target)
+      ) {
         setOpen(false)
       }
     }
@@ -38,19 +46,36 @@ export default function ActionsDropdown({ items }: ActionsDropdownProps) {
     }
   }, [open])
 
+  function handleOpen() {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      setMenuPos({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right,
+      })
+    }
+    setOpen(prev => !prev)
+  }
+
   return (
     <div ref={wrapperRef} className={styles.wrapper}>
       <button
+        ref={btnRef}
         className={`${styles.trigger} ${open ? styles.triggerOpen : ''}`}
-        onClick={() => setOpen(prev => !prev)}
+        onClick={handleOpen}
         aria-haspopup="menu"
         aria-expanded={open}
       >
         Actions <span aria-hidden="true">▾</span>
       </button>
 
-      {open && (
-        <div className={styles.menu} role="menu">
+      {open && createPortal(
+        <div
+          ref={menuRef}
+          className={styles.menu}
+          role="menu"
+          style={{ position: 'fixed', top: menuPos.top, right: menuPos.right }}
+        >
           {items.map((item, i) => {
             if (item.type === 'divider') {
               return <hr key={i} className={styles.divider} />
@@ -68,7 +93,6 @@ export default function ActionsDropdown({ items }: ActionsDropdownProps) {
                 </Link>
               )
             }
-            // type === 'button'
             return (
               <button
                 key={i}
@@ -85,7 +109,8 @@ export default function ActionsDropdown({ items }: ActionsDropdownProps) {
               </button>
             )
           })}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

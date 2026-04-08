@@ -53,7 +53,7 @@ export default async function DashboardPage() {
     : []
 
   // ── Creator: all lessons they created, with isStandalone flag ───────────────
-  const createdLessons = isCreator
+  const createdLessonsRaw = isCreator
     ? await db.select({
         id: lessons.id,
         title: lessons.title,
@@ -63,20 +63,38 @@ export default async function DashboardPage() {
         publishedAt: lessons.publishedAt,
         examEnforced: lessons.examEnforced,
         showcase: lessons.showcase,
-        isStandalone: sql<boolean>`NOT EXISTS (
-          SELECT 1 FROM chapter_lessons cl WHERE cl.lesson_id = ${lessons.id}
-        )`,
       })
         .from(lessons)
         .where(eq(lessons.createdBy, userId))
         .orderBy(desc(lessons.updatedAt))
     : []
 
+  // Fetch lesson IDs that appear in a chapter belonging to an existing course
+  const inChapterIds = new Set<string>()
+  if (createdLessonsRaw.length > 0) {
+    const lessonIds = createdLessonsRaw.map(l => l.id)
+    const inChapterRows = await db
+      .selectDistinct({ lessonId: chapterLessons.lessonId })
+      .from(chapterLessons)
+      .innerJoin(courseChapters, eq(courseChapters.id, chapterLessons.chapterId))
+      .innerJoin(courseSections, eq(courseSections.id, courseChapters.sectionId))
+      .innerJoin(courses, eq(courses.id, courseSections.courseId))
+      .where(inArray(chapterLessons.lessonId, lessonIds))
+    for (const row of inChapterRows) {
+      if (row.lessonId) inChapterIds.add(row.lessonId)
+    }
+  }
+
+  const createdLessons = createdLessonsRaw.map(l => ({
+    ...l,
+    chapterLessonCount: inChapterIds.has(l.id) ? 1 : 0,
+  }))
+
   // ── Creator: results data ─────────────────────────────────────────────────
   let resultsData: ResultsData | undefined
 
   if (isCreator && (createdLessons.length > 0 || createdCourses.length > 0)) {
-    const standaloneLessons = createdLessons.filter(l => l.isStandalone)
+    const standaloneLessons = createdLessons.filter(l => l.chapterLessonCount === 0)
     const createdLessonIds = standaloneLessons.map(l => l.id)
     const courseIds = createdCourses.map(c => c.id)
 
@@ -447,7 +465,7 @@ export default async function DashboardPage() {
                 publishedAt: l.publishedAt?.toISOString() ?? null,
                 examEnforced: l.examEnforced,
                 showcase: l.showcase,
-                isStandalone: l.isStandalone,
+                isStandalone: l.chapterLessonCount === 0,
               }))}
               learner={{
                 courses: enrolledCourses,

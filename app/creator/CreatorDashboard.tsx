@@ -170,11 +170,15 @@ export default function CreatorDashboard({
           {lessons.length > 0 && <span className={styles.tabBadge}>{lessons.length}</span>}
         </button>
         <button
-          className={`${styles.tab} ${tab === 'courses' ? styles.tabActive : ''}`}
+          className={`${styles.tab} ${tab === 'courses' ? styles.tabActive : ''} ${plan === 'free' ? styles.tabDisabled : ''}`}
           onClick={() => setTab('courses')}
+          disabled={plan === 'free'}
         >
           Courses
-          {courses.length > 0 && <span className={styles.tabBadge}>{courses.length}</span>}
+          {plan === 'free'
+            ? <span className={styles.tabPro}>Pro</span>
+            : courses.length > 0 && <span className={styles.tabBadge}>{courses.length}</span>
+          }
         </button>
         {results && (
           <button
@@ -250,10 +254,7 @@ export default function CreatorDashboard({
         courses.length === 0 ? (
           <p className={styles.empty}>
             No courses yet.{' '}
-            {plan !== 'free'
-              ? <Link href="/creator/courses/new" className={styles.link}>Create your first course →</Link>
-              : <span>Courses are available on Pro and higher plans.</span>
-            }
+            <Link href="/creator/courses/new" className={styles.link}>Create your first course →</Link>
           </p>
         ) : view === 'card' ? (
           <div className={styles.cardGrid}>

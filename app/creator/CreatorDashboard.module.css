@@ -42,6 +42,23 @@
   background: var(--accent-soft);
   border-color: transparent;
 }
+.tabDisabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+.tabPro {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 1px 5px;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
 
 /* ── Toolbar ─────────────────────────────────────────────────────────────── */
 .toolbar {

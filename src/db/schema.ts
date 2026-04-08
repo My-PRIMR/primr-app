@@ -6,6 +6,10 @@ import type { LessonManifest } from '@primr/components'
 export const productRoleEnum = pgEnum('product_role', ['learner', 'creator', 'lnd_manager', 'org_admin'])
 export const planEnum         = pgEnum('plan',         ['free', 'teacher', 'pro', 'enterprise'])
 export const internalRoleEnum = pgEnum('internal_role', ['staff', 'admin'])
+export const onboardingSegmentEnum = pgEnum('onboarding_segment', [
+  'creator_free', 'creator_pro', 'creator_enterprise',
+  'teacher', 'lnd_manager', 'org_admin',
+])
 
 // ── Organizations ────────────────────────────────────────────────────────────
 export const organizations = pgTable('organizations', {
@@ -33,6 +37,7 @@ export const users = pgTable('users', {
   /** Captured during teacher application; useful for support and analytics. Null for non-teachers. */
   schoolName: text('school_name'),
   organizationId: uuid('organization_id').references(() => organizations.id),
+  onboardingDismissedAt: timestamp('onboarding_dismissed_at'),
   createdAt:      timestamp('created_at').notNull().defaultNow(),
   updatedAt:      timestamp('updated_at').notNull().defaultNow(),
   lastLoginAt:    timestamp('last_login_at'),
@@ -117,6 +122,21 @@ export const lessonInviteLinks = pgTable('lesson_invite_links', {
 
 export type LessonInviteLink = typeof lessonInviteLinks.$inferSelect
 export type NewLessonInviteLink = typeof lessonInviteLinks.$inferInsert
+
+// ── Onboarding Playlists ──────────────────────────────────────────────────────
+export const onboardingPlaylists = pgTable('onboarding_playlists', {
+  id:           uuid('id').primaryKey().defaultRandom(),
+  segment:      onboardingSegmentEnum('segment').notNull(),
+  lessonId:     uuid('lesson_id').notNull().references(() => lessons.id, { onDelete: 'cascade' }),
+  displayOrder: integer('display_order').notNull(),
+  createdAt:    timestamp('created_at').notNull().defaultNow(),
+}, (t) => [
+  unique('onboarding_playlists_segment_lesson').on(t.segment, t.lessonId),
+  unique('onboarding_playlists_segment_order').on(t.segment, t.displayOrder),
+])
+
+export type OnboardingPlaylist = typeof onboardingPlaylists.$inferSelect
+export type NewOnboardingPlaylist = typeof onboardingPlaylists.$inferInsert
 
 // ── Courses ───────────────────────────────────────────────────────────────────
 export const courseStatusEnum = pgEnum('course_status', ['draft', 'generating', 'ready', 'published'])

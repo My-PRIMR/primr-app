@@ -1,7 +1,7 @@
 .header {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 200;
   display: flex;
   align-items: center;
   gap: 0.75rem;

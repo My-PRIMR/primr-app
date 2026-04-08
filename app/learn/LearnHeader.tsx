@@ -7,11 +7,11 @@ interface LearnHeaderProps {
   userEmail: string
   role: string
   internalRole?: string | null
-  internalUrl?: string
 }
 
-export default function LearnHeader({ userName, userEmail, role, internalRole, internalUrl }: LearnHeaderProps) {
+export default function LearnHeader({ userName, userEmail, role, internalRole }: LearnHeaderProps) {
   const dashboardHref = role === 'creator' || role === 'lnd_manager' || role === 'org_admin' ? '/creator' : '/my-primr'
+  const internalUrl = process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004'
 
   return (
     <header className={styles.header}>

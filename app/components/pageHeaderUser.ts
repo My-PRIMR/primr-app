@@ -11,6 +11,7 @@ export interface PageHeaderUser {
   email: string
   productRole: string
   internalRole?: string | null
+  internalUrl?: string
 }
 
 /** Picks the fields PageHeader needs from a PrimrSession user. */
@@ -25,5 +26,6 @@ export function toPageHeaderUser(user: {
     email: user.email,
     productRole: user.productRole,
     internalRole: user.internalRole,
+    internalUrl: process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004',
   }
 }

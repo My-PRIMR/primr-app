@@ -25,10 +25,7 @@
 
 /* ── Dropdown panel ── */
 .dropdown {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  z-index: 200;
+  z-index: 400;
   min-width: 220px;
   background: var(--surface);
   border: 1.5px solid var(--border-mid);

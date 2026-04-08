@@ -45,7 +45,7 @@ export function PageHeader({
           userEmail={user.email}
           role={user.productRole}
           internalRole={user.internalRole}
-          internalUrl={internalUrl}
+          internalUrl={internalUrl ?? user.internalUrl}
         />
       </div>
     </header>

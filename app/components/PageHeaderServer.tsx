@@ -12,7 +12,6 @@ export default async function PageHeaderServer(props: Props) {
   return (
     <PageHeader
       user={toPageHeaderUser(session.user)}
-      internalUrl={process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004'}
       {...props}
     />
   )

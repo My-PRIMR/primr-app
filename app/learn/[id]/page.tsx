@@ -12,8 +12,9 @@ export default async function LearnPage({ params, searchParams }: { params: Prom
   const { embed } = await searchParams
   const isEmbed = embed === 'true'
 
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   const lesson = await db.query.lessons.findFirst({
-    where: eq(lessons.slug, id),
+    where: UUID_RE.test(id) ? eq(lessons.id, id) : eq(lessons.slug, id),
   })
 
   if (!lesson) notFound()

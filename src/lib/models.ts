@@ -88,6 +88,14 @@ export function canTrackLearners(
   return plan === 'teacher' || plan === 'pro' || plan === 'enterprise' || internalRole != null
 }
 
+/** Course creation — Pro, Enterprise, and Teacher tiers only. Free tier is lessons-only. */
+export function canCreateCourses(
+  plan: string | null | undefined,
+  internalRole: string | null | undefined
+): boolean {
+  return plan === 'teacher' || plan === 'pro' || plan === 'enterprise' || internalRole != null
+}
+
 /** Lesson monetization (selling content). Excludes Teacher tier — non-commercial use only. */
 export function canMonetize(plan: string | null | undefined): boolean {
   return plan === 'pro' || plan === 'enterprise'

@@ -250,7 +250,10 @@ export default function CreatorDashboard({
         courses.length === 0 ? (
           <p className={styles.empty}>
             No courses yet.{' '}
-            <Link href="/creator/courses/new" className={styles.link}>Create your first course →</Link>
+            {plan !== 'free'
+              ? <Link href="/creator/courses/new" className={styles.link}>Create your first course →</Link>
+              : <span>Courses are available on Pro and higher plans.</span>
+            }
           </p>
         ) : view === 'card' ? (
           <div className={styles.cardGrid}>

@@ -3,6 +3,7 @@ import { db } from '@/db'
 import { courses, chapterLessons, courseChapters, courseSections } from '@/db/schema'
 import { eq, desc, sql, and } from 'drizzle-orm'
 import { getSession } from '@/session'
+import { canCreateCourses } from '@/lib/models'
 
 function slugify(text: string): string {
   return text
@@ -42,10 +43,13 @@ export async function GET() {
   return NextResponse.json({ courses: rows })
 }
 
-// POST /api/courses — create empty course record
+// POST /api/courses — create empty course record (Pro, Teacher, Enterprise only)
 export async function POST(req: NextRequest) {
   const session = await getSession()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!canCreateCourses(session.user.plan, session.user.internalRole)) {
+    return NextResponse.json({ error: 'Courses require a Pro plan or higher' }, { status: 403 })
+  }
 
   const { title, description, isPublic } = await req.json()
   if (!title?.trim()) return NextResponse.json({ error: 'title is required' }, { status: 400 })

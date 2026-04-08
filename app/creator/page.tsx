@@ -506,7 +506,7 @@ export default async function DashboardPage() {
       <PageHeaderServer
         rightSlot={isCreator && (
           <>
-            <Link href="/creator/courses/new" className={styles.newCourseBtn}>+ New course</Link>
+            {plan !== 'free' && <Link href="/creator/courses/new" className={styles.newCourseBtn}>+ New course</Link>}
             <Link href="/creator/new" className={styles.newBtn}>+ New lesson</Link>
           </>
         )}

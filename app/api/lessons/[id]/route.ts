@@ -40,7 +40,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!existing) {
     return NextResponse.json({ error: 'lesson not found' }, { status: 404 })
   }
-  if (existing.createdBy !== session.user.id) {
+  const isOwner = existing.createdBy === session.user.id
+  const isInternalStaff = session.user.internalRole != null
+  if (!isOwner && !isInternalStaff) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

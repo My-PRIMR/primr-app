@@ -6,8 +6,10 @@ import { db } from '@/db'
 import {
   users, lessons, lessonInvitations, lessonAttempts,
   courses, courseSections, courseChapters, chapterLessons, courseEnrollments, lessonFeedback,
+  onboardingPlaylists,
 } from '@/db/schema'
 import { desc, eq, and, sql, inArray, max, isNull, gte } from 'drizzle-orm'
+import { resolveSegment } from '@/lib/onboarding'
 import { getSession } from '@/session'
 import { fillDailyActivity } from '@/lib/results'
 import { listTeacherRoster } from '@/lib/teacher-roster'
@@ -427,6 +429,84 @@ export default async function DashboardPage() {
 
   const hasAnything = isCreator || enrolledCourses.length > 0 || invitedLessons.length > 0 || lessonHistory.length > 0
 
+  // ── Onboarding strip data ─────────────────────────────────────────────────────
+  const userRow = await db
+    .select({ onboardingDismissedAt: users.onboardingDismissedAt })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
+    .then(rows => rows[0])
+
+  const onboardingDismissedAt = userRow?.onboardingDismissedAt ?? null
+  const segment = resolveSegment(role, plan)
+  type OnboardingLessonItem = {
+    id: string
+    title: string
+    slug: string
+    displayOrder: number
+    status: 'completed' | 'in_progress' | 'not_started'
+  }
+  let onboardingLessons: OnboardingLessonItem[] = []
+
+  if (segment && !onboardingDismissedAt) {
+    const playlistRows = await db
+      .select({
+        lessonId: onboardingPlaylists.lessonId,
+        displayOrder: onboardingPlaylists.displayOrder,
+      })
+      .from(onboardingPlaylists)
+      .where(eq(onboardingPlaylists.segment, segment))
+      .orderBy(onboardingPlaylists.displayOrder)
+
+    if (playlistRows.length > 0) {
+      const playlistLessonIds = playlistRows.map(r => r.lessonId)
+
+      const [lessonRows, attemptRows] = await Promise.all([
+        db
+          .select({ id: lessons.id, title: lessons.title, slug: lessons.slug })
+          .from(lessons)
+          .where(inArray(lessons.id, playlistLessonIds)),
+        db
+          .select({
+            lessonId: lessonAttempts.lessonId,
+            status: lessonAttempts.status,
+          })
+          .from(lessonAttempts)
+          .where(
+            and(
+              eq(lessonAttempts.userId, userId),
+              inArray(lessonAttempts.lessonId, playlistLessonIds),
+            )
+          )
+          .orderBy(lessonAttempts.startedAt),
+      ])
+
+      // Best attempt status wins: completed > in_progress > not_started
+      const attemptStatusMap = new Map<string, 'completed' | 'in_progress'>()
+      for (const a of attemptRows) {
+        const current = attemptStatusMap.get(a.lessonId)
+        if (a.status === 'completed' || current === undefined) {
+          attemptStatusMap.set(a.lessonId, a.status as 'completed' | 'in_progress')
+        }
+      }
+
+      const lessonMap = new Map(lessonRows.map(l => [l.id, l]))
+      onboardingLessons = playlistRows
+        .map(r => {
+          const lesson = lessonMap.get(r.lessonId)
+          if (!lesson) return null
+          return {
+            id: lesson.id,
+            title: lesson.title,
+            slug: lesson.slug,
+            displayOrder: r.displayOrder,
+            status: (attemptStatusMap.get(lesson.id) ?? 'not_started') as OnboardingLessonItem['status'],
+          }
+        })
+        .filter((x): x is OnboardingLessonItem => x !== null)
+    }
+  }
+
   return (
     <main className={styles.main}>
       <PageHeaderServer
@@ -447,6 +527,9 @@ export default async function DashboardPage() {
             <CreatorDashboard
               plan={plan}
               roster={roster}
+              // @ts-expect-error -- onboarding props added in Task 10
+              onboardingLessons={onboardingLessons}
+              onboardingDismissedAt={onboardingDismissedAt ? onboardingDismissedAt.toISOString() : null}
               results={resultsData}
               courses={createdCourses.map(c => ({
                 id: c.id,

@@ -7,13 +7,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const body = await req.json()
-  const { userId, email, role, plan } = body as {
-    userId: string
-    email: string
-    role: string
-    plan: string
+  let body: { userId?: string; email?: string; role?: string; plan?: string }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
+  const { userId, email, role, plan } = body
 
   if (!userId || !email || !role || !plan) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })

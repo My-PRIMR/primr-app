@@ -1,9 +1,9 @@
 .panel {
   position: fixed;
-  top: 0;
+  top: 57px;
   right: 0;
   width: 420px;
-  height: 100vh;
+  height: calc(100vh - 57px);
   background: var(--surface, #fff);
   border-left: 1px solid var(--border-mid, rgba(15,17,23,0.18));
   display: flex;

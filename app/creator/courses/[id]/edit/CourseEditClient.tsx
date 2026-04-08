@@ -60,6 +60,7 @@ export default function CourseEditClient({ course, plan, internalRole, user }: {
   }
 
   // ── Sidebar state ──────────────────────────────────────────────────────────
+  const [outlineCollapsed, setOutlineCollapsed] = useState(false)
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
   const [collapsedChapters, setCollapsedChapters] = useState<Set<string>>(new Set())
   const [disabledLessons, setDisabledLessons] = useState<Set<string>>(() => initDisabled(course))
@@ -236,10 +237,10 @@ export default function CourseEditClient({ course, plan, internalRole, user }: {
       {/* ── Main layout ── */}
       <div className={styles.layout}>
         {/* ── Left sidebar ── */}
-        <aside className={styles.sidebar}>
-          <div className={styles.sidebarHeader}>
-            <span className={styles.sidebarTitle}>Course outline</span>
-            {(() => {
+        <aside className={`${styles.sidebar} ${outlineCollapsed ? styles.sidebarCollapsed : ''}`}>
+          <div className={`${styles.sidebarHeader} ${outlineCollapsed ? styles.sidebarHeaderCollapsed : ''}`}>
+            {!outlineCollapsed && <span className={styles.sidebarTitle}>Course outline</span>}
+            {!outlineCollapsed && (() => {
               const statuses = [...lessonStatuses.values()]
               const total = statuses.length
               const done = statuses.filter(s => s.generationStatus === 'done').length
@@ -251,8 +252,15 @@ export default function CourseEditClient({ course, plan, internalRole, user }: {
                 </span>
               )
             })()}
+            <button
+              className={styles.sidebarCollapseBtn}
+              onClick={() => setOutlineCollapsed(v => !v)}
+              title={outlineCollapsed ? 'Expand outline' : 'Collapse outline'}
+            >
+              {outlineCollapsed ? '▶' : '◀'}
+            </button>
           </div>
-          <div className={styles.sidebarBody}>
+          {!outlineCollapsed && <div className={styles.sidebarBody}>
             {course.sections.map(section => {
               const sectionCollapsed = collapsedSections.has(section.id)
               return (
@@ -333,7 +341,7 @@ export default function CourseEditClient({ course, plan, internalRole, user }: {
                 </div>
               )
             })}
-          </div>
+          </div>}
         </aside>
 
         {/* ── Center + right: lesson editor ── */}

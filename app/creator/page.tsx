@@ -484,8 +484,8 @@ export default async function DashboardPage() {
       // Best attempt status wins: completed > in_progress > not_started
       const attemptStatusMap = new Map<string, 'completed' | 'in_progress'>()
       for (const a of attemptRows) {
-        const current = attemptStatusMap.get(a.lessonId)
-        if (a.status === 'completed' || current === undefined) {
+        // Never downgrade from completed
+        if (attemptStatusMap.get(a.lessonId) !== 'completed') {
           attemptStatusMap.set(a.lessonId, a.status as 'completed' | 'in_progress')
         }
       }

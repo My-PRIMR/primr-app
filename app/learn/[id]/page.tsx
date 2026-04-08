@@ -13,7 +13,7 @@ export default async function LearnPage({ params, searchParams }: { params: Prom
   const isEmbed = embed === 'true'
 
   const lesson = await db.query.lessons.findFirst({
-    where: eq(lessons.id, id),
+    where: eq(lessons.slug, id),
   })
 
   if (!lesson) notFound()
@@ -21,7 +21,7 @@ export default async function LearnPage({ params, searchParams }: { params: Prom
   const session = await getSession()
   if (!session?.user?.id || !session.user.email) notFound()
 
-  const hasAccess = await canAccessLesson(id, session.user.id, session.user.email, session.user.internalRole)
+  const hasAccess = await canAccessLesson(lesson.id, session.user.id, session.user.email, session.user.internalRole)
   if (!hasAccess) {
     return (
       <main style={{ padding: '4rem', textAlign: 'center' }}>

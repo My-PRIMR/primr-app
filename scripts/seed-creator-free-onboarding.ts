@@ -2,7 +2,7 @@ import 'dotenv/config'
 import { db } from '../src/db'
 import { lessons, onboardingPlaylists } from '../src/db/schema'
 import { creatorFreeOnboardingLesson } from '../../primr-components/src/lessons/creator-free-onboarding'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 
 async function seed() {
   const manifest = creatorFreeOnboardingLesson
@@ -45,7 +45,11 @@ async function seed() {
     console.log(`Inserted new lesson: ${lessonId}`)
   }
 
-  // Upsert playlist entry — idempotent by segment + lessonId
+  // Replace playlist entry — delete any existing row for this segment+displayOrder first
+  // (onConflictDoNothing would silently skip if a stale row existed with a different lessonId)
+  await db
+    .delete(onboardingPlaylists)
+    .where(and(eq(onboardingPlaylists.segment, 'creator_free'), eq(onboardingPlaylists.displayOrder, 1)))
   await db
     .insert(onboardingPlaylists)
     .values({
@@ -53,7 +57,6 @@ async function seed() {
       lessonId: lessonId,
       displayOrder: 1,
     })
-    .onConflictDoNothing()
 
   console.log(`Registered in onboarding_playlists for segment: creator_free, displayOrder: 1`)
   console.log('Done.')

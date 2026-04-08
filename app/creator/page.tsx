@@ -14,6 +14,7 @@ import { getSession } from '@/session'
 import { fillDailyActivity } from '@/lib/results'
 import { listTeacherRoster } from '@/lib/teacher-roster'
 import type { ResultsData, CourseResultRow, CourseLearnerRow } from './ResultsTab'
+import type { OnboardingLesson } from './OnboardingStrip'
 import { redirect } from 'next/navigation'
 import styles from './page.module.css'
 
@@ -439,14 +440,7 @@ export default async function DashboardPage() {
 
   const onboardingDismissedAt = userRow?.onboardingDismissedAt ?? null
   const segment = resolveSegment(role, plan)
-  type OnboardingLessonItem = {
-    id: string
-    title: string
-    slug: string
-    displayOrder: number
-    status: 'completed' | 'in_progress' | 'not_started'
-  }
-  let onboardingLessons: OnboardingLessonItem[] = []
+  let onboardingLessons: OnboardingLesson[] = []
 
   if (segment && !onboardingDismissedAt) {
     const playlistRows = await db
@@ -500,10 +494,10 @@ export default async function DashboardPage() {
             title: lesson.title,
             slug: lesson.slug,
             displayOrder: r.displayOrder,
-            status: (attemptStatusMap.get(lesson.id) ?? 'not_started') as OnboardingLessonItem['status'],
+            status: (attemptStatusMap.get(lesson.id) ?? 'not_started') as OnboardingLesson['status'],
           }
         })
-        .filter((x): x is OnboardingLessonItem => x !== null)
+        .filter((x): x is OnboardingLesson => x !== null)
     }
   }
 

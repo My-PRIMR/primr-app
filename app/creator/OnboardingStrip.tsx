@@ -32,11 +32,14 @@ export default function OnboardingStrip({ lessons }: Props) {
 
   const completedCount = lessons.filter(l => l.status === 'completed').length
 
-  async function handleDismiss() {
-    await fetch('/api/user/onboarding-dismiss', { method: 'PATCH' })
+  function handleDismiss() {
+    // Optimistic update — hide strip immediately, then sync with server
     setDismissed(true)
     setShowToast(true)
     setTimeout(() => setShowToast(false), 5000)
+    fetch('/api/user/onboarding-dismiss', { method: 'PATCH' })
+      .then(res => { if (!res.ok) console.error('[onboarding-dismiss] unexpected status', res.status) })
+      .catch(err => console.error('[onboarding-dismiss]', err))
   }
 
   function statusLabel(status: OnboardingLesson['status']) {

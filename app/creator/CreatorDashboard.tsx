@@ -217,7 +217,7 @@ export default function CreatorDashboard({
       {/* ── Toolbar ── */}
       {tab !== 'results' && tab !== 'learning' && tab !== 'students' && <div className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
-          {tab === 'lessons' && (
+          {tab === 'lessons' && plan !== 'free' && (
             <label className={styles.filterCheckbox}>
               <input
                 type="checkbox"
@@ -354,7 +354,7 @@ export default function CreatorDashboard({
           <p className={styles.empty}>
             {lessons.length === 0
               ? <><Link href="/creator/new" className={styles.link}>Create your first lesson →</Link></>
-              : 'No standalone lessons. Uncheck "Standalone only" to see all lessons.'}
+              : plan === 'free' ? 'No lessons yet.' : 'No standalone lessons. Uncheck "Standalone only" to see all lessons.'}
           </p>
         ) : view === 'card' ? (
           <div className={styles.cardGrid}>

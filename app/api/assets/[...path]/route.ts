@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { readFile } from 'fs/promises'
 import { join, resolve, normalize } from 'path'
 import { getSession } from '@/session'
+import { canAccessLesson } from '@/lib/lesson-access'
 
 const ALLOWED_EXTENSIONS = ['.png', '.jpg', '.gif']
 
@@ -29,12 +30,21 @@ export async function GET(
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  // Auth: the requesting user must own this asset
+  // Auth: the requesting user must own this asset, be internal staff,
+  // or (for 3-part paths) be able to access the lesson the asset belongs to
   const session = await getSession()
   const sessionUserId = session?.user?.id ?? null
   const internalRole = session?.user?.internalRole ?? null
   if (sessionUserId !== userId && internalRole == null) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (path.length === 3 && sessionUserId && session?.user?.email) {
+      const lessonId = path[1]
+      const hasAccess = await canAccessLesson(lessonId, sessionUserId, session.user.email, internalRole)
+      if (!hasAccess) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    } else {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
   }
 
   // Resolve file path and guard against path traversal

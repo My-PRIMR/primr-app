@@ -50,6 +50,7 @@
     "eslint-config-next": "16.1.6",
     "jest": "^30.3.0",
     "ts-jest": "^29.4.6",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

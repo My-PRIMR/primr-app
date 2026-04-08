@@ -7,6 +7,7 @@ import { InvitePanel } from './InvitePanel'
 import type { EnrolledCourse, InvitedLesson, HistoryLesson } from './LearnerDashboard'
 import styles from './CreatorDashboard.module.css'
 import ActionsDropdown from './ActionsDropdown'
+import OnboardingStrip, { type OnboardingLesson } from './OnboardingStrip'
 import ResultsTab, { type ResultsData } from './ResultsTab'
 import ResultsTabBoundary from './ResultsTabBoundary'
 import StudentsTable from './students/StudentsTable'
@@ -69,6 +70,7 @@ export default function CreatorDashboard({
   results,
   plan,
   roster,
+  onboardingLessons = [],
 }: {
   courses: CourseItem[]
   lessons: LessonItem[]
@@ -76,6 +78,7 @@ export default function CreatorDashboard({
   results?: ResultsData
   plan?: string
   roster?: TeacherRosterRow[]
+  onboardingLessons?: OnboardingLesson[]
 }) {
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('lessons')
@@ -153,6 +156,10 @@ export default function CreatorDashboard({
 
   return (
     <div>
+      {onboardingLessons.length > 0 && (
+        <OnboardingStrip lessons={onboardingLessons} />
+      )}
+
       {/* ── Tabs ── */}
       <div className={styles.tabs}>
         <button

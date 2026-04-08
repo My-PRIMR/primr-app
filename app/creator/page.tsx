@@ -527,9 +527,7 @@ export default async function DashboardPage() {
             <CreatorDashboard
               plan={plan}
               roster={roster}
-              // @ts-expect-error -- onboarding props added in Task 10
               onboardingLessons={onboardingLessons}
-              onboardingDismissedAt={onboardingDismissedAt ? onboardingDismissedAt.toISOString() : null}
               results={resultsData}
               courses={createdCourses.map(c => ({
                 id: c.id,

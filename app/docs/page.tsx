@@ -19,7 +19,7 @@ export default async function DocsPage() {
       userEmail={session.user.email}
       role={session.user.productRole}
       internalRole={session.user.internalRole}
-      internalUrl={process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004'}
+     
     />
   )
 

@@ -115,7 +115,7 @@ export default async function CourseLearnPage({
 
   return (
     <>
-      <LearnHeader userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} internalRole={session.user.internalRole} internalUrl={process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004'} />
+      <LearnHeader userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} internalRole={session.user.internalRole} />
       <CoursePlayer
         courseId={courseId}
         courseTitle={course.title}

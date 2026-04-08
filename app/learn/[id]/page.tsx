@@ -38,7 +38,7 @@ export default async function LearnPage({ params, searchParams }: { params: Prom
 
   return (
     <>
-      {!isEmbed && <LearnHeader userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} internalRole={session.user.internalRole} internalUrl={process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004'} />}
+      {!isEmbed && <LearnHeader userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} internalRole={session.user.internalRole} />}
       <LessonPlayer lessonId={lesson.id} manifest={lesson.manifest} adminMode={adminMode} examEnforced={lesson.examEnforced} isEmbed={isEmbed} />
     </>
   )

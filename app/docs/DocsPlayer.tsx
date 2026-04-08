@@ -96,15 +96,16 @@ export default function DocsPlayer({ courseTitle, userRole, tree }: Props) {
 
   return (
     <div className={styles.layout}>
+      {/* Top header */}
+      <header className={styles.topHeader}>
+        <a href={exitHref} className={styles.topWordmark}>Primr</a>
+        <a href={exitHref} className={styles.topExitBtn}>← Exit</a>
+      </header>
+
+      <div className={styles.body}>
       {/* Sidebar */}
       <aside className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
-          <div className={styles.sidebarTop}>
-            <span className={styles.wordmark}>Primr</span>
-            <a href={exitHref} className={styles.exitBtn} title="Back to dashboard">
-              ← Exit
-            </a>
-          </div>
           <h2 className={styles.courseTitle}>{courseTitle}</h2>
         </div>
 
@@ -171,6 +172,7 @@ export default function DocsPlayer({ courseTitle, userRole, tree }: Props) {
           </div>
         )}
       </main>
+      </div>
     </div>
   )
 }

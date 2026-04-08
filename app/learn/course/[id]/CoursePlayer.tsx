@@ -208,15 +208,16 @@ export default function CoursePlayer({ courseId, courseTitle, userId, tree, init
 
   return (
     <div className={styles.layout}>
+      {/* Top header */}
+      <header className={styles.topHeader}>
+        <Link href="/creator" className={styles.topWordmark}>Primr</Link>
+        <Link href="/creator" className={styles.topExitBtn}>← Exit</Link>
+      </header>
+
+      <div className={styles.body}>
       {/* Sidebar */}
       <aside className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
-          <div className={styles.sidebarTop}>
-            <span className={styles.wordmark}>Primr</span>
-            <Link href="/creator" className={styles.exitBtn} title="Back to dashboard">
-              ← Exit
-            </Link>
-          </div>
           <h2 className={styles.courseTitle}>{courseTitle}</h2>
           {progressLoaded && (
             <div className={styles.progressBar}>
@@ -321,6 +322,7 @@ export default function CoursePlayer({ courseId, courseTitle, userId, tree, init
           </div>
         )}
       </main>
+      </div>
     </div>
   )
 }

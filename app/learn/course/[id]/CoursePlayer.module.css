@@ -1,7 +1,50 @@
 .layout {
   --green:       #16a34a;
   display: flex;
+  flex-direction: column;
   height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Top header bar ── */
+.topHeader {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 1.5rem;
+  height: 52px;
+  border-bottom: 0.5px solid var(--border);
+  background: var(--surface);
+}
+
+.topWordmark {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--ink);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.topExitBtn {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  padding: 4px 8px;
+  border-radius: 5px;
+  text-decoration: none;
+  transition: background 120ms, color 120ms;
+}
+.topExitBtn:hover {
+  background: var(--border);
+  color: var(--ink-soft);
+}
+
+/* ── Body row (sidebar + main) ── */
+.body {
+  flex: 1;
+  display: flex;
   overflow: hidden;
 }
 
@@ -21,33 +64,6 @@
   border-bottom: 1px solid var(--border);
 }
 
-.sidebarTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-}
-
-.wordmark {
-  font-family: 'DM Serif Display', Georgia, serif;
-  font-size: 18px;
-  font-weight: 400;
-  color: var(--ink);
-}
-
-.exitBtn {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--ink-muted);
-  padding: 4px 8px;
-  border-radius: 5px;
-  transition: background 120ms, color 120ms;
-}
-
-.exitBtn:hover {
-  background: var(--border);
-  color: var(--ink-soft);
-}
 
 .courseTitle {
   font-size: 13.5px;

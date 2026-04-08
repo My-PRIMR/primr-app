@@ -24,6 +24,9 @@ export async function canAccessLesson(lessonId: string, userId: string, userEmai
   // Non-creators can only access published lessons
   if (!lesson.publishedAt) return false
 
+  // Published system lessons are accessible to any authenticated user
+  if (lesson.isSystem) return true
+
   // Check direct invitation by email
   const invitation = await db.query.lessonInvitations.findFirst({
     where: and(

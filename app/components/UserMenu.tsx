@@ -74,19 +74,32 @@ export function UserMenu({ userName, userEmail, role, internalRole, internalUrl 
 
       <div className={styles.divider} />
 
-      {/* Become a creator — learners only */}
-      {role === 'learner' && (
+      {/* Upgrade options — learners and free creators */}
+      {(role === 'learner' || role === 'creator') && (
         <>
-          <button
+          {role === 'learner' && (
+            <button
+              className={styles.upgradeItem}
+              onClick={() => { setOpen(false); setShowUpgrade(true) }}
+            >
+              <span className={styles.upgradeIcon}>✦</span>
+              <span>
+                <span className={styles.upgradeTitle}>Become a Creator</span>
+                <span className={styles.upgradeSub}>It&apos;s free!</span>
+              </span>
+            </button>
+          )}
+          <a
+            href="/apply-teacher"
             className={styles.upgradeItem}
-            onClick={() => { setOpen(false); setShowUpgrade(true) }}
+            onClick={() => setOpen(false)}
           >
-            <span className={styles.upgradeIcon}>✦</span>
+            <span className={styles.upgradeIcon}>🎓</span>
             <span>
-              <span className={styles.upgradeTitle}>Become a Creator</span>
-              <span className={styles.upgradeSub}>It&apos;s free!</span>
+              <span className={styles.upgradeTitle}>Apply for Teacher</span>
+              <span className={styles.upgradeSub}>Free for K-12 educators</span>
             </span>
-          </button>
+          </a>
           <div className={styles.divider} />
         </>
       )}

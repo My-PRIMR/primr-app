@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import styles from './UserMenu.module.css'
 import { UpgradeModal } from './UpgradeModal'
+import { TeacherModal } from './TeacherModal'
 import { useTheme } from './useTheme'
 import type { Theme } from './useTheme'
 
@@ -28,6 +29,7 @@ function roleLabel(role: string) {
 export function UserMenu({ userName, userEmail, role, internalRole, internalUrl }: UserMenuProps) {
   const [open, setOpen] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const [showTeacher, setShowTeacher] = useState(false)
   const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 })
   const { theme, setTheme } = useTheme()
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -89,17 +91,16 @@ export function UserMenu({ userName, userEmail, role, internalRole, internalUrl 
               </span>
             </button>
           )}
-          <a
-            href="/apply-teacher"
+          <button
             className={styles.upgradeItem}
-            onClick={() => setOpen(false)}
+            onClick={() => { setOpen(false); setShowTeacher(true) }}
           >
             <span className={styles.upgradeIcon}>🎓</span>
             <span>
               <span className={styles.upgradeTitle}>Apply for Teacher</span>
               <span className={styles.upgradeSub}>Free for K-12 educators</span>
             </span>
-          </a>
+          </button>
           <div className={styles.divider} />
         </>
       )}
@@ -147,6 +148,7 @@ export function UserMenu({ userName, userEmail, role, internalRole, internalUrl 
   return (
     <>
       {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} />}
+      {showTeacher && <TeacherModal onClose={() => setShowTeacher(false)} />}
       <div className={styles.wrapper} ref={wrapperRef}>
         <button
           ref={btnRef}

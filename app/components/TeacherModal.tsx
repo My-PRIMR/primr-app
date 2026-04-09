@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import styles from './UpgradeModal.module.css'
 
 interface TeacherModalProps {
@@ -40,9 +41,9 @@ export function TeacherModal({ onClose }: TeacherModalProps) {
     setSubmitted(true)
   }
 
-  return (
+  return createPortal(
     <div className={styles.backdrop} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className={styles.card} role="dialog" aria-modal="true" style={{ maxWidth: 520, overflowY: 'auto', maxHeight: 'calc(100vh - 4rem)' }}>
+      <div className={styles.card} role="dialog" aria-modal="true" style={{ maxWidth: 520, overflowY: 'auto', maxHeight: '90vh' }}>
         <button className={styles.closeBtn} onClick={onClose} aria-label="Close">✕</button>
 
         <div className={styles.badge}>Free for educators</div>
@@ -106,6 +107,7 @@ export function TeacherModal({ onClose }: TeacherModalProps) {
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

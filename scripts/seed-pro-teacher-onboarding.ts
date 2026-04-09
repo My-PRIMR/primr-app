@@ -21,7 +21,6 @@ async function upsertLesson(manifest: LessonManifest): Promise<string> {
         title: manifest.title,
         manifest: manifest,
         isSystem: true,
-        publishedAt: new Date(),
         updatedAt: new Date(),
       })
       .where(eq(lessons.slug, manifest.slug))
@@ -63,29 +62,31 @@ async function seed() {
   }
   const freeLessonId = freeLesson[0].id
 
-  // 3. Clear existing playlist rows for creator_pro and teacher segments
-  //    (idempotent — safe to re-run)
-  await db
-    .delete(onboardingPlaylists)
-    .where(
-      inArray(onboardingPlaylists.segment, ['creator_pro', 'teacher'])
-    )
-  console.log('Cleared existing creator_pro and teacher playlist rows')
+  // 3–5. Atomically rebuild playlist rows for creator_pro and teacher segments
+  await db.transaction(async (tx) => {
+    // 3. Clear existing playlist rows (idempotent — safe to re-run)
+    await tx
+      .delete(onboardingPlaylists)
+      .where(
+        inArray(onboardingPlaylists.segment, ['creator_pro', 'teacher'])
+      )
+    console.log('Cleared existing creator_pro and teacher playlist rows')
 
-  // 4. Insert creator_pro playlist: positions 1–2
-  await db.insert(onboardingPlaylists).values([
-    { segment: 'creator_pro', lessonId: freeLessonId,       displayOrder: 1 },
-    { segment: 'creator_pro', lessonId: courseOnboardingId, displayOrder: 2 },
-  ])
-  console.log('Inserted creator_pro playlist (2 lessons)')
+    // 4. Insert creator_pro playlist: positions 1–2
+    await tx.insert(onboardingPlaylists).values([
+      { segment: 'creator_pro', lessonId: freeLessonId,       displayOrder: 1 },
+      { segment: 'creator_pro', lessonId: courseOnboardingId, displayOrder: 2 },
+    ])
+    console.log('Inserted creator_pro playlist (2 lessons)')
 
-  // 5. Insert teacher playlist: positions 1–3
-  await db.insert(onboardingPlaylists).values([
-    { segment: 'teacher', lessonId: freeLessonId,       displayOrder: 1 },
-    { segment: 'teacher', lessonId: courseOnboardingId, displayOrder: 2 },
-    { segment: 'teacher', lessonId: classOnboardingId,  displayOrder: 3 },
-  ])
-  console.log('Inserted teacher playlist (3 lessons)')
+    // 5. Insert teacher playlist: positions 1–3
+    await tx.insert(onboardingPlaylists).values([
+      { segment: 'teacher', lessonId: freeLessonId,       displayOrder: 1 },
+      { segment: 'teacher', lessonId: courseOnboardingId, displayOrder: 2 },
+      { segment: 'teacher', lessonId: classOnboardingId,  displayOrder: 3 },
+    ])
+    console.log('Inserted teacher playlist (3 lessons)')
+  })
 
   console.log('Done.')
   process.exit(0)

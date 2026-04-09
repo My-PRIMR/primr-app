@@ -50,7 +50,7 @@ export default async function DashboardPage() {
         .leftJoin(courseSections, eq(courseSections.courseId, courses.id))
         .leftJoin(courseChapters, eq(courseChapters.sectionId, courseSections.id))
         .leftJoin(chapterLessons, eq(chapterLessons.chapterId, courseChapters.id))
-        .where(eq(courses.createdBy, userId))
+        .where(and(eq(courses.createdBy, userId), eq(courses.isSystem, false)))
         .groupBy(courses.id)
         .orderBy(desc(courses.createdAt))
     : []
@@ -68,7 +68,7 @@ export default async function DashboardPage() {
         showcase: lessons.showcase,
       })
         .from(lessons)
-        .where(eq(lessons.createdBy, userId))
+        .where(and(eq(lessons.createdBy, userId), eq(lessons.isSystem, false)))
         .orderBy(desc(lessons.updatedAt))
     : []
 

@@ -36,7 +36,7 @@ export async function GET() {
     .leftJoin(courseSections, eq(courseSections.courseId, courses.id))
     .leftJoin(courseChapters, eq(courseChapters.sectionId, courseSections.id))
     .leftJoin(chapterLessons, eq(chapterLessons.chapterId, courseChapters.id))
-    .where(eq(courses.createdBy, session.user.id))
+    .where(and(eq(courses.createdBy, session.user.id), eq(courses.isSystem, false)))
     .groupBy(courses.id)
     .orderBy(desc(courses.updatedAt))
 

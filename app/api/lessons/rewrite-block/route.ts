@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
+import { generateObject } from 'ai'
+import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
+import { blockConfigSchema } from '@/lib/ai/schemas'
 import { getSession } from '@/session'
 import { canAiEdit, DEFAULT_MODEL } from '@/lib/models'
 import { BLOCK_SCHEMA_MAP, ALL_BLOCK_TYPES } from '@/lib/block-schemas'
-import { extractJSON } from '@/lib/extract-json'
 import type { BlockConfig } from '@/types/outline'
-
-const client = new Anthropic()
 
 export async function POST(req: NextRequest) {
   const session = await getSession()
@@ -48,15 +47,13 @@ export async function POST(req: NextRequest) {
   ].join('')
 
   try {
-    const message = await client.messages.create({
-      model: DEFAULT_MODEL,
-      max_tokens: 4096,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userMessage }],
+    const { object: parsed } = await generateObject({
+      model: resolveModelRef(DEFAULT_MODEL),
+      schema: blockConfigSchema,
+      maxTokens: 4096,
+      system: buildSystemPrompt(systemPrompt, DEFAULT_MODEL),
+      prompt: userMessage,
     })
-
-    const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-    const parsed = JSON.parse(extractJSON(raw))
 
     return NextResponse.json({ block: parsed })
   } catch (err) {

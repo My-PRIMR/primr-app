@@ -1,7 +1,11 @@
 export const MODELS = {
-  haiku:  { id: 'claude-haiku-4-5-20251001', costCategory: 'LOW',    label: 'Haiku',  minRole: 'staff' as const },
-  sonnet: { id: 'claude-sonnet-4-6',          costCategory: 'MEDIUM', label: 'Sonnet', minRole: 'staff' as const },
-  opus:   { id: 'claude-opus-4-6',            costCategory: 'HIGH',   label: 'Opus',   minRole: 'admin' as const },
+  // Anthropic
+  haiku:  { id: 'claude-haiku-4-5-20251001', provider: 'anthropic' as const, costCategory: 'LOW',    label: 'Haiku',  minRole: 'staff' as const },
+  sonnet: { id: 'claude-sonnet-4-6',         provider: 'anthropic' as const, costCategory: 'MEDIUM', label: 'Sonnet', minRole: 'staff' as const },
+  opus:   { id: 'claude-opus-4-6',           provider: 'anthropic' as const, costCategory: 'HIGH',   label: 'Opus',   minRole: 'admin' as const },
+  // Google
+  flash:  { id: 'gemini-2.5-flash',          provider: 'google' as const,    costCategory: 'LOW',    label: 'Flash',  minRole: 'staff' as const },
+  pro:    { id: 'gemini-2.5-pro',            provider: 'google' as const,    costCategory: 'MEDIUM', label: 'Pro',    minRole: 'staff' as const },
 } as const
 
 export type ModelKey = keyof typeof MODELS
@@ -13,7 +17,7 @@ export const DAILY_CAPS: Record<CostCategory, number | null> = {
   HIGH:   2,     // Opus: 2 per day (admin only)
 }
 
-export const DEFAULT_MODEL = MODELS.haiku.id
+export const DEFAULT_MODEL = process.env.AI_DEFAULT_MODEL ?? MODELS.haiku.id
 
 function hasStaffModelAccess(internalRole: string | null | undefined, productRole: string | null | undefined) {
   return internalRole === 'staff' || internalRole === 'admin' || productRole === 'org_admin'

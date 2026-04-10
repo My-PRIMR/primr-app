@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
+import { generateObject } from 'ai'
+import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
+import { blockConfigSchema } from '@/lib/ai/schemas'
+import { DEFAULT_MODEL } from '@/lib/models'
 import { BLOCK_SCHEMA_MAP } from '@/lib/block-schemas'
-
-const client = new Anthropic()
 
 export async function POST(req: NextRequest) {
   const { block, instructions, lessonTitle, adjacentBlocks } = await req.json()
@@ -31,27 +32,20 @@ Rules:
 
   console.log(`[edit-block] block: ${block.id} (${block.type}), instructions: "${instructions.slice(0, 100)}"`)
   const t0 = Date.now()
-
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 2048,
-    system: systemPrompt,
-    messages: [{
-      role: 'user',
-      content: `Current block:\n${JSON.stringify(block, null, 2)}\n${context}\n\nEdit instructions: ${instructions}`,
-    }],
-  })
-
-  console.log(`[edit-block] responded in ${Date.now() - t0}ms, usage: ${JSON.stringify(message.usage)}`)
-
-  const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
+  const modelId = DEFAULT_MODEL
 
   try {
-    const updatedBlock = JSON.parse(cleaned)
+    const { object: updatedBlock } = await generateObject({
+      model: resolveModelRef(modelId),
+      schema: blockConfigSchema,
+      maxTokens: 2048,
+      system: buildSystemPrompt(systemPrompt, modelId),
+      prompt: `Current block:\n${JSON.stringify(block, null, 2)}\n${context}\n\nEdit instructions: ${instructions}`,
+    })
+    console.log(`[edit-block] responded in ${Date.now() - t0}ms`)
     return NextResponse.json({ block: updatedBlock })
-  } catch {
-    console.error(`[edit-block] JSON parse failed. Raw:\n${raw}`)
-    return NextResponse.json({ error: 'AI returned invalid JSON', raw }, { status: 500 })
+  } catch (err) {
+    console.error(`[edit-block] AI generation failed:`, err)
+    return NextResponse.json({ error: 'AI edit failed. Please try again.' }, { status: 500 })
   }
 }

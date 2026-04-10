@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateObject } from 'ai'
+import { generateText } from 'ai'
 import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
-import { lessonManifestSchema } from '@/lib/ai/schemas'
+import { extractJSON } from '@/lib/extract-json'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { getSession } from '@/session'
@@ -142,20 +142,22 @@ export async function POST(req: NextRequest) {
       documentAssets?.length ? buildAssetPromptSection(documentAssets) : '',
     ].join('')
 
+    const { text: raw } = await generateText({
+      model: resolveModelRef(resolvedModel.id),
+      maxOutputTokens: 16384,
+      system: buildSystemPrompt(systemPrompt, resolvedModel.id),
+      prompt: userMessage + '\n\nRespond with JSON only.',
+    })
+
+    console.log(`[generate] responded in ${Date.now() - t0}ms`)
+
     try {
-      const result = await generateObject({
-        model: resolveModelRef(resolvedModel.id),
-        schema: lessonManifestSchema,
-        maxOutputTokens: 16384,
-        system: buildSystemPrompt(systemPrompt, resolvedModel.id),
-        prompt: userMessage + '\n\nRespond with JSON only.',
-      })
-      manifest = result.object as LessonManifest
-      console.log(`[generate] responded in ${Date.now() - t0}ms`)
+      manifest = JSON.parse(extractJSON(raw))
       console.log(`[generate] parsed manifest: id=${manifest.id}, blocks=${manifest.blocks.length}`)
     } catch (err) {
-      console.error(`[generate] AI generation failed:`, err)
-      return NextResponse.json({ error: 'AI generation failed. Please try again.' }, { status: 500 })
+      console.error(`[generate] JSON parse failed:`, err)
+      console.error(`[generate] full raw response:\n${raw}`)
+      return NextResponse.json({ error: 'AI returned invalid JSON', raw }, { status: 500 })
     }
 
     if (includeImages && canUsePexels(plan, internalRole)) {

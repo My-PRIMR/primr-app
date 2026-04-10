@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateObject } from 'ai'
+import { generateText } from 'ai'
 import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
-import { blockConfigSchema } from '@/lib/ai/schemas'
+import { extractJSON } from '@/lib/extract-json'
 import { DEFAULT_MODEL } from '@/lib/models'
 import { BLOCK_SCHEMA_MAP } from '@/lib/block-schemas'
 
@@ -35,17 +35,17 @@ Rules:
   const modelId = DEFAULT_MODEL
 
   try {
-    const { object: updatedBlock } = await generateObject({
+    const { text: raw } = await generateText({
       model: resolveModelRef(modelId),
-      schema: blockConfigSchema,
       maxOutputTokens: 2048,
       system: buildSystemPrompt(systemPrompt, modelId),
       prompt: `Current block:\n${JSON.stringify(block, null, 2)}\n${context}\n\nEdit instructions: ${instructions}`,
     })
     console.log(`[edit-block] responded in ${Date.now() - t0}ms`)
+    const updatedBlock = JSON.parse(extractJSON(raw))
     return NextResponse.json({ block: updatedBlock })
   } catch (err) {
-    console.error(`[edit-block] AI generation failed:`, err)
+    console.error(`[edit-block] AI edit failed:`, err)
     return NextResponse.json({ error: 'AI edit failed. Please try again.' }, { status: 500 })
   }
 }

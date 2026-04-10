@@ -2,9 +2,9 @@
  * Background course generation logic.
  * Runs sequentially through all chapter_lessons, generating outline + lesson for each.
  */
-import { generateObject, APICallError } from 'ai'
+import { generateText, APICallError } from 'ai'
 import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
-import { lessonOutlineSchema } from '@/lib/ai/schemas'
+import { extractJSON } from './extract-json'
 import { db } from '@/db'
 import { courses, chapterLessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
@@ -107,15 +107,14 @@ async function generateOutline(params: {
     : `Title: ${params.title}\nTopic: ${params.title}\nAudience: ${params.audience}\nLevel: ${params.level}\n${focusLine}${videoLine}\nRespond with JSON only.`
 
   const modelId = params.model ?? DEFAULT_MODEL
-  const { object } = await generateObject({
+  const { text: raw } = await generateText({
     model: resolveModelRef(modelId),
-    schema: lessonOutlineSchema,
     maxOutputTokens: 2048,
     system: buildSystemPrompt(OUTLINE_SYSTEM_PROMPT + heroOverride + passiveOverride, modelId),
     prompt: userContent,
     abortSignal: params.signal,
   })
-  return object as LessonOutline
+  return JSON.parse(extractJSON(raw)) as LessonOutline
 }
 
 // ── Lesson generation ─────────────────────────────────────────────────────────

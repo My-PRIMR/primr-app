@@ -5,9 +5,9 @@
  * both the standalone lesson wizard (app/api/lessons/generate/route.ts) and
  * course generation (src/lib/course-gen.ts).
  */
-import { generateObject } from 'ai'
+import { generateText } from 'ai'
 import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
-import { lessonManifestSchema } from '@/lib/ai/schemas'
+import { extractJSON } from '@/lib/extract-json'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { DEFAULT_MODEL } from '@/lib/models'
@@ -117,14 +117,21 @@ export async function generateLessonFromOutline(params: {
 
   // Call Claude
   const modelId = params.model ?? DEFAULT_MODEL
-  const { object: manifest } = await generateObject({
+  const { text: raw } = await generateText({
     model: resolveModelRef(modelId),
-    schema: lessonManifestSchema,
     maxOutputTokens: 16384,
     system: buildSystemPrompt(systemPrompt, modelId),
     prompt: userMessage,
     abortSignal: params.signal,
-  }) as { object: LessonManifest }
+  })
+  let manifest: LessonManifest
+  try {
+    manifest = JSON.parse(extractJSON(raw))
+  } catch (err) {
+    console.error('[lesson-gen] JSON parse failed:', err)
+    console.error('[lesson-gen] full raw response:\n' + raw)
+    throw err
+  }
 
   if (params.includeImages) {
     await enrichWithPexelsImages(manifest, process.env.PEXELS_API_KEY ?? '')

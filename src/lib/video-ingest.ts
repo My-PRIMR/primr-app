@@ -4,9 +4,8 @@
  * chapter-structured Primr lesson with one media clip per chapter and
  * quizzes consolidated at the end.
  */
-import { generateText, generateObject } from 'ai'
+import { generateText } from 'ai'
 import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
-import { lessonManifestSchema } from '@/lib/ai/schemas'
 import { extractJSON } from './extract-json'
 import { AssemblyAI } from 'assemblyai'
 import { execFile } from 'node:child_process'
@@ -732,13 +731,13 @@ export async function runVideoIngestion(params: {
     ].join('\n\n')
 
     const lessonSystemPrompt = isLocalFile ? UPLOAD_LESSON_SYSTEM_PROMPT : LESSON_SYSTEM_PROMPT
-    const { object: manifest } = await generateObject({
+    const { text: lessonRaw } = await generateText({
       model: resolveModelRef(model),
-      schema: lessonManifestSchema,
       maxOutputTokens: 16384,
       system: buildSystemPrompt(lessonSystemPrompt, model),
       prompt: lessonUserContent + '\n\nRespond with JSON only.',
-    }) as { object: LessonManifest }
+    })
+    const manifest: LessonManifest = JSON.parse(extractJSON(lessonRaw))
 
     const slug = `${slugify(manifest.slug || manifest.title)}-${Math.random().toString(36).slice(2, 7)}`
     manifest.slug = slug

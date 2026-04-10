@@ -12,9 +12,9 @@
  *   with an optional docMarker so document text is included as supplementary.
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { generateObject } from 'ai'
+import { generateText } from 'ai'
 import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
-import { courseTreeSchema } from '@/lib/ai/schemas'
+import { extractJSON } from '@/lib/extract-json'
 import { getSession } from '@/session'
 import { resolveModel, DEFAULT_MODEL, modelById } from '@/lib/models'
 import type { ParsedCourseTree, CourseTree } from '@/types/course'
@@ -247,19 +247,19 @@ export async function POST(req: NextRequest) {
         }>
       }>
     }
+    const { text: raw } = await generateText({
+      model: resolveModelRef(resolvedModel.id),
+      maxOutputTokens: 32000,
+      system: buildSystemPrompt(systemPrompt, resolvedModel.id),
+      prompt: userParts.filter(Boolean).join('\n\n'),
+    })
+    console.log(`[courses/parse] AI responded in ${Date.now() - t0}ms`)
+
     try {
-      const result = await generateObject({
-        model: resolveModelRef(resolvedModel.id),
-        schema: courseTreeSchema,
-        maxOutputTokens: 32000,
-        system: buildSystemPrompt(systemPrompt, resolvedModel.id),
-        prompt: userParts.filter(Boolean).join('\n\n'),
-      })
-      parsed = result.object as typeof parsed
-      console.log(`[courses/parse] AI responded in ${Date.now() - t0}ms`)
-    } catch (err) {
-      console.error('[courses/parse] AI generation failed:', err)
-      return NextResponse.json({ error: 'AI generation failed. Please try again.' }, { status: 500 })
+      parsed = JSON.parse(extractJSON(raw))
+    } catch {
+      console.error('[courses/parse] JSON parse failed. Raw:', raw)
+      return NextResponse.json({ error: 'AI returned invalid JSON', raw }, { status: 500 })
     }
 
     // ── Build all heading markers list (for sliceTextByMarker next-marker lookup) ──

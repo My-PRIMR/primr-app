@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateObject } from 'ai'
+import { generateText } from 'ai'
 import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
-import { blockConfigSchema } from '@/lib/ai/schemas'
+import { extractJSON } from '@/lib/extract-json'
 import { getSession } from '@/session'
 import { canAiEdit, DEFAULT_MODEL } from '@/lib/models'
 import { BLOCK_SCHEMA_MAP, ALL_BLOCK_TYPES } from '@/lib/block-schemas'
@@ -47,13 +47,13 @@ export async function POST(req: NextRequest) {
   ].join('')
 
   try {
-    const { object: parsed } = await generateObject({
+    const { text: raw } = await generateText({
       model: resolveModelRef(DEFAULT_MODEL),
-      schema: blockConfigSchema,
       maxOutputTokens: 4096,
       system: buildSystemPrompt(systemPrompt, DEFAULT_MODEL),
       prompt: userMessage,
     })
+    const parsed = JSON.parse(extractJSON(raw))
 
     return NextResponse.json({ block: parsed })
   } catch (err) {

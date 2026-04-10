@@ -4,7 +4,9 @@
  * chapter-structured Primr lesson with one media clip per chapter and
  * quizzes consolidated at the end.
  */
-import Anthropic from '@anthropic-ai/sdk'
+import { generateText, generateObject } from 'ai'
+import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
+import { lessonManifestSchema } from '@/lib/ai/schemas'
 import { extractJSON } from './extract-json'
 import { AssemblyAI } from 'assemblyai'
 import { execFile } from 'node:child_process'
@@ -17,7 +19,6 @@ import { lessons } from '@/db/schema'
 import { BLOCK_SCHEMAS, INFORMATIONAL_TYPES, INTERACTIVE_TYPES } from '@/lib/block-schemas'
 import type { LessonManifest } from '@primr/components'
 
-const anthropic = new Anthropic()
 const assemblyai = new AssemblyAI({ apiKey: process.env.ASSEMBLYAI_API_KEY! })
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -695,13 +696,12 @@ export async function runVideoIngestion(params: {
 
     const outlineSystemPrompt = isLocalFile ? makeUploadOutlineSystemPrompt(passiveLesson) : makeOutlineSystemPrompt(passiveLesson)
     const sourceLine = isLocalFile ? `Uploaded file: ${sourceLabel ?? 'upload'}` : `Video URL: ${videoUrl}`
-    const outlineMsg = await anthropic.messages.create({
-      model,
-      max_tokens: 4096,
-      system: outlineSystemPrompt,
-      messages: [{ role: 'user', content: `${sourceLine}\n${outlineUserContent}\n\nRespond with JSON only.` }],
+    const { text: outlineRaw } = await generateText({
+      model: resolveModelRef(model),
+      maxTokens: 4096,
+      system: buildSystemPrompt(outlineSystemPrompt, model),
+      prompt: `${sourceLine}\n${outlineUserContent}\n\nRespond with JSON only.`,
     })
-    const outlineRaw = outlineMsg.content[0].type === 'text' ? outlineMsg.content[0].text : ''
     const outline = JSON.parse(extractJSON(outlineRaw))
     console.log(`[video-ingest] Outline: ${outline.blocks.length} blocks`)
 
@@ -732,14 +732,13 @@ export async function runVideoIngestion(params: {
     ].join('\n\n')
 
     const lessonSystemPrompt = isLocalFile ? UPLOAD_LESSON_SYSTEM_PROMPT : LESSON_SYSTEM_PROMPT
-    const lessonMsg = await anthropic.messages.create({
-      model,
-      max_tokens: 16384,
-      system: lessonSystemPrompt,
-      messages: [{ role: 'user', content: lessonUserContent + '\n\nRespond with JSON only.' }],
-    })
-    const lessonRaw = lessonMsg.content[0].type === 'text' ? lessonMsg.content[0].text : ''
-    const manifest: LessonManifest = JSON.parse(extractJSON(lessonRaw))
+    const { object: manifest } = await generateObject({
+      model: resolveModelRef(model),
+      schema: lessonManifestSchema,
+      maxTokens: 16384,
+      system: buildSystemPrompt(lessonSystemPrompt, model),
+      prompt: lessonUserContent + '\n\nRespond with JSON only.',
+    }) as { object: LessonManifest }
 
     const slug = `${slugify(manifest.slug || manifest.title)}-${Math.random().toString(36).slice(2, 7)}`
     manifest.slug = slug

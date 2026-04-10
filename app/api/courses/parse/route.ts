@@ -16,7 +16,7 @@ import { generateText } from 'ai'
 import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
 import { extractJSON } from '@/lib/extract-json'
 import { getSession } from '@/session'
-import { resolveModel, DEFAULT_MODEL, modelById } from '@/lib/models'
+import { resolveModel, DEFAULT_MODEL, MODELS, modelById } from '@/lib/models'
 import type { ParsedCourseTree, CourseTree } from '@/types/course'
 import { fetchYouTubeData } from '@/lib/video-ingest'
 
@@ -247,13 +247,17 @@ export async function POST(req: NextRequest) {
         }>
       }>
     }
+    // Always use Haiku for structural parsing — it reliably follows the
+    // exhaustive lesson count rules. The user-selected model is used for
+    // lesson content generation, not document structure extraction.
+    const parseModelId = MODELS.haiku.id
     const { text: raw } = await generateText({
-      model: resolveModelRef(resolvedModel.id),
+      model: resolveModelRef(parseModelId),
       maxOutputTokens: 32000,
-      system: buildSystemPrompt(systemPrompt, resolvedModel.id, { learnlm: false }),
+      system: buildSystemPrompt(systemPrompt, parseModelId, { learnlm: false }),
       prompt: userParts.filter(Boolean).join('\n\n'),
     })
-    console.log(`[courses/parse] AI responded in ${Date.now() - t0}ms`)
+    console.log(`[courses/parse] AI responded in ${Date.now() - t0}ms (model=${parseModelId})`)
 
     try {
       parsed = JSON.parse(extractJSON(raw))

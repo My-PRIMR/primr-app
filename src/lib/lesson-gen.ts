@@ -5,8 +5,9 @@
  * both the standalone lesson wizard (app/api/lessons/generate/route.ts) and
  * course generation (src/lib/course-gen.ts).
  */
-import Anthropic from '@anthropic-ai/sdk'
-import { extractJSON } from '@/lib/extract-json'
+import { generateObject } from 'ai'
+import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
+import { lessonManifestSchema } from '@/lib/ai/schemas'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { DEFAULT_MODEL } from '@/lib/models'
@@ -14,8 +15,6 @@ import { BLOCK_SCHEMAS, PASSIVE_LESSON_OVERRIDE } from '@/lib/block-schemas'
 import { enrichWithPexelsImages, IMAGE_PROMPT_SNIPPET } from '@/lib/pexels'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline, DocumentAsset } from '@/types/outline'
-
-const client = new Anthropic()
 
 // ── System prompt ─────────────────────────────────────────────────────────────
 
@@ -117,22 +116,15 @@ export async function generateLessonFromOutline(params: {
   ].join('')
 
   // Call Claude
-  const message = await client.messages.create({
-    model: params.model ?? DEFAULT_MODEL,
-    max_tokens: 16384,
-    system: systemPrompt,
-    messages: [{ role: 'user', content: userMessage }],
-  }, { signal: params.signal })
-
-  const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-  let manifest: LessonManifest
-  try {
-    manifest = JSON.parse(extractJSON(raw))
-  } catch (err) {
-    console.error('[lesson-gen] JSON parse failed:', err)
-    console.error('[lesson-gen] full raw response:\n' + raw)
-    throw err
-  }
+  const modelId = params.model ?? DEFAULT_MODEL
+  const { object: manifest } = await generateObject({
+    model: resolveModelRef(modelId),
+    schema: lessonManifestSchema,
+    maxTokens: 16384,
+    system: buildSystemPrompt(systemPrompt, modelId),
+    prompt: userMessage,
+    abortSignal: params.signal,
+  }) as { object: LessonManifest }
 
   if (params.includeImages) {
     await enrichWithPexelsImages(manifest, process.env.PEXELS_API_KEY ?? '')

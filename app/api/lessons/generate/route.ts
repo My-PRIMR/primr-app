@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
-import { extractJSON } from '@/lib/extract-json'
+import { generateObject } from 'ai'
+import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
+import { lessonManifestSchema } from '@/lib/ai/schemas'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { getSession } from '@/session'
@@ -12,8 +13,6 @@ import type { LessonManifest } from '@primr/components'
 import type { LessonOutline } from '@/types/outline'
 import type { DocumentAsset } from '@/types/outline'
 import { generateLessonFromOutline, slugify, buildAssetPromptSection } from '@/lib/lesson-gen'
-
-const client = new Anthropic()
 
 /**
  * Returns a target block count range based on source document length.
@@ -143,24 +142,20 @@ export async function POST(req: NextRequest) {
       documentAssets?.length ? buildAssetPromptSection(documentAssets) : '',
     ].join('')
 
-    const message = await client.messages.create({
-      model: resolvedModel.id,
-      max_tokens: 16384,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userMessage + '\n\nRespond with JSON only.' }],
-    })
-
-    console.log(`[generate] responded in ${Date.now() - t0}ms, usage: ${JSON.stringify(message.usage)}`)
-
-    const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-
     try {
-      manifest = JSON.parse(extractJSON(raw))
+      const result = await generateObject({
+        model: resolveModelRef(resolvedModel.id),
+        schema: lessonManifestSchema,
+        maxTokens: 16384,
+        system: buildSystemPrompt(systemPrompt, resolvedModel.id),
+        prompt: userMessage + '\n\nRespond with JSON only.',
+      })
+      manifest = result.object as LessonManifest
+      console.log(`[generate] responded in ${Date.now() - t0}ms`)
       console.log(`[generate] parsed manifest: id=${manifest.id}, blocks=${manifest.blocks.length}`)
     } catch (err) {
-      console.error(`[generate] JSON parse failed:`, err)
-      console.error(`[generate] full raw response:\n${raw}`)
-      return NextResponse.json({ error: 'AI returned invalid JSON', raw }, { status: 500 })
+      console.error(`[generate] AI generation failed:`, err)
+      return NextResponse.json({ error: 'AI generation failed. Please try again.' }, { status: 500 })
     }
 
     if (includeImages && canUsePexels(plan, internalRole)) {

@@ -237,11 +237,17 @@ export default function VideoIngestForm({ internalRole, productRole, selectedMod
               value={selectedModel}
               onChange={e => onModelChange?.(e.target.value)}
             >
-              <option value={MODELS.haiku.id}>Haiku (fast)</option>
-              <option value={MODELS.sonnet.id}>Sonnet (better)</option>
-              {canSelectOpus(internalRole, productRole) && (
-                <option value={MODELS.opus.id}>Opus (best)</option>
-              )}
+              <optgroup label="Anthropic">
+                <option value={MODELS.haiku.id}>Haiku (fast)</option>
+                <option value={MODELS.sonnet.id}>Sonnet (better)</option>
+                {canSelectOpus(internalRole, productRole) && (
+                  <option value={MODELS.opus.id}>Opus (best)</option>
+                )}
+              </optgroup>
+              <optgroup label="Google">
+                <option value={MODELS.flash.id}>Flash (fast)</option>
+                <option value={MODELS.pro.id}>Pro (better)</option>
+              </optgroup>
             </select>
           </label>
         </div>

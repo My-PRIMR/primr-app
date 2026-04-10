@@ -44,9 +44,13 @@ const LEARNLM_PREAMBLE = `Apply these pedagogical principles:
 
 /**
  * Wrap a system prompt with provider-specific enhancements.
- * For Google models, prepends LearnLM pedagogical instructions.
+ * For Google models, prepends LearnLM pedagogical instructions on
+ * content generation operations only. Structural tasks (course parsing,
+ * block editing) must NOT get the preamble — it conflicts with precise
+ * structural instructions like "emit exactly N lessons."
  */
-export function buildSystemPrompt(base: string, modelId: string): string {
-  if (providerForModel(modelId) === 'google') return LEARNLM_PREAMBLE + '\n\n' + base
+export function buildSystemPrompt(base: string, modelId: string, opts?: { learnlm?: boolean }): string {
+  const useLearnlm = opts?.learnlm ?? true
+  if (useLearnlm && providerForModel(modelId) === 'google') return LEARNLM_PREAMBLE + '\n\n' + base
   return base
 }

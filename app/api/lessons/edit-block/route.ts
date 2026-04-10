@@ -38,7 +38,7 @@ Rules:
     const { text: raw } = await generateText({
       model: resolveModelRef(modelId),
       maxOutputTokens: 2048,
-      system: buildSystemPrompt(systemPrompt, modelId),
+      system: buildSystemPrompt(systemPrompt, modelId, { learnlm: false }),
       prompt: `Current block:\n${JSON.stringify(block, null, 2)}\n${context}\n\nEdit instructions: ${instructions}`,
     })
     console.log(`[edit-block] responded in ${Date.now() - t0}ms`)

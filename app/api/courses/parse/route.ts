@@ -250,7 +250,7 @@ export async function POST(req: NextRequest) {
     const { text: raw } = await generateText({
       model: resolveModelRef(resolvedModel.id),
       maxOutputTokens: 32000,
-      system: buildSystemPrompt(systemPrompt, resolvedModel.id),
+      system: buildSystemPrompt(systemPrompt, resolvedModel.id, { learnlm: false }),
       prompt: userParts.filter(Boolean).join('\n\n'),
     })
     console.log(`[courses/parse] AI responded in ${Date.now() - t0}ms`)

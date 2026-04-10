@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     const { text: raw } = await generateText({
       model: resolveModelRef(DEFAULT_MODEL),
       maxOutputTokens: 4096,
-      system: buildSystemPrompt(systemPrompt, DEFAULT_MODEL),
+      system: buildSystemPrompt(systemPrompt, DEFAULT_MODEL, { learnlm: false }),
       prompt: userMessage,
     })
     const parsed = JSON.parse(extractJSON(raw))

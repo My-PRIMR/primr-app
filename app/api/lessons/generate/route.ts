@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
       const result = await generateObject({
         model: resolveModelRef(resolvedModel.id),
         schema: lessonManifestSchema,
-        maxTokens: 16384,
+        maxOutputTokens: 16384,
         system: buildSystemPrompt(systemPrompt, resolvedModel.id),
         prompt: userMessage + '\n\nRespond with JSON only.',
       })

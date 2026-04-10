@@ -38,7 +38,7 @@ Rules:
     const { object: updatedBlock } = await generateObject({
       model: resolveModelRef(modelId),
       schema: blockConfigSchema,
-      maxTokens: 2048,
+      maxOutputTokens: 2048,
       system: buildSystemPrompt(systemPrompt, modelId),
       prompt: `Current block:\n${JSON.stringify(block, null, 2)}\n${context}\n\nEdit instructions: ${instructions}`,
     })

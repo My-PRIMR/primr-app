@@ -251,7 +251,7 @@ export async function POST(req: NextRequest) {
       const result = await generateObject({
         model: resolveModelRef(resolvedModel.id),
         schema: courseTreeSchema,
-        maxTokens: 32000,
+        maxOutputTokens: 32000,
         system: buildSystemPrompt(systemPrompt, resolvedModel.id),
         prompt: userParts.filter(Boolean).join('\n\n'),
       })

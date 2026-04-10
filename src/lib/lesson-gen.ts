@@ -120,7 +120,7 @@ export async function generateLessonFromOutline(params: {
   const { object: manifest } = await generateObject({
     model: resolveModelRef(modelId),
     schema: lessonManifestSchema,
-    maxTokens: 16384,
+    maxOutputTokens: 16384,
     system: buildSystemPrompt(systemPrompt, modelId),
     prompt: userMessage,
     abortSignal: params.signal,

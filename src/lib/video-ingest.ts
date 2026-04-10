@@ -698,7 +698,7 @@ export async function runVideoIngestion(params: {
     const sourceLine = isLocalFile ? `Uploaded file: ${sourceLabel ?? 'upload'}` : `Video URL: ${videoUrl}`
     const { text: outlineRaw } = await generateText({
       model: resolveModelRef(model),
-      maxTokens: 4096,
+      maxOutputTokens: 4096,
       system: buildSystemPrompt(outlineSystemPrompt, model),
       prompt: `${sourceLine}\n${outlineUserContent}\n\nRespond with JSON only.`,
     })
@@ -735,7 +735,7 @@ export async function runVideoIngestion(params: {
     const { object: manifest } = await generateObject({
       model: resolveModelRef(model),
       schema: lessonManifestSchema,
-      maxTokens: 16384,
+      maxOutputTokens: 16384,
       system: buildSystemPrompt(lessonSystemPrompt, model),
       prompt: lessonUserContent + '\n\nRespond with JSON only.',
     }) as { object: LessonManifest }

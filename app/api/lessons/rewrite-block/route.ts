@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     const { object: parsed } = await generateObject({
       model: resolveModelRef(DEFAULT_MODEL),
       schema: blockConfigSchema,
-      maxTokens: 4096,
+      maxOutputTokens: 4096,
       system: buildSystemPrompt(systemPrompt, DEFAULT_MODEL),
       prompt: userMessage,
     })

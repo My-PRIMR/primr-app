@@ -110,7 +110,7 @@ async function generateOutline(params: {
   const { object } = await generateObject({
     model: resolveModelRef(modelId),
     schema: lessonOutlineSchema,
-    maxTokens: 2048,
+    maxOutputTokens: 2048,
     system: buildSystemPrompt(OUTLINE_SYSTEM_PROMPT + heroOverride + passiveOverride, modelId),
     prompt: userContent,
     abortSignal: params.signal,

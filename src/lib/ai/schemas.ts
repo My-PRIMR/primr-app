@@ -8,7 +8,7 @@ import { z } from 'zod'
 export const blockConfigSchema = z.object({
   id: z.string(),
   type: z.string(),
-  props: z.record(z.unknown()),
+  props: z.record(z.string(), z.unknown()),
 })
 
 // ── Lesson manifest ──────────────────────────────────────────────────────────

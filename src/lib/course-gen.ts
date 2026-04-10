@@ -2,8 +2,9 @@
  * Background course generation logic.
  * Runs sequentially through all chapter_lessons, generating outline + lesson for each.
  */
-import Anthropic from '@anthropic-ai/sdk'
-import { extractJSON } from './extract-json'
+import { generateObject, APICallError } from 'ai'
+import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
+import { lessonOutlineSchema } from '@/lib/ai/schemas'
 import { db } from '@/db'
 import { courses, chapterLessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
@@ -13,8 +14,6 @@ import { courseCompleteEmail } from '@/lib/email-templates'
 import { PASSIVE_LESSON_OVERRIDE } from '@/lib/block-schemas'
 import type { LessonOutline } from '@/types/outline'
 import { generateLessonFromOutline } from '@/lib/lesson-gen'
-
-const client = new Anthropic()
 
 // ── Cancellation registry ─────────────────────────────────────────────────────
 
@@ -107,15 +106,16 @@ async function generateOutline(params: {
     ? `Title: ${params.title}\nAudience: ${params.audience}\nLevel: ${params.level}\n${focusLine}${videoLine}\nSource document:\n"""\n${params.documentText}\n"""\n\nRespond with JSON only.`
     : `Title: ${params.title}\nTopic: ${params.title}\nAudience: ${params.audience}\nLevel: ${params.level}\n${focusLine}${videoLine}\nRespond with JSON only.`
 
-  const message = await client.messages.create({
-    model: params.model ?? DEFAULT_MODEL,
-    max_tokens: 2048,
-    system: OUTLINE_SYSTEM_PROMPT + heroOverride + passiveOverride,
-    messages: [{ role: 'user', content: userContent }],
-  }, { signal: params.signal })
-
-  const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-  return JSON.parse(extractJSON(raw)) as LessonOutline
+  const modelId = params.model ?? DEFAULT_MODEL
+  const { object } = await generateObject({
+    model: resolveModelRef(modelId),
+    schema: lessonOutlineSchema,
+    maxTokens: 2048,
+    system: buildSystemPrompt(OUTLINE_SYSTEM_PROMPT + heroOverride + passiveOverride, modelId),
+    prompt: userContent,
+    abortSignal: params.signal,
+  })
+  return object as LessonOutline
 }
 
 // ── Lesson generation ─────────────────────────────────────────────────────────
@@ -157,9 +157,11 @@ const MAX_RETRY_ATTEMPTS = 3
 const INITIAL_BACKOFF_MS = 2000
 
 function isRetryableError(err: unknown): boolean {
-  if (err instanceof Anthropic.RateLimitError) return true
-  if (err instanceof Anthropic.InternalServerError) return true
-  if (err instanceof Anthropic.APIConnectionError) return true
+  if (err instanceof APICallError) {
+    const status = err.statusCode
+    return status === 429 || status === 500 || status === 503
+  }
+  if (err instanceof Error && err.message.includes('fetch failed')) return true
   return false
 }
 

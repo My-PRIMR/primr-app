@@ -251,13 +251,16 @@ export async function POST(req: NextRequest) {
     // exhaustive lesson count rules. The user-selected model is used for
     // lesson content generation, not document structure extraction.
     const parseModelId = MODELS.haiku.id
-    const { text: raw } = await generateText({
+    const { text: raw, finishReason } = await generateText({
       model: resolveModelRef(parseModelId),
-      maxOutputTokens: 32000,
+      maxOutputTokens: 65536,
       system: buildSystemPrompt(systemPrompt, parseModelId, { learnlm: false }),
       prompt: userParts.filter(Boolean).join('\n\n'),
     })
-    console.log(`[courses/parse] AI responded in ${Date.now() - t0}ms (model=${parseModelId})`)
+    console.log(`[courses/parse] AI responded in ${Date.now() - t0}ms (model=${parseModelId}, finishReason=${finishReason})`)
+    if (finishReason === 'length') {
+      console.warn('[courses/parse] WARNING: output was truncated — increase maxOutputTokens or reduce document size')
+    }
 
     try {
       parsed = JSON.parse(extractJSON(raw))

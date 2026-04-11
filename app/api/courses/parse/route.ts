@@ -213,8 +213,14 @@ export async function POST(req: NextRequest) {
 
     const userParts: string[] = []
 
+    // Pre-count ### headings so the model doesn't have to count itself
+    const slicedDocText = docText.slice(0, 200000)
+    const h3Count = structureSource === 'document'
+      ? (slicedDocText.match(/^### /gm) || []).length
+      : 0
+
     if (structureSource === 'document') {
-      userParts.push(`Document:\n"""\n${docText.slice(0, 200000)}\n"""`)
+      userParts.push(`Document:\n"""\n${slicedDocText}\n"""`)
       if (videoData) {
         const chapterList = videoData.chapters.map((ch, i) => `  ${i}: "${ch.title}"`).join('\n')
         userParts.push(`Video chapters (for videoChapterIndex annotation):\n${chapterList}`)
@@ -229,12 +235,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (h3Count > 0) {
+      userParts.push(`HEADING COUNT: This document contains exactly ${h3Count} "### " headings. Your output MUST contain exactly ${h3Count} lessons — one per heading. Do not stop early.`)
+    }
+
     userParts.push(
       `Audience: ${audience}`,
       `Level: ${level}`,
       focus ? `Focus/Scope: ${focus}` : '',
       'Respond with JSON only.',
     )
+
+    console.log(`[courses/parse] h3Count=${h3Count}`)
 
     console.log(`[courses/parse] model=${resolvedModel.id} structureSource=${structureSource} video=${hasVideo} docs=${files.length} rawText=${!!rawText}`)
     const t0 = Date.now()

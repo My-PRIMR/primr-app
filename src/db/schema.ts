@@ -354,6 +354,12 @@ export const planSubscriptions = pgTable(
   (t) => [
     index('plan_subscriptions_subscriber_idx').on(t.subscriberUserId),
     index('plan_subscriptions_organization_idx').on(t.organizationId),
+    index('plan_subscriptions_org_active_idx')
+      .on(t.organizationId)
+      .where(sql`status = 'active'`),
+    // Enforces single-active-sub-per-tier. Under the MVP assumption that a user
+    // belongs to at most one org, this is sufficient. If multi-org membership is
+    // later introduced, this index must be extended to include organizationId.
     uniqueIndex('plan_subscriptions_one_active_per_user_tier')
       .on(t.subscriberUserId, t.tier)
       .where(sql`status = 'active'`),
@@ -372,9 +378,12 @@ export const teamInvitations = pgTable(
       .notNull()
       .references(() => organizations.id, { onDelete: 'cascade' }),
     email: text('email').notNull(),
-    invitedByUserId: uuid('invited_by_user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+    // Intentionally set null, not cascade: if the inviting admin's account is
+    // deleted, we preserve pending invites so the new org owner can still
+    // complete the invite flow.
+    invitedByUserId: uuid('invited_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
     token: text('token').notNull().unique(),
     status: teamInvitationStatusEnum('status').notNull().default('pending'),
     expiresAt: timestamp('expires_at').notNull(),

@@ -1,4 +1,6 @@
 import { POST } from './route'
+import * as stripeModule from '@/stripe'
+import * as dbModule from '@/db'
 
 jest.mock('@/stripe', () => ({
   getStripe: jest.fn(),
@@ -8,10 +10,27 @@ jest.mock('@/stripe', () => ({
 jest.mock('@/db', () => ({
   db: {
     update: jest.fn(() => ({ set: jest.fn(() => ({ where: jest.fn() })) })),
+    insert: jest.fn(() => ({ values: jest.fn() })),
+    query: {
+      creatorProfiles: {
+        findFirst: jest.fn(),
+      },
+    },
   },
 }))
 
-const { getStripe } = require('@/stripe')
+// Cast through `unknown` so tests can return partial mocks without satisfying
+// the full Stripe SDK / Drizzle shapes.
+const getStripe = stripeModule.getStripe as unknown as jest.Mock
+const db = dbModule.db as unknown as {
+  update: jest.Mock
+  insert: jest.Mock
+  query: {
+    creatorProfiles: {
+      findFirst: jest.Mock
+    }
+  }
+}
 
 function makeRequest(rawBody: string, signature = 'sig_test'): Request {
   return new Request('http://localhost/api/webhooks/stripe', {
@@ -61,5 +80,104 @@ describe('POST /api/webhooks/stripe', () => {
     const res = await POST(makeRequest('{}'))
     expect(res.status).toBe(200)
     expect(constructEvent).toHaveBeenCalled()
+  })
+})
+
+describe('POST /api/webhooks/stripe — checkout.session.completed', () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it('inserts a purchase row and increments creator lifetime revenue', async () => {
+    // Mock the creator profile lookup
+    db.query = {
+      ...db.query,
+      creatorProfiles: {
+        findFirst: jest.fn().mockResolvedValue({
+          userId: 'creator',
+          lifetimeRevenueCents: 0,
+          revenueThresholdCents: 100000,
+        }),
+      },
+    }
+
+    const insertValues = jest.fn().mockResolvedValue(undefined)
+    db.insert = jest.fn(() => ({ values: insertValues }))
+    const updateWhere = jest.fn().mockResolvedValue(undefined)
+    db.update = jest.fn(() => ({
+      set: jest.fn(() => ({ where: updateWhere })),
+    }))
+
+    getStripe.mockReturnValue({
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue({
+          type: 'checkout.session.completed',
+          data: {
+            object: {
+              mode: 'payment',
+              payment_intent: 'pi_123',
+              amount_total: 1000,
+              metadata: {
+                primrBuyerId: 'buyer',
+                primrCreatorId: 'creator',
+                primrKind: 'lesson',
+                primrLessonId: 'L1',
+                primrCourseId: '',
+              },
+            },
+          },
+        }),
+      },
+    })
+
+    const res = await POST(makeRequest('{}'))
+    expect(res.status).toBe(200)
+    expect(insertValues).toHaveBeenCalled()
+    expect(updateWhere).toHaveBeenCalled()
+  })
+
+  it('is idempotent — swallows unique violation on duplicate payment_intent', async () => {
+    db.query = {
+      ...db.query,
+      creatorProfiles: {
+        findFirst: jest.fn().mockResolvedValue({
+          userId: 'creator',
+          lifetimeRevenueCents: 0,
+          revenueThresholdCents: 100000,
+        }),
+      },
+    }
+
+    const uniqueError = Object.assign(new Error('duplicate key'), {
+      code: '23505',
+    })
+    const insertValues = jest.fn().mockRejectedValue(uniqueError)
+    db.insert = jest.fn(() => ({ values: insertValues }))
+    db.update = jest.fn(() => ({
+      set: jest.fn(() => ({ where: jest.fn() })),
+    }))
+
+    getStripe.mockReturnValue({
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue({
+          type: 'checkout.session.completed',
+          data: {
+            object: {
+              mode: 'payment',
+              payment_intent: 'pi_123',
+              amount_total: 1000,
+              metadata: {
+                primrBuyerId: 'buyer',
+                primrCreatorId: 'creator',
+                primrKind: 'lesson',
+                primrLessonId: 'L1',
+                primrCourseId: '',
+              },
+            },
+          },
+        }),
+      },
+    })
+
+    const res = await POST(makeRequest('{}'))
+    expect(res.status).toBe(200) // 200, not 500
   })
 })

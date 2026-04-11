@@ -91,6 +91,19 @@ export async function POST(req: Request) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
   const itemId = body.lessonId ?? body.courseId!
 
+  // Metadata is set at BOTH the session level and the payment_intent_data
+  // level. Stripe does NOT copy payment_intent_data.metadata back onto the
+  // session object, so the `checkout.session.completed` webhook only sees
+  // session.metadata. We duplicate the values so the webhook handler can read
+  // them directly off `session.metadata` without expanding the payment_intent.
+  const primrMetadata = {
+    primrBuyerId: session.user.id,
+    primrCreatorId: creatorId,
+    primrKind: kind,
+    primrLessonId: body.lessonId ?? '',
+    primrCourseId: body.courseId ?? '',
+  }
+
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: 'payment',
     payment_method_types: ['card'],
@@ -104,16 +117,11 @@ export async function POST(req: Request) {
         quantity: 1,
       },
     ],
+    metadata: primrMetadata,
     payment_intent_data: {
       application_fee_amount: fee.platformFeeCents,
       transfer_data: { destination: creator.stripeAccountId },
-      metadata: {
-        primrBuyerId: session.user.id,
-        primrCreatorId: creatorId,
-        primrKind: kind,
-        primrLessonId: body.lessonId ?? '',
-        primrCourseId: body.courseId ?? '',
-      },
+      metadata: primrMetadata,
     },
     success_url: `${baseUrl}/learn/${kind === 'course' ? 'course/' : ''}${itemId}?purchase=success`,
     cancel_url: `${baseUrl}/learn/${kind === 'course' ? 'course/' : ''}${itemId}?purchase=cancel`,

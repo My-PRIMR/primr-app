@@ -51,6 +51,22 @@ export const users = pgTable('users', {
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 
+// ── Creator Profiles ──────────────────────────────────────────────────────────
+export const creatorProfiles = pgTable('creator_profiles', {
+  userId:                   uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  stripeAccountId:          text('stripe_account_id'),
+  stripeOnboardingComplete: boolean('stripe_onboarding_complete').notNull().default(false),
+  subscriptionEnabled:      boolean('subscription_enabled').notNull().default(false),
+  subscriptionPriceCents:   integer('subscription_price_cents'),
+  revenueThresholdCents:    integer('revenue_threshold_cents').notNull().default(100000),
+  lifetimeRevenueCents:     integer('lifetime_revenue_cents').notNull().default(0),
+  createdAt:                timestamp('created_at').notNull().defaultNow(),
+  updatedAt:                timestamp('updated_at').notNull().defaultNow(),
+})
+
+export type CreatorProfile = typeof creatorProfiles.$inferSelect
+export type NewCreatorProfile = typeof creatorProfiles.$inferInsert
+
 // ── Lessons ──────────────────────────────────────────────────────────────────
 export const lessonGenerationStatusEnum = pgEnum('lesson_generation_status', ['pending', 'generating', 'done', 'failed', 'retrying'])
 
@@ -72,6 +88,8 @@ export const lessons = pgTable('lessons', {
   showcase:         boolean('showcase').notNull().default(false),
   /** When true, this lesson is system content: immutable, marked "System" in internal UI. Toggleable only by internal admins. */
   isSystem:         boolean('is_system').notNull().default(false),
+  priceCents:       integer('price_cents'),
+  isPaid:           boolean('is_paid').notNull().default(false),
   createdAt:        timestamp('created_at').notNull().defaultNow(),
   updatedAt:        timestamp('updated_at').notNull().defaultNow(),
 })
@@ -155,6 +173,8 @@ export const courses = pgTable('courses', {
   status:      courseStatusEnum('status').notNull().default('draft'),
   /** When true, this course is system content: immutable, marked "System" in internal UI. Toggleable only by internal admins. Cascades to all contained lessons on toggle. */
   isSystem:    boolean('is_system').notNull().default(false),
+  priceCents:  integer('price_cents'),
+  isPaid:      boolean('is_paid').notNull().default(false),
   createdBy:   uuid('created_by').references(() => users.id),
   createdAt:   timestamp('created_at').notNull().defaultNow(),
   updatedAt:   timestamp('updated_at').notNull().defaultNow(),
@@ -401,3 +421,36 @@ export const teamInvitations = pgTable(
 
 export type TeamInvitation = typeof teamInvitations.$inferSelect
 export type NewTeamInvitation = typeof teamInvitations.$inferInsert
+
+// ── Creator Subscriptions ────────────────────────────────────────────────────
+export const subscriptionStatusEnum = pgEnum('subscription_status', ['active', 'canceled', 'past_due'])
+
+export const subscriptions = pgTable('subscriptions', {
+  id:                   uuid('id').primaryKey().defaultRandom(),
+  subscriberId:         uuid('subscriber_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  creatorId:            uuid('creator_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  stripeSubscriptionId: text('stripe_subscription_id').notNull().unique(),
+  status:               subscriptionStatusEnum('status').notNull(),
+  currentPeriodEnd:     timestamp('current_period_end').notNull(),
+  createdAt:            timestamp('created_at').notNull().defaultNow(),
+  updatedAt:            timestamp('updated_at').notNull().defaultNow(),
+})
+
+export type Subscription = typeof subscriptions.$inferSelect
+export type NewSubscription = typeof subscriptions.$inferInsert
+
+// ── Purchases ─────────────────────────────────────────────────────────────────
+export const purchases = pgTable('purchases', {
+  id:                    uuid('id').primaryKey().defaultRandom(),
+  buyerId:               uuid('buyer_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  lessonId:              uuid('lesson_id').references(() => lessons.id, { onDelete: 'cascade' }),
+  courseId:              uuid('course_id').references(() => courses.id, { onDelete: 'cascade' }),
+  stripePaymentIntentId: text('stripe_payment_intent_id').notNull().unique(),
+  amountCents:           integer('amount_cents').notNull(),
+  creatorRevenueCents:   integer('creator_revenue_cents').notNull(),
+  primrFeeCents:         integer('primr_fee_cents').notNull(),
+  createdAt:             timestamp('created_at').notNull().defaultNow(),
+})
+
+export type Purchase = typeof purchases.$inferSelect
+export type NewPurchase = typeof purchases.$inferInsert

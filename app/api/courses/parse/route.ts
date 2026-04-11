@@ -61,7 +61,7 @@ Rules:
 - headingMarker must be an exact substring from the document text.
 - If the document only has 2-3 levels, synthesize the missing levels (set "inferred": true).
 - Each lesson covers a coherent sub-topic.
-- CRITICAL LESSON COUNT RULE: Before writing any JSON, scan the ENTIRE document end-to-end and count every distinct section heading. Each section heading represents exactly one lesson. Your output MUST contain one lesson per heading — do NOT truncate, summarize, consolidate, or omit any. If the document has 150 headings you must emit 150 lessons. Process the document from the FIRST page to the LAST page. If the user message includes a HEADING COUNT, match that count.
+- CRITICAL STRUCTURE RULE: If a Table of Contents is provided, it is the definitive structure. Create one lesson for EVERY lowest-level entry in the TOC — do NOT truncate, summarize, consolidate, or omit any. If the TOC has 150 entries you must emit 150 lessons. If no TOC is provided, scan the entire document end-to-end and create one lesson per distinct section heading. Process from first page to last page.
 - Tailor to the specified audience and level.
 - If a Focus/Scope is provided, only include lessons relevant to that focus.${videoRule}
 - Return ONLY valid JSON. No markdown fences, no explanation. Start with { and end with }.`
@@ -215,23 +215,27 @@ export async function POST(req: NextRequest) {
 
     const slicedDocText = docText.slice(0, 200000)
 
-    // Pre-count document headings to give the model an explicit target.
-    // Try markdown ### headings first, then fall back to numbered section
-    // headings (e.g. "1.1 Topic", "2.3: Topic") common in PDF extracts.
-    let headingCount = 0
+    // ── Extract Table of Contents if present ─────────────────────────────
+    // Look for TOC in the first portion of the document. Common markers:
+    // "Table of Contents", "Contents", "TABLE OF CONTENTS"
+    let tocText = ''
     if (structureSource === 'document') {
-      const h3 = (slicedDocText.match(/^### /gm) || []).length
-      if (h3 > 0) {
-        headingCount = h3
-      } else {
-        // Match lines starting with section numbers like "1.1 ", "2.3: ", "4.7 "
-        const numbered = (slicedDocText.match(/^\d+\.\d+[:\s]/gm) || []).length
-        if (numbered > 5) headingCount = numbered
+      const tocMatch = slicedDocText.match(
+        /(?:^|\n)((?:Table of Contents|Contents|TABLE OF CONTENTS)\s*\n[\s\S]*?)(?:\n\s*\n\s*\n|\n(?:Chapter|CHAPTER|Preface|PREFACE|Introduction|INTRODUCTION)\s)/i
+      )
+      if (tocMatch) {
+        // Cap TOC at 10K chars to avoid sending a huge TOC
+        tocText = tocMatch[1].trim().slice(0, 10000)
       }
     }
 
     if (structureSource === 'document') {
-      userParts.push(`Document:\n"""\n${slicedDocText}\n"""`)
+      if (tocText) {
+        userParts.push(`Table of Contents (use this as the definitive structure — create one lesson per entry):\n"""\n${tocText}\n"""`)
+        userParts.push(`\nFull document text (for headingMarker lookup):\n"""\n${slicedDocText}\n"""`)
+      } else {
+        userParts.push(`Document:\n"""\n${slicedDocText}\n"""`)
+      }
       if (videoData) {
         const chapterList = videoData.chapters.map((ch, i) => `  ${i}: "${ch.title}"`).join('\n')
         userParts.push(`Video chapters (for videoChapterIndex annotation):\n${chapterList}`)
@@ -246,10 +250,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (headingCount > 0) {
-      userParts.push(`HEADING COUNT: This document contains approximately ${headingCount} section headings. Your output should contain roughly ${headingCount} lessons — one per heading. Do NOT summarize or consolidate multiple sections into one lesson. Do NOT stop early — process the ENTIRE document from beginning to end.`)
+    if (tocText) {
+      userParts.push(`STRUCTURE RULE: The Table of Contents above defines the course structure. Create one lesson for each lowest-level entry in the TOC. Do NOT consolidate or skip entries. The TOC is the source of truth for lesson count and titles.`)
     } else {
-      userParts.push(`IMPORTANT: Process the ENTIRE document from beginning to end. Create one lesson per distinct sub-topic. Do NOT summarize or consolidate. Do NOT stop before reaching the end of the document.`)
+      userParts.push(`IMPORTANT: Process the ENTIRE document from beginning to end. Create one lesson per distinct sub-topic or section heading. Do NOT summarize or consolidate. Do NOT stop before reaching the end of the document.`)
     }
 
     userParts.push(
@@ -259,7 +263,7 @@ export async function POST(req: NextRequest) {
       'Respond with JSON only.',
     )
 
-    console.log(`[courses/parse] headingCount=${headingCount}`)
+    console.log(`[courses/parse] tocFound=${!!tocText} tocLength=${tocText.length}`)
 
     console.log(`[courses/parse] model=${resolvedModel.id} structureSource=${structureSource} video=${hasVideo} docs=${files.length} rawText=${!!rawText}`)
     const t0 = Date.now()

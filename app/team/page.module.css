@@ -1,0 +1,244 @@
+.main {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 3rem 2rem 4rem;
+  min-height: 100vh;
+}
+
+/* ── Dark mode token overrides (match billing / upgrade pages) ───────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .main {
+    --ink:         #EDEEF5;
+    --ink-soft:    #B0B3C8;
+    --ink-muted:   #6B6E85;
+    --surface:     #1A1C28;
+    --surface-alt: #141520;
+    --border:      rgba(255,255,255,0.08);
+    --border-mid:  rgba(255,255,255,0.14);
+    --accent-soft: rgba(107,92,231,0.18);
+  }
+}
+
+:root[data-theme="dark"] .main {
+  --ink:         #EDEEF5;
+  --ink-soft:    #B0B3C8;
+  --ink-muted:   #6B6E85;
+  --surface:     #1A1C28;
+  --surface-alt: #141520;
+  --border:      rgba(255,255,255,0.08);
+  --border-mid:  rgba(255,255,255,0.14);
+  --accent-soft: rgba(107,92,231,0.18);
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.header {
+  margin-bottom: 2.5rem;
+}
+
+.title {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 40px;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0 0 0.5rem;
+  line-height: 1.15;
+}
+
+.meta {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--ink-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Section card ────────────────────────────────────────────────────────── */
+.section {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 1.5rem;
+}
+
+.sectionHeading {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0 0 1rem;
+}
+
+/* ── Member list ─────────────────────────────────────────────────────────── */
+.memberList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.memberRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.memberRow:first-child {
+  padding-top: 0;
+}
+
+.memberRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.memberRow strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ── Owner badge ─────────────────────────────────────────────────────────── */
+.ownerBadge {
+  display: inline-block;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 4px 10px;
+  letter-spacing: 0.01em;
+}
+
+/* ── Remove button ───────────────────────────────────────────────────────── */
+.removeBtn {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--coral, #E8453C);
+  background: transparent;
+  border: 1.5px solid var(--coral, #E8453C);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 150ms, color 150ms, opacity 150ms;
+}
+
+.removeBtn:hover:not(:disabled) {
+  background: var(--coral, #E8453C);
+  color: #fff;
+}
+
+.removeBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Invite form ─────────────────────────────────────────────────────────── */
+.inviteForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.inviteInput {
+  flex: 1 1 220px;
+  min-width: 0;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--surface-alt);
+  border: 1px solid var(--border-mid);
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+
+.inviteInput:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.inviteBtn {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 11px 16px;
+  cursor: pointer;
+  transition: opacity 150ms;
+}
+
+.inviteBtn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.inviteBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Pending invites list ────────────────────────────────────────────────── */
+.pendingList {
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+}
+
+.pendingList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+/* ── Muted / helper text ─────────────────────────────────────────────────── */
+.muted {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+/* ── Error message ───────────────────────────────────────────────────────── */
+.error {
+  flex-basis: 100%;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--coral, #E8453C);
+  margin: 4px 0 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .main {
+    padding: 2rem 1rem 3rem;
+  }
+
+  .title {
+    font-size: 30px;
+  }
+
+  .section {
+    padding: 20px;
+  }
+
+  .memberRow {
+    flex-wrap: wrap;
+  }
+}

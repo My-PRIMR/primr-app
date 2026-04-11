@@ -2,12 +2,151 @@
 import 'dotenv/config'
 import { db } from '../src/db'
 import { lessons, onboardingPlaylists } from '../src/db/schema'
-import { buildYourFirstCourseLesson } from '../../primr-components/src/lessons/build-your-first-course'
-import { manageYourClassLesson } from '../../primr-components/src/lessons/manage-your-class'
-import type { LessonManifest } from '../../primr-components/src/types'
 import { eq, inArray } from 'drizzle-orm'
 
-async function upsertLesson(manifest: LessonManifest): Promise<string> {
+// Inlined from primr-components/src/lessons/ to avoid importing source files
+// at deploy time (dist is gitignored; source imports break Next.js build).
+const buildYourFirstCourseLesson = {
+  id: 'build-your-first-course',
+  title: 'Build Your First Course',
+  slug: 'build-your-first-course',
+  blocks: [
+    {
+      id: 'hero',
+      type: 'hero',
+      props: {
+        title: 'One doc. An entire course.',
+        tagline:
+          "Upload a document and Primr will propose a full course outline — sections, chapters, and lessons. You review the structure, make any edits, then confirm. Generation starts only when you're ready.",
+        meta: [{ label: '3 min' }, { label: 'Courses' }, { label: 'Creators' }],
+      },
+    },
+    {
+      id: 'how-it-works',
+      type: 'narrative',
+      props: {
+        eyebrow: 'HOW IT WORKS',
+        title: 'A course is a document, organized',
+        body: "Primr reads your document and proposes a course outline — sections, chapters, and individual lessons — based on what's in the doc. You review and adjust the structure before a single lesson is generated.",
+      },
+    },
+    {
+      id: 'the-outline',
+      type: 'narrative',
+      props: {
+        eyebrow: 'THE OUTLINE',
+        title: "You're in control before generation starts",
+        body: "After analysis, you'll see a tree of your proposed course. Add, remove, or rename any section, chapter, or lesson. Exclude anything that doesn't belong. Only then do you confirm and kick off generation.",
+      },
+    },
+    {
+      id: 'workflow',
+      type: 'step-navigator',
+      props: {
+        title: "Here's what you'll do",
+        steps: [
+          {
+            title: 'Go to Courses → New Course and upload your document',
+            body: 'Use a PDF or Word doc — a training guide, a textbook chapter, a how-to manual.',
+          },
+          {
+            title: 'Review the outline Primr proposes',
+            body: "Edit titles, exclude anything you don't need, add lessons if something is missing.",
+          },
+          {
+            title: 'Confirm and watch Primr generate each lesson',
+            body: 'Generation runs lesson by lesson. You can watch progress in real time.',
+          },
+          {
+            title: 'Preview the finished course as a learner, then publish',
+            body: "Walk through the course the way your learners will before you share it.",
+          },
+        ],
+      },
+    },
+    {
+      id: 'after-generation',
+      type: 'narrative',
+      props: {
+        eyebrow: 'AFTER GENERATION',
+        title: 'Your lessons are drafts — make them yours',
+        body: "Each generated lesson is ready to preview and refine. Walk through them, edit any content that needs polish, then publish the course when you're satisfied. You can always update and re-publish later.",
+      },
+    },
+  ],
+}
+
+const manageYourClassLesson = {
+  id: 'manage-your-class',
+  title: 'Manage Your Class',
+  slug: 'manage-your-class',
+  blocks: [
+    {
+      id: 'hero',
+      type: 'hero',
+      props: {
+        title: 'Your class, your content, your results.',
+        tagline:
+          'Learn how to add students to your lessons and courses, and track their progress from one place.',
+        meta: [{ label: '3 min' }, { label: 'Students' }, { label: 'Teachers' }],
+      },
+    },
+    {
+      id: 'students-tab',
+      type: 'narrative',
+      props: {
+        eyebrow: 'THE STUDENTS TAB',
+        title: 'Your whole class in one view',
+        body: "The Students tab on your dashboard shows everyone you've added across all your lessons and courses — with lessons started, lessons completed, average scores, and last activity. As your class grows, it stays in one place.",
+      },
+    },
+    {
+      id: 'adding-students',
+      type: 'narrative',
+      props: {
+        eyebrow: 'ADDING STUDENTS',
+        title: 'Two ways to bring students in',
+        body: "Open any lesson or course and hit Share. You can add students by email directly — they'll get an invitation — or copy an invite link to post in your LMS, email, or wherever your class lives. Both methods work for lessons and courses.",
+      },
+    },
+    {
+      id: 'workflow',
+      type: 'step-navigator',
+      props: {
+        title: "Here's what you'll do",
+        steps: [
+          {
+            title: 'Open a lesson or course and click Share',
+            body: 'The Share panel works the same way for both lessons and courses.',
+          },
+          {
+            title: 'Add student emails directly, or copy the invite link',
+            body: 'Paste the link into your LMS, email, or any platform where your class is.',
+          },
+          {
+            title: 'Students accept and start working through the content',
+            body: "Students land directly in the lesson or course — no account required to get started.",
+          },
+          {
+            title: 'Check the Students tab to monitor progress and scores',
+            body: 'Results update automatically as students complete lessons and assessments.',
+          },
+        ],
+      },
+    },
+    {
+      id: 'progress',
+      type: 'narrative',
+      props: {
+        eyebrow: 'STAYING ON TOP OF PROGRESS',
+        title: 'Results update as students work',
+        body: "You don't need to do anything after inviting students. As they complete lessons and assessments, their scores and activity appear automatically in your Students tab. If something looks off, you can revisit the lesson and refine it anytime.",
+      },
+    },
+  ],
+}
+
+async function upsertLesson(manifest: typeof buildYourFirstCourseLesson): Promise<string> {
   const existing = await db
     .select({ id: lessons.id })
     .from(lessons)
@@ -19,7 +158,7 @@ async function upsertLesson(manifest: LessonManifest): Promise<string> {
       .update(lessons)
       .set({
         title: manifest.title,
-        manifest: manifest,
+        manifest: manifest as never,
         isSystem: true,
         updatedAt: new Date(),
       })
@@ -32,7 +171,7 @@ async function upsertLesson(manifest: LessonManifest): Promise<string> {
       .values({
         slug: manifest.slug,
         title: manifest.title,
-        manifest: manifest,
+        manifest: manifest as never,
         isSystem: true,
         publishedAt: new Date(),
         examEnforced: false,
@@ -44,11 +183,9 @@ async function upsertLesson(manifest: LessonManifest): Promise<string> {
 }
 
 async function seed() {
-  // 1. Upsert both new lessons
   const courseOnboardingId = await upsertLesson(buildYourFirstCourseLesson)
   const classOnboardingId = await upsertLesson(manageYourClassLesson)
 
-  // 2. Look up the existing creator_free lesson by slug
   const freeLesson = await db
     .select({ id: lessons.id })
     .from(lessons)
@@ -62,24 +199,18 @@ async function seed() {
   }
   const freeLessonId = freeLesson[0].id
 
-  // 3–5. Atomically rebuild playlist rows for creator_pro and teacher segments
   await db.transaction(async (tx) => {
-    // 3. Clear existing playlist rows (idempotent — safe to re-run)
     await tx
       .delete(onboardingPlaylists)
-      .where(
-        inArray(onboardingPlaylists.segment, ['creator_pro', 'teacher'])
-      )
+      .where(inArray(onboardingPlaylists.segment, ['creator_pro', 'teacher']))
     console.log('Cleared existing creator_pro and teacher playlist rows')
 
-    // 4. Insert creator_pro playlist: positions 1–2
     await tx.insert(onboardingPlaylists).values([
       { segment: 'creator_pro', lessonId: freeLessonId,       displayOrder: 1 },
       { segment: 'creator_pro', lessonId: courseOnboardingId, displayOrder: 2 },
     ])
     console.log('Inserted creator_pro playlist (2 lessons)')
 
-    // 5. Insert teacher playlist: positions 1–3
     await tx.insert(onboardingPlaylists).values([
       { segment: 'teacher', lessonId: freeLessonId,       displayOrder: 1 },
       { segment: 'teacher', lessonId: courseOnboardingId, displayOrder: 2 },

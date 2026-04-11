@@ -61,7 +61,7 @@ Rules:
 - headingMarker must be an exact substring from the document text.
 - If the document only has 2-3 levels, synthesize the missing levels (set "inferred": true).
 - Each lesson covers a coherent sub-topic.
-- CRITICAL LESSON COUNT RULE: Before writing any JSON, scan the ENTIRE document end-to-end and count every "### " heading (third-level markdown heading). Each "### " heading represents exactly one lesson. Your output MUST contain exactly that many lessons — no more, no fewer. Do NOT truncate, summarize, or omit any. If the document has 53 "### " headings you must emit 53 lessons. This rule overrides any default lesson-count preference. Only fall back to "aim for 10-30 lessons" when the document has NO "### " headings at all.
+- CRITICAL LESSON COUNT RULE: Before writing any JSON, scan the ENTIRE document end-to-end and count every distinct section heading. Each section heading represents exactly one lesson. Your output MUST contain one lesson per heading — do NOT truncate, summarize, consolidate, or omit any. If the document has 150 headings you must emit 150 lessons. Process the document from the FIRST page to the LAST page. If the user message includes a HEADING COUNT, match that count.
 - Tailor to the specified audience and level.
 - If a Focus/Scope is provided, only include lessons relevant to that focus.${videoRule}
 - Return ONLY valid JSON. No markdown fences, no explanation. Start with { and end with }.`
@@ -213,11 +213,22 @@ export async function POST(req: NextRequest) {
 
     const userParts: string[] = []
 
-    // Pre-count ### headings so the model doesn't have to count itself
     const slicedDocText = docText.slice(0, 200000)
-    const h3Count = structureSource === 'document'
-      ? (slicedDocText.match(/^### /gm) || []).length
-      : 0
+
+    // Pre-count document headings to give the model an explicit target.
+    // Try markdown ### headings first, then fall back to numbered section
+    // headings (e.g. "1.1 Topic", "2.3: Topic") common in PDF extracts.
+    let headingCount = 0
+    if (structureSource === 'document') {
+      const h3 = (slicedDocText.match(/^### /gm) || []).length
+      if (h3 > 0) {
+        headingCount = h3
+      } else {
+        // Match lines starting with section numbers like "1.1 ", "2.3: ", "4.7 "
+        const numbered = (slicedDocText.match(/^\d+\.\d+[:\s]/gm) || []).length
+        if (numbered > 5) headingCount = numbered
+      }
+    }
 
     if (structureSource === 'document') {
       userParts.push(`Document:\n"""\n${slicedDocText}\n"""`)
@@ -235,8 +246,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (h3Count > 0) {
-      userParts.push(`HEADING COUNT: This document contains exactly ${h3Count} "### " headings. Your output MUST contain exactly ${h3Count} lessons — one per heading. Do not stop early.`)
+    if (headingCount > 0) {
+      userParts.push(`HEADING COUNT: This document contains approximately ${headingCount} section headings. Your output should contain roughly ${headingCount} lessons — one per heading. Do NOT summarize or consolidate multiple sections into one lesson. Do NOT stop early — process the ENTIRE document from beginning to end.`)
+    } else {
+      userParts.push(`IMPORTANT: Process the ENTIRE document from beginning to end. Create one lesson per distinct sub-topic. Do NOT summarize or consolidate. Do NOT stop before reaching the end of the document.`)
     }
 
     userParts.push(
@@ -246,7 +259,7 @@ export async function POST(req: NextRequest) {
       'Respond with JSON only.',
     )
 
-    console.log(`[courses/parse] h3Count=${h3Count}`)
+    console.log(`[courses/parse] headingCount=${headingCount}`)
 
     console.log(`[courses/parse] model=${resolvedModel.id} structureSource=${structureSource} video=${hasVideo} docs=${files.length} rawText=${!!rawText}`)
     const t0 = Date.now()

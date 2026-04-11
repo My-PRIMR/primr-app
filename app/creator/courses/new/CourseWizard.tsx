@@ -197,21 +197,14 @@ export default function CourseWizard({ user, internalRole, productRole }: Course
       })).filter(s => s.chapters.length > 0),
     }
 
-    // Re-level: if only one top-level section remains, promote its chapters
-    // to become the new top-level sections. This avoids a redundant wrapper
-    // section (e.g., after removing front-matter and licensing sections).
+    // Re-level: if only one top-level section remains (e.g., after removing
+    // front-matter and licensing sections), replace its title with the course
+    // title so it serves as the course root rather than a redundant wrapper.
     if (filteredTree.sections.length === 1) {
-      const only = filteredTree.sections[0]
-      filteredTree.sections = only.chapters.map((c, i) => ({
-        localId: `s${i}`,
-        title: c.title,
-        inferred: only.inferred,
-        chapters: [{
-          localId: `s${i}c0`,
-          title: c.title,
-          lessons: c.lessons.map((l, li) => ({ ...l, localId: `s${i}c0l${li}` })),
-        }],
-      }))
+      filteredTree.sections[0] = {
+        ...filteredTree.sections[0],
+        title: filteredTree.title,
+      }
     }
 
     const lessonCount = filteredTree.sections

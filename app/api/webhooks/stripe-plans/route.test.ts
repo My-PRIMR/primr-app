@@ -183,6 +183,10 @@ describe('subscription lifecycle', () => {
     const where = jest.fn().mockResolvedValue(undefined)
     const set = jest.fn(() => ({ where }))
     db.update = jest.fn(() => ({ set }))
+    db.query.planSubscriptions.findFirst = jest.fn().mockResolvedValue({
+      id: 'row_1',
+      stripeSubscriptionId: 'sub_123',
+    })
 
     getStripe.mockReturnValue({
       webhooks: {
@@ -203,5 +207,30 @@ describe('subscription lifecycle', () => {
     expect(set).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'past_due' }),
     )
+  })
+
+  it('ignores invoice.payment_failed when no plan_subscription row exists', async () => {
+    const { db } = require('@/db') as any
+    const where = jest.fn().mockResolvedValue(undefined)
+    const set = jest.fn(() => ({ where }))
+    db.update = jest.fn(() => ({ set }))
+    db.query.planSubscriptions.findFirst = jest.fn().mockResolvedValue(null)
+
+    getStripe.mockReturnValue({
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue({
+          type: 'invoice.payment_failed',
+          data: {
+            object: {
+              id: 'in_other',
+              subscription: 'sub_other',
+            },
+          },
+        }),
+      },
+    })
+    const res = await POST(makeRequest('{}'))
+    expect(res.status).toBe(200)
+    expect(set).not.toHaveBeenCalled()
   })
 })

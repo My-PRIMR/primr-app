@@ -174,13 +174,19 @@ export async function POST(req: Request) {
 
     case 'invoice.payment_failed': {
       const invoice = event.data.object as Stripe.Invoice
-      const md = invoice.metadata ?? {}
-      if (md.primrKind !== 'plan_subscription') break
       const subId =
         typeof invoice.subscription === 'string'
           ? invoice.subscription
           : invoice.subscription?.id
       if (!subId) break
+
+      // Filter by DB presence — plan_subscriptions is our authoritative set of
+      // subscriptions we care about. If the row doesn't exist, the invoice is
+      // for some other Stripe subscription (e.g., future creator monetization).
+      const row = await db.query.planSubscriptions.findFirst({
+        where: eq(planSubscriptions.stripeSubscriptionId, subId),
+      })
+      if (!row) break
 
       await db
         .update(planSubscriptions)

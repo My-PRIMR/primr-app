@@ -12,14 +12,13 @@
  *   with an optional docMarker so document text is included as supplementary.
  */
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
+import { generateText } from 'ai'
+import { resolveModelRef } from '@/lib/ai/providers'
 import { getSession } from '@/session'
-import { resolveModel, DEFAULT_MODEL, MODELS, modelById } from '@/lib/models'
+import { resolveModel, DEFAULT_MODEL, modelById } from '@/lib/models'
 import { extractJSON } from '@/lib/extract-json'
 import type { ParsedCourseTree, CourseTree } from '@/types/course'
 import { fetchYouTubeData } from '@/lib/video-ingest'
-
-const client = new Anthropic()
 
 // ── System prompts ────────────────────────────────────────────────────────────
 
@@ -248,27 +247,13 @@ export async function POST(req: NextRequest) {
         }>
       }>
     }
-    const stream = await client.messages.stream({
-      model: resolvedModel.id,
-      max_tokens: 32000,
+    const { text: raw, finishReason, usage } = await generateText({
+      model: resolveModelRef(resolvedModel.id),
+      maxOutputTokens: 32000,
       system: systemPrompt,
-      messages: [{ role: 'user' as const, content: userParts.filter(Boolean).join('\n\n') }],
+      prompt: userParts.filter(Boolean).join('\n\n'),
     })
-    const message = await stream.finalMessage()
-    console.log(`[courses/parse] AI responded in ${Date.now() - t0}ms model=${resolvedModel.id} stop_reason=${message.stop_reason} output_tokens=${message.usage.output_tokens}`)
-
-    // Log all content blocks — shows thinking blocks (if any) plus the text response
-    for (const block of message.content) {
-      if (block.type === 'thinking') {
-        console.log(`[courses/parse] THINKING block (${block.thinking.length} chars): ${block.thinking.slice(0, 500)}...`)
-      } else if (block.type === 'text') {
-        console.log(`[courses/parse] TEXT block (${block.text.length} chars), last 200 chars: ...${block.text.slice(-200)}`)
-      } else {
-        console.log(`[courses/parse] ${block.type} block`)
-      }
-    }
-
-    const raw = message.content.filter(b => b.type === 'text').map(b => b.type === 'text' ? b.text : '').join('')
+    console.log(`[courses/parse] AI responded in ${Date.now() - t0}ms model=${resolvedModel.id} finishReason=${finishReason} outputTokens=${usage.outputTokens}`)
 
     try {
       parsed = JSON.parse(extractJSON(raw))

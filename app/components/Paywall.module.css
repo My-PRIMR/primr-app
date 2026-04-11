@@ -51,7 +51,42 @@
   font-size: 32px;
   font-weight: 600;
   color: var(--ink, #0F1117);
-  margin: 0 0 1rem;
+  margin: 0 0 1.25rem;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: stretch;
+}
+
+.buyBtn {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--accent, #6B5CE7);
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: opacity 150ms;
+}
+
+.buyBtn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.buyBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.error {
+  font-size: 13px;
+  color: #d94f4f;
+  margin: 0.85rem 0 0;
 }
 
 .hint {

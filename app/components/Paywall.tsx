@@ -9,14 +9,23 @@ interface Props {
   title: string
   priceCents: number | null
   creatorId: string | null
+  creatorSubscriptionPriceCents: number | null
 }
 
 /**
  * Paywall shown when a learner lacks access to paid content.
  * Starts a Stripe Checkout session via /api/purchase/checkout and redirects.
- * Task 19 will add a Subscribe CTA alongside the Buy CTA.
+ * If the creator offers subscriptions, also shows a Subscribe CTA that hits
+ * /api/subscribe/checkout.
  */
-export function Paywall({ kind, id, title, priceCents }: Props) {
+export function Paywall({
+  kind,
+  id,
+  title,
+  priceCents,
+  creatorId,
+  creatorSubscriptionPriceCents,
+}: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -34,6 +43,28 @@ export function Paywall({ kind, id, title, priceCents }: Props) {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         throw new Error(body.error ?? 'Failed to start checkout')
+      }
+      const { url } = await res.json()
+      window.location.href = url
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+      setLoading(false)
+    }
+  }
+
+  async function subscribe() {
+    if (!creatorId) return
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/subscribe/checkout', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ creatorId }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? 'Failed to start subscription')
       }
       const { url } = await res.json()
       window.location.href = url
@@ -64,7 +95,16 @@ export function Paywall({ kind, id, title, priceCents }: Props) {
           >
             {loading ? 'Redirecting…' : `Buy for ${priceLabel}`}
           </button>
-          {/* Task 19 will add a Subscribe to [creator] button here */}
+          {creatorSubscriptionPriceCents != null && creatorId && (
+            <button
+              type="button"
+              onClick={subscribe}
+              disabled={loading}
+              className={styles.subscribeBtn}
+            >
+              Subscribe for ${(creatorSubscriptionPriceCents / 100).toFixed(2)}/mo
+            </button>
+          )}
         </div>
         {error && <p className={styles.error}>{error}</p>}
       </section>

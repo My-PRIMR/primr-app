@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { db } from '@/db'
-import { lessons } from '@/db/schema'
+import { lessons, creatorProfiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { canAccessLesson } from '@/lib/lesson-access'
@@ -38,6 +38,15 @@ export default async function LearnPage({ params, searchParams }: { params: Prom
   // subscribers/purchasers always pass. Everyone else sees the paywall.
   const hasPaidAccess = await hasAccessToLesson(session.user.id, lesson.id)
   if (!hasPaidAccess) {
+    const creatorProfile = lesson.createdBy
+      ? await db.query.creatorProfiles.findFirst({
+          where: eq(creatorProfiles.userId, lesson.createdBy),
+        })
+      : null
+    const creatorSubPrice =
+      creatorProfile?.subscriptionEnabled
+        ? creatorProfile.subscriptionPriceCents
+        : null
     return (
       <Paywall
         kind="lesson"
@@ -45,6 +54,7 @@ export default async function LearnPage({ params, searchParams }: { params: Prom
         title={lesson.title}
         priceCents={lesson.priceCents}
         creatorId={lesson.createdBy}
+        creatorSubscriptionPriceCents={creatorSubPrice}
       />
     )
   }

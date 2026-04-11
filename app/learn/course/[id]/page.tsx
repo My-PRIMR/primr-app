@@ -1,7 +1,7 @@
 import { getSession } from '@/session'
 import { redirect, notFound } from 'next/navigation'
 import { db } from '@/db'
-import { courses, courseSections, courseChapters, chapterLessons, courseEnrollments, lessons } from '@/db/schema'
+import { courses, courseSections, courseChapters, chapterLessons, courseEnrollments, lessons, creatorProfiles } from '@/db/schema'
 import { eq, asc, and } from 'drizzle-orm'
 import { hasAccessToCourse } from '@/access'
 import { Paywall } from '../../../components/Paywall'
@@ -45,6 +45,15 @@ export default async function CourseLearnPage({
   // subscribers/purchasers always pass. Everyone else sees the paywall.
   const hasPaidAccess = await hasAccessToCourse(userId, course.id)
   if (!hasPaidAccess) {
+    const creatorProfile = course.createdBy
+      ? await db.query.creatorProfiles.findFirst({
+          where: eq(creatorProfiles.userId, course.createdBy),
+        })
+      : null
+    const creatorSubPrice =
+      creatorProfile?.subscriptionEnabled
+        ? creatorProfile.subscriptionPriceCents
+        : null
     return (
       <Paywall
         kind="course"
@@ -52,6 +61,7 @@ export default async function CourseLearnPage({
         title={course.title}
         priceCents={course.priceCents}
         creatorId={course.createdBy}
+        creatorSubscriptionPriceCents={creatorSubPrice}
       />
     )
   }

@@ -83,6 +83,28 @@
   cursor: not-allowed;
 }
 
+.subscribeBtn {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--accent, #6B5CE7);
+  background: transparent;
+  border: 1px solid var(--accent, #6B5CE7);
+  border-radius: 8px;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: background-color 150ms, opacity 150ms;
+}
+
+.subscribeBtn:hover:not(:disabled) {
+  background: var(--accent-soft, color-mix(in srgb, var(--accent, #6B5CE7) 10%, transparent));
+}
+
+.subscribeBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .error {
   font-size: 13px;
   color: #d94f4f;

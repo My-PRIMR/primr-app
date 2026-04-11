@@ -4,6 +4,8 @@ import { db } from '@/db'
 import { planSubscriptions, users, organizations } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import type Stripe from 'stripe'
+import { getPlanForPriceId } from '@/plans'
+import { downgradeUserToFree, downgradeOrganization } from '@/lib/billing'
 
 export const runtime = 'nodejs'
 
@@ -90,6 +92,100 @@ export async function POST(req: Request) {
             .where(eq(organizations.id, organizationId))
         }
       }
+      break
+    }
+
+    case 'customer.subscription.created':
+    case 'customer.subscription.updated': {
+      const sub = event.data.object as Stripe.Subscription
+      const md = sub.metadata ?? {}
+      if (md.primrKind !== 'plan_subscription') break
+
+      const status =
+        sub.status === 'active' || sub.status === 'trialing'
+          ? 'active'
+          : sub.status === 'past_due'
+            ? 'past_due'
+            : sub.status === 'incomplete'
+              ? 'incomplete'
+              : 'canceled'
+
+      // Detect plan switch via the price ID
+      const priceId = sub.items.data[0]?.price?.id ?? null
+      const planFromPrice = priceId ? getPlanForPriceId(priceId) : null
+
+      const updates: Record<string, unknown> = {
+        status,
+        currentPeriodEnd: new Date(sub.current_period_end * 1000),
+        cancelAtPeriodEnd: sub.cancel_at_period_end ?? false,
+        updatedAt: new Date(),
+      }
+      if (planFromPrice) {
+        updates.tier = planFromPrice.tier
+        updates.billingPeriod = planFromPrice.period
+      }
+
+      await db
+        .update(planSubscriptions)
+        .set(updates)
+        .where(eq(planSubscriptions.stripeSubscriptionId, sub.id))
+
+      // Recover user plan if active after prior downgrade
+      if (status === 'active') {
+        const row = await db.query.planSubscriptions.findFirst({
+          where: eq(planSubscriptions.stripeSubscriptionId, sub.id),
+        })
+        if (row) {
+          await db
+            .update(users)
+            .set({ plan: 'pro' })
+            .where(eq(users.id, row.subscriberUserId))
+        }
+      }
+      break
+    }
+
+    case 'customer.subscription.deleted': {
+      const sub = event.data.object as Stripe.Subscription
+      const md = sub.metadata ?? {}
+      if (md.primrKind !== 'plan_subscription') break
+
+      const row = await db.query.planSubscriptions.findFirst({
+        where: eq(planSubscriptions.stripeSubscriptionId, sub.id),
+      })
+      if (!row) break
+
+      await db
+        .update(planSubscriptions)
+        .set({ status: 'canceled', updatedAt: new Date() })
+        .where(eq(planSubscriptions.stripeSubscriptionId, sub.id))
+
+      if (row.organizationId) {
+        await db
+          .update(organizations)
+          .set({ planSubscriptionId: null })
+          .where(eq(organizations.id, row.organizationId))
+        await downgradeOrganization(row.organizationId)
+      } else {
+        await downgradeUserToFree(row.subscriberUserId)
+      }
+      break
+    }
+
+    case 'invoice.payment_failed': {
+      const invoice = event.data.object as Stripe.Invoice
+      const md = invoice.metadata ?? {}
+      if (md.primrKind !== 'plan_subscription') break
+      const subId =
+        typeof invoice.subscription === 'string'
+          ? invoice.subscription
+          : invoice.subscription?.id
+      if (!subId) break
+
+      await db
+        .update(planSubscriptions)
+        .set({ status: 'past_due', updatedAt: new Date() })
+        .where(eq(planSubscriptions.stripeSubscriptionId, subId))
       break
     }
 

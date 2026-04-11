@@ -111,3 +111,97 @@ describe('POST /api/webhooks/stripe-plans', () => {
     expect(db.insert).not.toHaveBeenCalled()
   })
 })
+
+describe('subscription lifecycle', () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it('updates on customer.subscription.updated', async () => {
+    const { db } = require('@/db') as any
+    const where = jest.fn().mockResolvedValue(undefined)
+    const set = jest.fn(() => ({ where }))
+    db.update = jest.fn(() => ({ set }))
+    db.query.planSubscriptions.findFirst = jest.fn().mockResolvedValue({
+      id: 'row_1',
+      subscriberUserId: 'u1',
+    })
+
+    getStripe.mockReturnValue({
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue({
+          type: 'customer.subscription.updated',
+          data: {
+            object: {
+              id: 'sub_123',
+              status: 'active',
+              current_period_end: Math.floor(Date.now() / 1000) + 3600,
+              cancel_at_period_end: true,
+              metadata: { primrKind: 'plan_subscription' },
+              items: { data: [{ price: { id: 'price_pm' } }] },
+            },
+          },
+        }),
+      },
+    })
+    const res = await POST(makeRequest('{}'))
+    expect(res.status).toBe(200)
+    expect(set).toHaveBeenCalledWith(
+      expect.objectContaining({ cancelAtPeriodEnd: true }),
+    )
+  })
+
+  it('downgrades user on customer.subscription.deleted', async () => {
+    const { db } = require('@/db') as any
+    const where = jest.fn().mockResolvedValue(undefined)
+    const set = jest.fn(() => ({ where }))
+    db.update = jest.fn(() => ({ set }))
+    db.query.planSubscriptions.findFirst = jest.fn().mockResolvedValue({
+      id: 'row_1',
+      subscriberUserId: 'u1',
+      organizationId: null,
+    })
+
+    getStripe.mockReturnValue({
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue({
+          type: 'customer.subscription.deleted',
+          data: {
+            object: {
+              id: 'sub_123',
+              metadata: { primrKind: 'plan_subscription' },
+            },
+          },
+        }),
+      },
+    })
+    const res = await POST(makeRequest('{}'))
+    expect(res.status).toBe(200)
+    expect(set).toHaveBeenCalled()
+  })
+
+  it('marks past_due on invoice.payment_failed', async () => {
+    const { db } = require('@/db') as any
+    const where = jest.fn().mockResolvedValue(undefined)
+    const set = jest.fn(() => ({ where }))
+    db.update = jest.fn(() => ({ set }))
+
+    getStripe.mockReturnValue({
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue({
+          type: 'invoice.payment_failed',
+          data: {
+            object: {
+              id: 'in_123',
+              subscription: 'sub_123',
+              metadata: { primrKind: 'plan_subscription' },
+            },
+          },
+        }),
+      },
+    })
+    const res = await POST(makeRequest('{}'))
+    expect(res.status).toBe(200)
+    expect(set).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'past_due' }),
+    )
+  })
+})

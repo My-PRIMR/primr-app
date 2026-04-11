@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getStripe, getStripeWebhookSecret } from '@/stripe'
+import { getStripe, getCreatorWebhookSecret } from '@/stripe'
 import { db } from '@/db'
 import { creatorProfiles, purchases, subscriptions } from '@/db/schema'
 import { eq, sql } from 'drizzle-orm'
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     event = stripe.webhooks.constructEvent(
       rawBody,
       signature,
-      getStripeWebhookSecret(),
+      getCreatorWebhookSecret(),
     )
   } catch {
     return NextResponse.json({ error: 'invalid signature' }, { status: 400 })

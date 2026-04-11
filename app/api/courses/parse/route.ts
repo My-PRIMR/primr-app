@@ -260,10 +260,11 @@ export async function POST(req: NextRequest) {
         }>
       }>
     }
-    // Always use Haiku for structural parsing — it reliably follows the
-    // exhaustive lesson count rules. The user-selected model is used for
-    // lesson content generation, not document structure extraction.
-    const parseModelId = MODELS.haiku.id
+    // Use Sonnet for structural parsing — Haiku stops early on very large
+    // documents (~100 lessons instead of 150+). Sonnet has better attention
+    // span for exhaustive document structure extraction. The user-selected
+    // model is used for lesson content generation, not parsing.
+    const parseModelId = MODELS.sonnet.id
     const stream = await client.messages.stream({
       model: parseModelId,
       max_tokens: 32000,

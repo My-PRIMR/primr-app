@@ -8,11 +8,14 @@ import { PageHeader } from '../../../components/PageHeader'
 import { type PageHeaderUser } from '../../../components/pageHeaderUser'
 import styles from './EditClient.module.css'
 import { canUsePexels, canAiEdit as canAiEditFn } from '@/lib/models'
+import { PricingSection } from './PricingSection'
 
 export default function EditClient({
   lessonId,
   manifest,
   publishedAt,
+  priceCents,
+  isPaid,
   plan,
   internalRole,
   user,
@@ -20,6 +23,8 @@ export default function EditClient({
   lessonId: string
   manifest: LessonManifest
   publishedAt: string | null
+  priceCents: number | null
+  isPaid: boolean
   plan: string
   internalRole: string | null
   user: PageHeaderUser
@@ -110,6 +115,17 @@ export default function EditClient({
     </div>
   )
 
+  const rightPanel = (
+    <>
+      <PricingSection
+        lessonId={lessonId}
+        initialPriceCents={priceCents}
+        initialIsPaid={isPaid}
+      />
+      {sharePanel}
+    </>
+  )
+
   return (
     <div className={styles.root}>
       {/* ── Nav ── */}
@@ -130,7 +146,7 @@ export default function EditClient({
           initialManifest={manifest}
           initialPublishedAt={publishedAt}
           panelMode="float"
-          rightPanelExtra={sharePanel}
+          rightPanelExtra={rightPanel}
           canPexels={canPexels}
           canAiEdit={aiEditEnabled}
           plan={plan}

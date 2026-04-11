@@ -6,6 +6,40 @@ import { uploadBuffer, type UploadFormat } from '@/lib/cloudinary'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5 MB
 
+// In-memory IP rate limit. Primr-app runs as a single long-lived Node
+// process, so a Map survives across requests. If we ever switch to
+// serverless or horizontal scale, swap for a Postgres-backed counter.
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000  // 1 hour
+const RATE_LIMIT_MAX = 5
+const ipBuckets = new Map<string, { count: number; resetAt: number }>()
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now()
+  // Opportunistic cleanup — prune expired buckets so the Map doesn't grow unbounded.
+  for (const [key, bucket] of ipBuckets) {
+    if (bucket.resetAt < now) ipBuckets.delete(key)
+  }
+  const bucket = ipBuckets.get(ip)
+  if (!bucket) {
+    ipBuckets.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+    return true
+  }
+  if (bucket.count >= RATE_LIMIT_MAX) return false
+  bucket.count++
+  return true
+}
+
+function getClientIp(req: NextRequest): string {
+  // nginx sets x-forwarded-for (first hop is the client) and x-real-ip.
+  // In tests and local dev we fall back to a fixed key so the whole
+  // request stream shares a single bucket — safely conservative.
+  const xff = req.headers.get('x-forwarded-for')
+  if (xff) return xff.split(',')[0].trim()
+  const xReal = req.headers.get('x-real-ip')
+  if (xReal) return xReal
+  return 'unknown'
+}
+
 const ALLOWED_FORMATS: Record<string, UploadFormat> = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
@@ -38,9 +72,20 @@ export async function POST(req: NextRequest) {
     // Bot trap: real users never fill this field (it's rendered off-screen);
     // bots that auto-fill every input will. Return 200 so the bot thinks it
     // succeeded and doesn't retry. Must run before the upload and DB work.
+    // Intentionally does NOT count against the rate limit — otherwise a
+    // single stupid bot could exhaust the bucket for a legit user sharing
+    // the same IP (e.g. a school network).
     const honeypot = (formData.get('website') as string | null) ?? ''
     if (honeypot.trim() !== '') {
       return NextResponse.json({ ok: true })
+    }
+
+    const ip = getClientIp(req)
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json(
+        { error: 'Too many submissions from this address. Please try again later.' },
+        { status: 429 },
+      )
     }
 
     const name = (formData.get('name') as string | null)?.trim()

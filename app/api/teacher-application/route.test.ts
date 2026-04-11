@@ -126,3 +126,31 @@ describe('POST /api/teacher-application — honeypot', () => {
     expect(insertedApplication()).toBeDefined()
   })
 })
+
+describe('POST /api/teacher-application — rate limit', () => {
+  it('allows up to 5 submissions per IP per hour', async () => {
+    for (let i = 0; i < 5; i++) {
+      const res = await POST(makeRequest(makeValidFields({ email: `u${i}@school.edu` }), { 'x-forwarded-for': '10.0.0.1' }))
+      expect(res.status).toBe(200)
+    }
+  })
+
+  it('returns 429 on the 6th submission from the same IP', async () => {
+    for (let i = 0; i < 5; i++) {
+      await POST(makeRequest(makeValidFields({ email: `u${i}@school.edu` }), { 'x-forwarded-for': '10.0.0.2' }))
+    }
+    const res = await POST(makeRequest(makeValidFields({ email: 'u6@school.edu' }), { 'x-forwarded-for': '10.0.0.2' }))
+    expect(res.status).toBe(429)
+    const body = await res.json()
+    expect(body.error).toMatch(/too many/i)
+  })
+
+  it('tracks IPs independently', async () => {
+    for (let i = 0; i < 5; i++) {
+      await POST(makeRequest(makeValidFields({ email: `a${i}@school.edu` }), { 'x-forwarded-for': '10.0.0.3' }))
+    }
+    // A different IP should still be allowed.
+    const res = await POST(makeRequest(makeValidFields({ email: 'b@school.edu' }), { 'x-forwarded-for': '10.0.0.4' }))
+    expect(res.status).toBe(200)
+  })
+})

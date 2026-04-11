@@ -181,3 +181,87 @@ describe('POST /api/webhooks/stripe — checkout.session.completed', () => {
     expect(res.status).toBe(200) // 200, not 500
   })
 })
+
+describe('POST /api/webhooks/stripe — subscription events', () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it('upserts a subscription row on customer.subscription.created', async () => {
+    const { db } = require('@/db') as any
+
+    // Reset db.insert to a chainable mock that supports onConflictDoUpdate
+    const onConflictDoUpdate = jest.fn().mockResolvedValue(undefined)
+    const values = jest.fn(() => ({ onConflictDoUpdate }))
+    db.insert = jest.fn(() => ({ values }))
+
+    getStripe.mockReturnValue({
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue({
+          type: 'customer.subscription.created',
+          data: {
+            object: {
+              id: 'sub_123',
+              status: 'active',
+              current_period_end: Math.floor(Date.now() / 1000) + 3600,
+              metadata: {
+                primrSubscriberId: 'buyer',
+                primrCreatorId: 'creator',
+              },
+            },
+          },
+        }),
+      },
+    })
+
+    const res = await POST(makeRequest('{}'))
+    expect(res.status).toBe(200)
+    expect(values).toHaveBeenCalled()
+    expect(onConflictDoUpdate).toHaveBeenCalled()
+  })
+
+  it('marks subscription canceled on customer.subscription.deleted', async () => {
+    const { db } = require('@/db') as any
+    const updateWhere = jest.fn().mockResolvedValue(undefined)
+    db.update = jest.fn(() => ({
+      set: jest.fn(() => ({ where: updateWhere })),
+    }))
+
+    getStripe.mockReturnValue({
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue({
+          type: 'customer.subscription.deleted',
+          data: { object: { id: 'sub_123' } },
+        }),
+      },
+    })
+
+    const res = await POST(makeRequest('{}'))
+    expect(res.status).toBe(200)
+    expect(updateWhere).toHaveBeenCalled()
+  })
+
+  it('marks subscription past_due on invoice.payment_failed', async () => {
+    const { db } = require('@/db') as any
+    const updateWhere = jest.fn().mockResolvedValue(undefined)
+    db.update = jest.fn(() => ({
+      set: jest.fn(() => ({ where: updateWhere })),
+    }))
+
+    getStripe.mockReturnValue({
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue({
+          type: 'invoice.payment_failed',
+          data: {
+            object: {
+              id: 'in_123',
+              subscription: 'sub_123',
+            },
+          },
+        }),
+      },
+    })
+
+    const res = await POST(makeRequest('{}'))
+    expect(res.status).toBe(200)
+    expect(updateWhere).toHaveBeenCalled()
+  })
+})

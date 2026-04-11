@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getStripe, getStripeWebhookSecret } from '@/stripe'
 import { db } from '@/db'
-import { creatorProfiles, purchases } from '@/db/schema'
+import { creatorProfiles, purchases, subscriptions } from '@/db/schema'
 import { eq, sql } from 'drizzle-orm'
 import { calculatePlatformFee } from '@/monetization/fees'
 import type Stripe from 'stripe'
@@ -94,7 +94,63 @@ export async function POST(req: Request) {
       }
       break
     }
-    // Subscription events are handled in later tasks.
+    case 'customer.subscription.created':
+    case 'customer.subscription.updated': {
+      const sub = event.data.object as Stripe.Subscription
+      const md = sub.metadata ?? {}
+      const subscriberId = md.primrSubscriberId
+      const creatorId = md.primrCreatorId
+      if (!subscriberId || !creatorId) break
+
+      const status =
+        sub.status === 'active' || sub.status === 'trialing'
+          ? 'active'
+          : sub.status === 'past_due'
+            ? 'past_due'
+            : 'canceled'
+
+      const currentPeriodEnd = new Date(sub.current_period_end * 1000)
+
+      await db
+        .insert(subscriptions)
+        .values({
+          subscriberId,
+          creatorId,
+          stripeSubscriptionId: sub.id,
+          status,
+          currentPeriodEnd,
+        })
+        .onConflictDoUpdate({
+          target: subscriptions.stripeSubscriptionId,
+          set: {
+            status,
+            currentPeriodEnd,
+            updatedAt: new Date(),
+          },
+        })
+      break
+    }
+    case 'customer.subscription.deleted': {
+      const sub = event.data.object as Stripe.Subscription
+      await db
+        .update(subscriptions)
+        .set({ status: 'canceled', updatedAt: new Date() })
+        .where(eq(subscriptions.stripeSubscriptionId, sub.id))
+      break
+    }
+    case 'invoice.payment_failed': {
+      const invoice = event.data.object as Stripe.Invoice
+      const subId =
+        typeof invoice.subscription === 'string'
+          ? invoice.subscription
+          : invoice.subscription?.id
+      if (!subId) break
+      await db
+        .update(subscriptions)
+        .set({ status: 'past_due', updatedAt: new Date() })
+        .where(eq(subscriptions.stripeSubscriptionId, subId))
+      break
+    }
     default:
       break
   }

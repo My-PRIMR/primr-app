@@ -76,8 +76,8 @@ export function UserMenu({ userName, userEmail, role, internalRole, internalUrl 
 
       <div className={styles.divider} />
 
-      {/* Upgrade options — learners and free creators */}
-      {(role === 'learner' || role === 'creator') && (
+      {/* Upgrade options — learners and free creators; hidden for internal staff */}
+      {(role === 'learner' || role === 'creator') && !internalRole && (
         <>
           {role === 'learner' && (
             <button

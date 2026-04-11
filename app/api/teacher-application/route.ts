@@ -49,7 +49,11 @@ const ALLOWED_FORMATS: Record<string, UploadFormat> = {
 
 const ALLOWED_GRADE_LEVELS = new Set(['Elementary K-5', 'Middle 6-8', 'High 9-12', 'Other K-12'])
 const ALLOWED_ROLES = new Set(['Classroom teacher', 'Specialist', 'Substitute', 'Administrator', 'Other'])
-const ALLOWED_SOURCES = new Set(['in_app', 'marketing'])
+type ApplicationSource = 'in_app' | 'marketing'
+const ALLOWED_SOURCES: ReadonlySet<ApplicationSource> = new Set(['in_app', 'marketing'])
+function isApplicationSource(v: string): v is ApplicationSource {
+  return (ALLOWED_SOURCES as ReadonlySet<string>).has(v)
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -94,11 +98,12 @@ export async function POST(req: NextRequest) {
     const gradeLevel = (formData.get('gradeLevel') as string | null)?.trim()
     const currentRole = (formData.get('currentRole') as string | null)?.trim()
     const proof = formData.get('proof') as File | null
-    const source = (formData.get('source') as string | null)?.trim() || 'in_app'
+    const sourceRaw = (formData.get('source') as string | null)?.trim() || 'in_app'
 
-    if (!ALLOWED_SOURCES.has(source)) {
+    if (!isApplicationSource(sourceRaw)) {
       return NextResponse.json({ error: 'Invalid source.' }, { status: 400 })
     }
+    const source: ApplicationSource = sourceRaw
     if (!name || !email || !schoolName || !gradeLevel || !currentRole || !proof) {
       return NextResponse.json({ error: 'All fields are required.' }, { status: 400 })
     }

@@ -48,7 +48,14 @@ export async function POST(req: NextRequest) {
   const session = await getSession()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!canCreateCourses(session.user.plan, session.user.internalRole)) {
-    return NextResponse.json({ error: 'Courses require a Pro plan or higher' }, { status: 403 })
+    return NextResponse.json(
+      {
+        error: 'Courses require a Pro plan or higher',
+        upgradeUrl: '/upgrade',
+        upgradeRequired: 'pro',
+      },
+      { status: 403 },
+    )
   }
 
   const { title, description, isPublic } = await req.json()

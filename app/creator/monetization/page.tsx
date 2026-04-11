@@ -4,6 +4,7 @@ import { db } from '@/db'
 import { creatorProfiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { ConnectStripeButton } from './ConnectStripeButton'
+import { SubscriptionSettings } from './SubscriptionSettings'
 import styles from './page.module.css'
 
 export const dynamic = 'force-dynamic'
@@ -43,6 +44,13 @@ export default async function MonetizationPage() {
             </>
           )}
         </section>
+
+        {connected && (
+          <SubscriptionSettings
+            initialEnabled={profile?.subscriptionEnabled ?? false}
+            initialPriceCents={profile?.subscriptionPriceCents ?? null}
+          />
+        )}
       </div>
     </main>
   )

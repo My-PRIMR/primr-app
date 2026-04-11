@@ -1,0 +1,105 @@
+.section {
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1rem;
+}
+
+.heading {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0 0 0.5rem;
+}
+
+.subhead {
+  font-size: 14px;
+  color: var(--ink-muted);
+  line-height: 1.55;
+  margin: 0 0 1.25rem;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+.toggleRow input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+.priceRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-bottom: 1.25rem;
+}
+
+.priceLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+.priceInput {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  padding: 9px 12px;
+  width: 140px;
+  transition: border-color 150ms;
+}
+
+.priceInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.saveBtn {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 7px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: opacity 150ms;
+}
+
+.saveBtn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.saveBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.saved {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #16a34a;
+  margin-left: 0.75rem;
+}
+
+.error {
+  display: inline-block;
+  font-size: 13px;
+  color: #d94f4f;
+  margin-left: 0.75rem;
+}

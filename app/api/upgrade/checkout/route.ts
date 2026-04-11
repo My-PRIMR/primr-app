@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
+import { eq } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { getStripe } from '@/stripe'
 import { getPriceId } from '@/plans'
 import { ensureStripeCustomer } from '@/lib/billing'
+import { db } from '@/db'
+import { organizations, users as usersTable } from '@/db/schema'
 
 const VALID_TIERS = ['pro', 'teams'] as const
 const VALID_PERIODS = ['monthly', 'annual'] as const
@@ -29,11 +32,55 @@ export async function POST(req: Request) {
   const tier = body.tier as 'pro' | 'teams'
   const period = body.period as 'monthly' | 'annual'
 
+  let organizationId: string | null = null
+
   if (tier === 'teams') {
-    return NextResponse.json(
-      { error: 'Teams checkout is not implemented yet' },
-      { status: 400 },
-    )
+    // Load the user to get organizationId (not guaranteed to be on session)
+    const user = await db.query.users.findFirst({
+      where: eq(usersTable.id, session.user.id),
+    })
+
+    if (user?.organizationId) {
+      // Existing org — check if it already has an active subscription
+      const existingOrg = await db.query.organizations.findFirst({
+        where: eq(organizations.id, user.organizationId),
+      })
+      if (existingOrg?.planSubscriptionId) {
+        return NextResponse.json(
+          { error: 'Your organization already has an active Teams subscription' },
+          { status: 400 },
+        )
+      }
+      organizationId = user.organizationId
+    } else {
+      // No org yet — require teamName and create it
+      if (!body.teamName || body.teamName.trim().length < 2) {
+        return NextResponse.json(
+          { error: 'Team name is required (2-80 characters)' },
+          { status: 400 },
+        )
+      }
+      const name = body.teamName.trim().slice(0, 80)
+      const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+
+      const [row] = await db
+        .insert(organizations)
+        .values({
+          name,
+          slug,
+          ownerId: session.user.id,
+        })
+        .returning({ id: organizations.id })
+      organizationId = row.id
+
+      await db
+        .update(usersTable)
+        .set({ organizationId, productRole: 'org_admin' })
+        .where(eq(usersTable.id, session.user.id))
+    }
   }
 
   const customerId = await ensureStripeCustomer(
@@ -45,11 +92,14 @@ export async function POST(req: Request) {
   const priceId = getPriceId(tier, period)
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-  const metadata = {
+  const metadata: Record<string, string> = {
     primrKind: 'plan_subscription',
     primrUserId: session.user.id,
     primrTier: tier,
     primrPeriod: period,
+  }
+  if (organizationId) {
+    metadata.primrOrganizationId = organizationId
   }
 
   const stripe = getStripe()

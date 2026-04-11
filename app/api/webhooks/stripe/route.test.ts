@@ -4,7 +4,7 @@ import * as dbModule from '@/db'
 
 jest.mock('@/stripe', () => ({
   getStripe: jest.fn(),
-  getStripeWebhookSecret: jest.fn(() => 'whsec_test'),
+  getCreatorWebhookSecret: jest.fn(() => 'whsec_test'),
 }))
 
 jest.mock('@/db', () => ({

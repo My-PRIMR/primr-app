@@ -8,7 +8,37 @@ function getSecret() {
   return new TextEncoder().encode(process.env.AUTH_SECRET!)
 }
 
+// Known protected sub-paths under /creator/*. Anything else matching a single
+// segment under /creator/ (e.g. /creator/{uuid}) is the PUBLIC creator profile
+// page and must be allowed through without auth.
+const PROTECTED_CREATOR_SUBPATHS = [
+  'new',
+  'edit',
+  'preview',
+  'video-status',
+  'courses',
+  'lessons',
+  'monetization',
+  'students',
+]
+
+function isPublicCreatorProfilePath(pathname: string): boolean {
+  // Match /creator/<something> with no further segments.
+  // /creator and /creator/ are the protected dashboard — not public.
+  const match = pathname.match(/^\/creator\/([^/]+)\/?$/)
+  if (!match) return false
+  const segment = match[1]
+  if (!segment) return false
+  if (PROTECTED_CREATOR_SUBPATHS.includes(segment)) return false
+  return true
+}
+
 export async function middleware(req: NextRequest) {
+  // Let the public creator profile page through without auth.
+  if (isPublicCreatorProfilePath(req.nextUrl.pathname)) {
+    return NextResponse.next()
+  }
+
   const token = req.cookies.get(COOKIE_NAME)?.value
 
   if (!token) {

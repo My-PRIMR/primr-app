@@ -162,6 +162,13 @@
       "when": 1775674460783,
       "tag": "0022_wild_vertigo",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1775880559657,
+      "tag": "0023_lonely_justice",
+      "breakpoints": true
     }
   ]
 }

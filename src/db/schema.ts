@@ -273,10 +273,12 @@ export type NewLessonFeedback = typeof lessonFeedback.$inferInsert
 
 // ── Teacher Applications ──────────────────────────────────────────────────────
 export const teacherApplicationStatusEnum = pgEnum('teacher_application_status', ['pending', 'approved', 'rejected'])
+export const teacherApplicationSourceEnum = pgEnum('teacher_application_source', ['in_app', 'marketing'])
 
 export const teacherApplications = pgTable('teacher_applications', {
   id:               uuid('id').primaryKey().defaultRandom(),
   userId:           uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  source:           teacherApplicationSourceEnum('source').notNull().default('in_app'),
   schoolName:       text('school_name').notNull(),
   gradeLevel:       text('grade_level').notNull(),
   proofDocumentUrl: text('proof_document_url').notNull(),

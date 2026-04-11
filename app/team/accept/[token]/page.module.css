@@ -1,0 +1,104 @@
+.main {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem 4rem;
+}
+
+/* ── Dark mode token overrides (match billing / upgrade pages) ───────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .main {
+    --ink:         #EDEEF5;
+    --ink-soft:    #B0B3C8;
+    --ink-muted:   #6B6E85;
+    --surface:     #1A1C28;
+    --surface-alt: #141520;
+    --border:      rgba(255,255,255,0.08);
+    --border-mid:  rgba(255,255,255,0.14);
+    --accent-soft: rgba(107,92,231,0.18);
+  }
+}
+
+:root[data-theme="dark"] .main {
+  --ink:         #EDEEF5;
+  --ink-soft:    #B0B3C8;
+  --ink-muted:   #6B6E85;
+  --surface:     #1A1C28;
+  --surface-alt: #141520;
+  --border:      rgba(255,255,255,0.08);
+  --border-mid:  rgba(255,255,255,0.14);
+  --accent-soft: rgba(107,92,231,0.18);
+}
+
+/* ── Card ────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 500px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.title {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0 0 0.75rem;
+  line-height: 1.2;
+}
+
+.body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 15px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  margin: 0 0 1.5rem;
+}
+
+.acceptBtn {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 11px 20px;
+  cursor: pointer;
+  transition: opacity 150ms;
+}
+
+.acceptBtn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.acceptBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--coral, #E8453C);
+  margin: 12px 0 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .main {
+    padding: 2rem 1rem 3rem;
+  }
+
+  .card {
+    padding: 24px;
+  }
+
+  .title {
+    font-size: 26px;
+  }
+}

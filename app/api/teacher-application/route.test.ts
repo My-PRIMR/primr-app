@@ -109,3 +109,20 @@ describe('POST /api/teacher-application — source field', () => {
     expect(insertedApplication()).toBeUndefined()
   })
 })
+
+describe('POST /api/teacher-application — honeypot', () => {
+  it('silently drops submissions with a filled honeypot field', async () => {
+    const res = await POST(makeRequest(makeValidFields({ website: 'http://spambot.example' }), { 'x-forwarded-for': '192.0.2.5' }))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.ok).toBe(true)
+    // No DB insert, no upload
+    expect(insertedApplication()).toBeUndefined()
+  })
+
+  it('allows submissions with an empty honeypot field', async () => {
+    const res = await POST(makeRequest(makeValidFields({ website: '' }), { 'x-forwarded-for': '192.0.2.6' }))
+    expect(res.status).toBe(200)
+    expect(insertedApplication()).toBeDefined()
+  })
+})

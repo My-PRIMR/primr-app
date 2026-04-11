@@ -34,6 +34,15 @@ export async function POST(req: NextRequest) {
 
   try {
     const formData = await req.formData()
+
+    // Bot trap: real users never fill this field (it's rendered off-screen);
+    // bots that auto-fill every input will. Return 200 so the bot thinks it
+    // succeeded and doesn't retry. Must run before the upload and DB work.
+    const honeypot = (formData.get('website') as string | null) ?? ''
+    if (honeypot.trim() !== '') {
+      return NextResponse.json({ ok: true })
+    }
+
     const name = (formData.get('name') as string | null)?.trim()
     const email = (formData.get('email') as string | null)?.trim().toLowerCase()
     const schoolName = (formData.get('schoolName') as string | null)?.trim()

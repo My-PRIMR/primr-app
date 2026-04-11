@@ -57,10 +57,13 @@ Return this exact structure:
 
 Rules:
 - Base ALL structure on the document — do not invent topics not in the document.
+- FIRST: Look for a Table of Contents in the input. If found, use it as the definitive structure. The TOC is the source of truth.
+- If no TOC is found, look for section headings throughout the document and use them.
+- If no clear headings exist, analyze content to identify natural topic boundaries.
 - headingMarker must be an exact substring from the document text.
 - If the document only has 2-3 levels, synthesize the missing levels (set "inferred": true).
 - Each lesson covers a coherent sub-topic.
-- CRITICAL LESSON COUNT RULE: Before writing any JSON, scan the ENTIRE document end-to-end and count every "### " heading (third-level markdown heading). Each "### " heading represents exactly one lesson. Your output MUST contain exactly that many lessons — no more, no fewer. Do NOT truncate, summarize, or omit any. If the document has 53 "### " headings you must emit 53 lessons. This rule overrides any default lesson-count preference. Only fall back to "aim for 10-30 lessons" when the document has NO "### " headings at all.
+- LESSON COUNT: Create at least one lesson per lowest-level TOC entry or heading. Do NOT truncate, summarize, or consolidate. Process the ENTIRE document from beginning to end.
 - Tailor to the specified audience and level.
 - If a Focus/Scope is provided, only include lessons relevant to that focus.${videoRule}
 - Return ONLY valid JSON. No markdown fences, no explanation. Start with { and end with }.`
@@ -134,6 +137,24 @@ function sliceTextByMarker(fullText: string, marker: string, nextMarker: string 
   const endIdx = nextMarker ? fullText.indexOf(nextMarker, startIdx + 1) : -1
   const chunk = endIdx === -1 ? fullText.slice(startIdx) : fullText.slice(startIdx, endIdx)
   return chunk.slice(0, 8000).trim()
+}
+
+/**
+ * Attempt to extract the Table of Contents from a document's text.
+ * Returns the TOC text (up to 30K chars from the marker) or null if
+ * no TOC marker is found. When a TOC is present, sending only that
+ * section to the model (instead of the full 200K char document)
+ * dramatically improves structural extraction accuracy.
+ */
+function extractTocSection(text: string): string | null {
+  // Case-insensitive match for "Table of Contents" or a bare "Contents" line
+  const tocMatch = text.match(/(table of contents|^contents\s*$)/im)
+  if (!tocMatch || tocMatch.index == null) return null
+
+  const start = tocMatch.index
+  // Grab up to 30K chars after the TOC marker — enough for very long TOCs
+  // but small enough to be a focused input for the model.
+  return text.slice(start, start + 30000)
 }
 
 // ── Route ─────────────────────────────────────────────────────────────────────
@@ -212,8 +233,18 @@ export async function POST(req: NextRequest) {
 
     const userParts: string[] = []
 
+    // Attempt TOC extraction for document-driven parses. When a TOC is found,
+    // sending just the TOC section yields much more accurate structure than
+    // sending 200K chars of mixed TOC + content. Falls back to full doc otherwise.
+    let tocUsed = false
     if (structureSource === 'document') {
-      userParts.push(`Document:\n"""\n${docText.slice(0, 200000)}\n"""`)
+      const tocSection = extractTocSection(docText)
+      if (tocSection) {
+        tocUsed = true
+        userParts.push(`Table of Contents section (use this as the definitive structure):\n"""\n${tocSection}\n"""`)
+      } else {
+        userParts.push(`Document:\n"""\n${docText.slice(0, 200000)}\n"""`)
+      }
       if (videoData) {
         const chapterList = videoData.chapters.map((ch, i) => `  ${i}: "${ch.title}"`).join('\n')
         userParts.push(`Video chapters (for videoChapterIndex annotation):\n${chapterList}`)
@@ -235,7 +266,7 @@ export async function POST(req: NextRequest) {
       'Respond with JSON only.',
     )
 
-    console.log(`[courses/parse] model=${resolvedModel.id} structureSource=${structureSource} video=${hasVideo} docs=${files.length} rawText=${!!rawText}`)
+    console.log(`[courses/parse] model=${resolvedModel.id} structureSource=${structureSource} tocUsed=${tocUsed} video=${hasVideo} docs=${files.length} rawText=${!!rawText}`)
     const t0 = Date.now()
     let parsed: {
       title: string; description: string;

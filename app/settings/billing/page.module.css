@@ -1,0 +1,146 @@
+.main {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 3rem 2rem 4rem;
+  min-height: 100vh;
+}
+
+/* ── Dark mode token overrides (match upgrade page) ─────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .main {
+    --ink:         #EDEEF5;
+    --ink-soft:    #B0B3C8;
+    --ink-muted:   #6B6E85;
+    --surface:     #1A1C28;
+    --surface-alt: #141520;
+    --border:      rgba(255,255,255,0.08);
+    --border-mid:  rgba(255,255,255,0.14);
+    --accent-soft: rgba(107,92,231,0.18);
+  }
+}
+
+:root[data-theme="dark"] .main {
+  --ink:         #EDEEF5;
+  --ink-soft:    #B0B3C8;
+  --ink-muted:   #6B6E85;
+  --surface:     #1A1C28;
+  --surface-alt: #141520;
+  --border:      rgba(255,255,255,0.08);
+  --border-mid:  rgba(255,255,255,0.14);
+  --accent-soft: rgba(107,92,231,0.18);
+}
+
+/* ── Page Title ──────────────────────────────────────────────────────────── */
+.title {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 40px;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0 0 2rem;
+  line-height: 1.15;
+}
+
+/* ── Billing Card ────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.cardHeading {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0 0 1rem;
+}
+
+.plan {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0 0 0.5rem;
+}
+
+.muted {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--ink-muted);
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+}
+
+/* ── Manage Subscription Button ──────────────────────────────────────────── */
+.manageBtn {
+  display: inline-block;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 11px 16px;
+  cursor: pointer;
+  transition: opacity 150ms;
+  margin-top: 1.5rem;
+}
+
+.manageBtn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.manageBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Upgrade Link ────────────────────────────────────────────────────────── */
+.upgradeLink {
+  display: inline-block;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+  padding: 11px 16px;
+  margin-top: 1.5rem;
+  border: 1.5px solid var(--accent);
+  border-radius: 8px;
+  transition: background 150ms, color 150ms;
+}
+
+.upgradeLink:hover {
+  background: var(--accent-soft);
+}
+
+/* ── Error message ───────────────────────────────────────────────────────── */
+.error {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--coral, #E8453C);
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .main {
+    padding: 2rem 1rem 3rem;
+  }
+
+  .title {
+    font-size: 30px;
+    margin-bottom: 1.5rem;
+  }
+
+  .card {
+    padding: 20px;
+  }
+
+  .plan {
+    font-size: 26px;
+  }
+}

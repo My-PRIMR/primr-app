@@ -25,6 +25,23 @@
   background: rgba(255, 255, 255, 0.92);
 }
 
+.left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.exitLink {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  text-decoration: none;
+  transition: color 120ms;
+}
+
+.exitLink:hover { color: var(--ink); }
+
 .wordmark {
   font-family: 'DM Serif Display', Georgia, serif;
   font-size: 20px;

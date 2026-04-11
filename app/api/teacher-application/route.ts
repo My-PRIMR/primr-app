@@ -6,6 +6,40 @@ import { uploadBuffer, type UploadFormat } from '@/lib/cloudinary'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5 MB
 
+// In-memory IP rate limit. Primr-app runs as a single long-lived Node
+// process, so a Map survives across requests. If we ever switch to
+// serverless or horizontal scale, swap for a Postgres-backed counter.
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000  // 1 hour
+const RATE_LIMIT_MAX = 5
+const ipBuckets = new Map<string, { count: number; resetAt: number }>()
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now()
+  // Opportunistic cleanup — prune expired buckets so the Map doesn't grow unbounded.
+  for (const [key, bucket] of ipBuckets) {
+    if (bucket.resetAt < now) ipBuckets.delete(key)
+  }
+  const bucket = ipBuckets.get(ip)
+  if (!bucket) {
+    ipBuckets.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+    return true
+  }
+  if (bucket.count >= RATE_LIMIT_MAX) return false
+  bucket.count++
+  return true
+}
+
+function getClientIp(req: NextRequest): string {
+  // nginx sets x-forwarded-for (first hop is the client) and x-real-ip.
+  // In tests and local dev we fall back to a fixed key so the whole
+  // request stream shares a single bucket — safely conservative.
+  const xff = req.headers.get('x-forwarded-for')
+  if (xff) return xff.split(',')[0].trim()
+  const xReal = req.headers.get('x-real-ip')
+  if (xReal) return xReal
+  return 'unknown'
+}
+
 const ALLOWED_FORMATS: Record<string, UploadFormat> = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
@@ -15,6 +49,11 @@ const ALLOWED_FORMATS: Record<string, UploadFormat> = {
 
 const ALLOWED_GRADE_LEVELS = new Set(['Elementary K-5', 'Middle 6-8', 'High 9-12', 'Other K-12'])
 const ALLOWED_ROLES = new Set(['Classroom teacher', 'Specialist', 'Substitute', 'Administrator', 'Other'])
+type ApplicationSource = 'in_app' | 'marketing'
+const ALLOWED_SOURCES: ReadonlySet<ApplicationSource> = new Set(['in_app', 'marketing'])
+function isApplicationSource(v: string): v is ApplicationSource {
+  return (ALLOWED_SOURCES as ReadonlySet<string>).has(v)
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -33,13 +72,38 @@ export async function POST(req: NextRequest) {
 
   try {
     const formData = await req.formData()
+
+    // Bot trap: real users never fill this field (it's rendered off-screen);
+    // bots that auto-fill every input will. Return 200 so the bot thinks it
+    // succeeded and doesn't retry. Must run before the upload and DB work.
+    // Intentionally does NOT count against the rate limit — otherwise a
+    // single stupid bot could exhaust the bucket for a legit user sharing
+    // the same IP (e.g. a school network).
+    const honeypot = (formData.get('website') as string | null) ?? ''
+    if (honeypot.trim() !== '') {
+      return NextResponse.json({ ok: true })
+    }
+
+    const ip = getClientIp(req)
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json(
+        { error: 'Too many submissions from this address. Please try again later.' },
+        { status: 429 },
+      )
+    }
+
     const name = (formData.get('name') as string | null)?.trim()
     const email = (formData.get('email') as string | null)?.trim().toLowerCase()
     const schoolName = (formData.get('schoolName') as string | null)?.trim()
     const gradeLevel = (formData.get('gradeLevel') as string | null)?.trim()
     const currentRole = (formData.get('currentRole') as string | null)?.trim()
     const proof = formData.get('proof') as File | null
+    const sourceRaw = (formData.get('source') as string | null)?.trim() || 'in_app'
 
+    if (!isApplicationSource(sourceRaw)) {
+      return NextResponse.json({ error: 'Invalid source.' }, { status: 400 })
+    }
+    const source: ApplicationSource = sourceRaw
     if (!name || !email || !schoolName || !gradeLevel || !currentRole || !proof) {
       return NextResponse.json({ error: 'All fields are required.' }, { status: 400 })
     }
@@ -85,6 +149,7 @@ export async function POST(req: NextRequest) {
 
         await tx.insert(teacherApplications).values({
           userId: user.id,
+          source,
           schoolName,
           gradeLevel,
           proofDocumentUrl: proofUrl,

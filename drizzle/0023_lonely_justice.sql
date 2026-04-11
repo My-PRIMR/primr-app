@@ -1,0 +1,2 @@
+CREATE TYPE "public"."teacher_application_source" AS ENUM('in_app', 'marketing');--> statement-breakpoint
+ALTER TABLE "teacher_applications" ADD COLUMN "source" "teacher_application_source" DEFAULT 'in_app' NOT NULL;

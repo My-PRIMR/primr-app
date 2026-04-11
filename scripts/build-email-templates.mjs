@@ -7,11 +7,17 @@
  * and writes the processed files to public/email-templates/.
  */
 import { readFileSync, writeFileSync, readdirSync, mkdirSync } from 'fs'
-import { fileURLToPath } from 'url'
+import { fileURLToPath, pathToFileURL } from 'url'
 import { dirname, join, resolve } from 'path'
+import { createRequire } from 'module'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..')
+
+// Resolve primr-tokens via the npm symlink so this script works in worktrees
+// (where '../primr-tokens' would resolve to the wrong directory).
+const require = createRequire(pathToFileURL(join(root, 'package.json')))
+const tokensPkg = require.resolve('@primr/tokens/tokens.css')
 
 /** Extract --var: value; pairs from a CSS block string (no nesting). */
 function parseTokenBlock(block) {
@@ -41,7 +47,7 @@ function applyTokens(content, tokens) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-const tokensCss = readFileSync(resolve(root, '../primr-tokens/tokens.css'), 'utf8')
+const tokensCss = readFileSync(tokensPkg, 'utf8')
 const tokens = parseLightModeTokens(tokensCss)
 
 const srcDir = join(root, 'src/email-templates')

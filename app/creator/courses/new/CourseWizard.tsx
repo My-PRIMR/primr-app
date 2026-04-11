@@ -231,6 +231,11 @@ export default function CourseWizard({ user, internalRole, productRole }: Course
       })
       const createData = await createRes.json()
       if (!createRes.ok) {
+        // Handle 403 with upgrade CTA
+        if (createRes.status === 403 && createData.upgradeUrl) {
+          window.location.href = createData.upgradeUrl
+          return
+        }
         set({ status: 'error', errorMessage: createData.error || 'Failed to create course.' })
         return
       }

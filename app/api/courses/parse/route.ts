@@ -251,7 +251,6 @@ export async function POST(req: NextRequest) {
     const stream = await client.messages.stream({
       model: resolvedModel.id,
       max_tokens: 32000,
-      thinking: { type: 'disabled' },
       system: systemPrompt,
       messages: [{ role: 'user' as const, content: userParts.filter(Boolean).join('\n\n') }],
     })

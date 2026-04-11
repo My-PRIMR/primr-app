@@ -169,6 +169,13 @@
       "when": 1775880559657,
       "tag": "0023_lonely_justice",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1775946740052,
+      "tag": "0024_new_ultimo",
+      "breakpoints": true
     }
   ]
 }

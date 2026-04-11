@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, text, jsonb, timestamp, uuid, real, integer, smallint, boolean, unique, uniqueIndex } from 'drizzle-orm/pg-core'
+import { pgTable, pgEnum, text, jsonb, timestamp, uuid, real, integer, smallint, boolean, unique, uniqueIndex, index, type AnyPgColumn } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import type { LessonManifest } from '@primr/components'
 
@@ -16,6 +16,10 @@ export const organizations = pgTable('organizations', {
   id:        uuid('id').primaryKey().defaultRandom(),
   name:      text('name').notNull(),
   slug:      text('slug').notNull().unique(),
+  ownerId:   uuid('owner_id').references((): AnyPgColumn => users.id, { onDelete: 'set null' }),
+  seatLimit: integer('seat_limit').notNull().default(5),
+  /** No inline FK: would create a circular reference with plan_subscriptions.organization_id. Enforced at the app layer. */
+  planSubscriptionId: uuid('plan_subscription_id'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
@@ -38,6 +42,7 @@ export const users = pgTable('users', {
   schoolName: text('school_name'),
   organizationId: uuid('organization_id').references(() => organizations.id),
   onboardingDismissedAt: timestamp('onboarding_dismissed_at'),
+  stripeCustomerId: text('stripe_customer_id'),
   createdAt:      timestamp('created_at').notNull().defaultNow(),
   updatedAt:      timestamp('updated_at').notNull().defaultNow(),
   lastLoginAt:    timestamp('last_login_at'),
@@ -300,3 +305,90 @@ export const teacherApplications = pgTable('teacher_applications', {
 
 export type TeacherApplication = typeof teacherApplications.$inferSelect
 export type NewTeacherApplication = typeof teacherApplications.$inferInsert
+
+// ── Plan Subscriptions ────────────────────────────────────────────────────────
+export const planSubscriptionTierEnum = pgEnum('plan_subscription_tier', [
+  'pro',
+  'teams',
+])
+
+export const planSubscriptionPeriodEnum = pgEnum('plan_subscription_period', [
+  'monthly',
+  'annual',
+])
+
+export const planSubscriptionStatusEnum = pgEnum('plan_subscription_status', [
+  'active',
+  'past_due',
+  'canceled',
+  'incomplete',
+])
+
+export const teamInvitationStatusEnum = pgEnum('team_invitation_status', [
+  'pending',
+  'accepted',
+  'revoked',
+  'expired',
+])
+
+export const planSubscriptions = pgTable(
+  'plan_subscriptions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    subscriberUserId: uuid('subscriber_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    organizationId: uuid('organization_id').references(() => organizations.id, {
+      onDelete: 'cascade',
+    }),
+    tier: planSubscriptionTierEnum('tier').notNull(),
+    billingPeriod: planSubscriptionPeriodEnum('billing_period').notNull(),
+    stripeCustomerId: text('stripe_customer_id').notNull(),
+    stripeSubscriptionId: text('stripe_subscription_id').notNull().unique(),
+    status: planSubscriptionStatusEnum('status').notNull(),
+    currentPeriodEnd: timestamp('current_period_end').notNull(),
+    cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    index('plan_subscriptions_subscriber_idx').on(t.subscriberUserId),
+    index('plan_subscriptions_organization_idx').on(t.organizationId),
+    uniqueIndex('plan_subscriptions_one_active_per_user_tier')
+      .on(t.subscriberUserId, t.tier)
+      .where(sql`status = 'active'`),
+  ],
+)
+
+export type PlanSubscription = typeof planSubscriptions.$inferSelect
+export type NewPlanSubscription = typeof planSubscriptions.$inferInsert
+
+// ── Team Invitations ──────────────────────────────────────────────────────────
+export const teamInvitations = pgTable(
+  'team_invitations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    email: text('email').notNull(),
+    invitedByUserId: uuid('invited_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    token: text('token').notNull().unique(),
+    status: teamInvitationStatusEnum('status').notNull().default('pending'),
+    expiresAt: timestamp('expires_at').notNull(),
+    acceptedByUserId: uuid('accepted_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('team_invitations_one_pending_per_email_per_org')
+      .on(t.organizationId, t.email)
+      .where(sql`status = 'pending'`),
+  ],
+)
+
+export type TeamInvitation = typeof teamInvitations.$inferSelect
+export type NewTeamInvitation = typeof teamInvitations.$inferInsert

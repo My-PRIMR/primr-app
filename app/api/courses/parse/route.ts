@@ -12,13 +12,14 @@
  *   with an optional docMarker so document text is included as supplementary.
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { streamText } from 'ai'
-import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
-import { extractJSON } from '@/lib/extract-json'
+import Anthropic from '@anthropic-ai/sdk'
 import { getSession } from '@/session'
 import { resolveModel, DEFAULT_MODEL, MODELS, modelById } from '@/lib/models'
+import { extractJSON } from '@/lib/extract-json'
 import type { ParsedCourseTree, CourseTree } from '@/types/course'
 import { fetchYouTubeData } from '@/lib/video-ingest'
+
+const client = new Anthropic()
 
 // ── System prompts ────────────────────────────────────────────────────────────
 
@@ -251,19 +252,15 @@ export async function POST(req: NextRequest) {
     // exhaustive lesson count rules. The user-selected model is used for
     // lesson content generation, not document structure extraction.
     const parseModelId = MODELS.haiku.id
-    const stream = streamText({
-      model: resolveModelRef(parseModelId),
-      maxOutputTokens: 32000,
-      system: buildSystemPrompt(systemPrompt, parseModelId, { learnlm: false }),
+    const stream = await client.messages.stream({
+      model: parseModelId,
+      max_tokens: 32000,
+      system: systemPrompt,
       messages: [{ role: 'user' as const, content: userParts.filter(Boolean).join('\n\n') }],
     })
-    const raw = await stream.text
-    const finishReason = await stream.finishReason
-    const usage = await stream.usage
-    console.log(`[courses/parse] AI responded in ${Date.now() - t0}ms model=${parseModelId} finishReason=${finishReason} outputTokens=${usage.outputTokens}`)
-    if (finishReason === 'length') {
-      console.warn('[courses/parse] WARNING: output was truncated at', usage.outputTokens, 'tokens')
-    }
+    const message = await stream.finalMessage()
+    console.log(`[courses/parse] AI responded in ${Date.now() - t0}ms model=${parseModelId} stop_reason=${message.stop_reason} output_tokens=${message.usage.output_tokens}`)
+    const raw = message.content[0].type === 'text' ? message.content[0].text : ''
 
     try {
       parsed = JSON.parse(extractJSON(raw))

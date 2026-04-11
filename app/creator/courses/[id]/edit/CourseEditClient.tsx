@@ -8,6 +8,7 @@ import LessonBlockEditor from '../../../components/LessonBlockEditor'
 import { PageHeader } from '../../../../components/PageHeader'
 import { type PageHeaderUser } from '../../../../components/pageHeaderUser'
 import { canUsePexels, canAiEdit as canAiEditFn } from '@/lib/models'
+import { PricingSection } from './PricingSection'
 
 import styles from './CourseEditClient.module.css'
 
@@ -341,6 +342,11 @@ export default function CourseEditClient({ course, plan, internalRole, user }: {
                 </div>
               )
             })}
+            <PricingSection
+              courseId={course.id}
+              initialPriceCents={course.priceCents}
+              initialIsPaid={course.isPaid}
+            />
           </div>}
         </aside>
 

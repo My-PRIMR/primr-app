@@ -80,6 +80,8 @@ export interface FullCourseTree {
   isPublic: boolean
   status: CourseStatus
   createdBy: string | null
+  priceCents: number | null
+  isPaid: boolean
   sections: Array<{
     id: string
     title: string

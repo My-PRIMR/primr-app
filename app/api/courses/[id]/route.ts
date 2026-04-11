@@ -66,6 +66,8 @@ export async function GET(
     isPublic: course.isPublic,
     status: course.status,
     createdBy: course.createdBy,
+    priceCents: course.priceCents,
+    isPaid: course.isPaid,
     sections: sections.map(section => ({
       id: section.id,
       title: section.title,

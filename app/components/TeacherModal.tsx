@@ -59,6 +59,7 @@ export function TeacherModal({ onClose }: TeacherModalProps) {
             <p className={styles.subtitle}>Free for verified K-12 teachers using Primr with their own students. Submit one of the documents below to verify your role.</p>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <input type="hidden" name="source" value="in_app" />
               <label className={styles.fieldLabel}>
                 Full name
                 <input name="name" required className={styles.input} />

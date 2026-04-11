@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import PageHeaderServer from '../components/PageHeaderServer'
 import { UpgradeCTA } from '../components/UpgradeCTA'
+import { PriceBadge } from '../components/PriceBadge'
 import { db } from '@/db'
 import {
   lessons, lessonInvitations, lessonAttempts,
@@ -26,6 +27,8 @@ export default async function MyPrimrPage() {
       id: courses.id,
       title: courses.title,
       status: courses.status,
+      priceCents: courses.priceCents,
+      isPaid: courses.isPaid,
       doneCount: sql<number>`count(case when ${chapterLessons.generationStatus} = 'done' then 1 end)::int`,
     })
     .from(courseEnrollments)
@@ -69,7 +72,13 @@ export default async function MyPrimrPage() {
 
   // ── Learner: individually invited lessons ───────────────────────────────────
   const invitedLessons = await db
-    .select({ id: lessons.id, title: lessons.title, slug: lessons.slug })
+    .select({
+      id: lessons.id,
+      title: lessons.title,
+      slug: lessons.slug,
+      priceCents: lessons.priceCents,
+      isPaid: lessons.isPaid,
+    })
     .from(lessonInvitations)
     .innerJoin(lessons, eq(lessonInvitations.lessonId, lessons.id))
     .where(eq(lessonInvitations.email, email))
@@ -134,7 +143,10 @@ export default async function MyPrimrPage() {
                 return (
                   <div key={course.id} className={styles.card}>
                     <div className={styles.cardBody}>
-                      <h2 className={styles.cardTitle}>{course.title}</h2>
+                      <h2 className={styles.cardTitle}>
+                        {course.title}
+                        <PriceBadge priceCents={course.priceCents} isPaid={course.isPaid} />
+                      </h2>
                       <p className={styles.cardMeta}>{enrolledCourseLabel(course.doneCount, course.completedCount)}</p>
                     </div>
                     <div className={styles.cardActions}>
@@ -161,7 +173,10 @@ export default async function MyPrimrPage() {
                 return (
                   <div key={lesson.id} className={styles.card}>
                     <div className={styles.cardBody}>
-                      <h2 className={styles.cardTitle}>{lesson.title}</h2>
+                      <h2 className={styles.cardTitle}>
+                        {lesson.title}
+                        <PriceBadge priceCents={lesson.priceCents} isPaid={lesson.isPaid} />
+                      </h2>
                       <p className={styles.cardMeta}>
                         {stat
                           ? `${stat.attemptCount} attempt${stat.attemptCount !== 1 ? 's' : ''}${stat.bestScore != null ? ` · Best: ${Math.round(stat.bestScore * 100)}%` : ''}${stat.lastAttempt ? ` · Last: ${new Date(stat.lastAttempt).toLocaleDateString()}` : ''}`

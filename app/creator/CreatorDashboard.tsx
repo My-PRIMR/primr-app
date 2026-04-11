@@ -12,6 +12,7 @@ import ResultsTab, { type ResultsData } from './ResultsTab'
 import ResultsTabBoundary from './ResultsTabBoundary'
 import StudentsTable from './students/StudentsTable'
 import type { TeacherRosterRow } from '@/lib/teacher-roster'
+import { PriceBadge } from '../components/PriceBadge'
 
 export type LearnerData = {
   courses: EnrolledCourse[]
@@ -26,6 +27,8 @@ export type CourseItem = {
   createdAt: string
   lessonCount: number
   doneCount: number
+  priceCents: number | null
+  isPaid: boolean
 }
 
 export type LessonItem = {
@@ -38,6 +41,8 @@ export type LessonItem = {
   examEnforced: boolean
   showcase: boolean
   isStandalone: boolean
+  priceCents: number | null
+  isPaid: boolean
 }
 
 type Tab = 'courses' | 'lessons' | 'results' | 'learning' | 'students'
@@ -272,7 +277,10 @@ export default function CreatorDashboard({
                   />
                 </label>
                 <div className={styles.cardBody}>
-                  <h2 className={styles.cardTitle}>{course.title}</h2>
+                  <h2 className={styles.cardTitle}>
+                    {course.title}
+                    <PriceBadge priceCents={course.priceCents} isPaid={course.isPaid} />
+                  </h2>
                   <p className={styles.cardMeta}>
                     {courseLabel(course.status, course.doneCount, course.lessonCount)}
                     {' · '}
@@ -322,7 +330,10 @@ export default function CreatorDashboard({
                       onChange={() => toggle(course.id)}
                     />
                   </td>
-                  <td className={styles.tdTitle}>{course.title}</td>
+                  <td className={styles.tdTitle}>
+                    {course.title}
+                    <PriceBadge priceCents={course.priceCents} isPaid={course.isPaid} />
+                  </td>
                   <td className={styles.tdMeta}>{courseLabel(course.status, course.doneCount, course.lessonCount)}</td>
                   <td className={styles.tdMeta}>{new Date(course.createdAt).toLocaleDateString()}</td>
                   <td className={styles.tdActions}>
@@ -375,6 +386,7 @@ export default function CreatorDashboard({
                   <h2 className={styles.cardTitle}>
                     {lesson.title}
                     {!lesson.publishedAt && <span className={styles.draftBadge}>Draft</span>}
+                    <PriceBadge priceCents={lesson.priceCents} isPaid={lesson.isPaid} />
                   </h2>
                   <p className={styles.cardMeta}>
                     Created {new Date(lesson.createdAt).toLocaleDateString()}
@@ -449,6 +461,7 @@ export default function CreatorDashboard({
                   <td className={styles.tdTitle}>
                     {lesson.title}
                     {!lesson.publishedAt && <span className={styles.draftBadge}>Draft</span>}
+                    <PriceBadge priceCents={lesson.priceCents} isPaid={lesson.isPaid} />
                   </td>
                   <td className={styles.tdMeta}>{new Date(lesson.updatedAt).toLocaleDateString()}</td>
                   <td className={styles.tdActions}>

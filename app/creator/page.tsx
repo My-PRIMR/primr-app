@@ -43,6 +43,8 @@ export default async function DashboardPage() {
           title: courses.title,
           status: courses.status,
           createdAt: courses.createdAt,
+          priceCents: courses.priceCents,
+          isPaid: courses.isPaid,
           lessonCount: sql<number>`count(${chapterLessons.id})::int`,
           doneCount: sql<number>`count(case when ${chapterLessons.generationStatus} = 'done' then 1 end)::int`,
         })
@@ -66,6 +68,8 @@ export default async function DashboardPage() {
         publishedAt: lessons.publishedAt,
         examEnforced: lessons.examEnforced,
         showcase: lessons.showcase,
+        priceCents: lessons.priceCents,
+        isPaid: lessons.isPaid,
       })
         .from(lessons)
         .where(and(eq(lessons.createdBy, userId), eq(lessons.isSystem, false)))
@@ -530,6 +534,8 @@ export default async function DashboardPage() {
                 createdAt: c.createdAt.toISOString(),
                 lessonCount: c.lessonCount,
                 doneCount: c.doneCount,
+                priceCents: c.priceCents,
+                isPaid: c.isPaid,
               }))}
               lessons={createdLessons.map(l => ({
                 id: l.id,
@@ -541,6 +547,8 @@ export default async function DashboardPage() {
                 examEnforced: l.examEnforced,
                 showcase: l.showcase,
                 isStandalone: l.chapterLessonCount === 0,
+                priceCents: l.priceCents,
+                isPaid: l.isPaid,
               }))}
               learner={{
                 courses: enrolledCourses,

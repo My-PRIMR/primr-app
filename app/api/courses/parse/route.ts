@@ -61,7 +61,7 @@ Rules:
 - headingMarker must be an exact substring from the document text.
 - If the document only has 2-3 levels, synthesize the missing levels (set "inferred": true).
 - Each lesson covers a coherent sub-topic.
-- CRITICAL STRUCTURE RULE: If a Table of Contents is provided, it is the definitive structure. Create one lesson for EVERY lowest-level entry in the TOC — do NOT truncate, summarize, consolidate, or omit any. If the TOC has 150 entries you must emit 150 lessons. If no TOC is provided, scan the entire document end-to-end and create one lesson per distinct section heading. Process from first page to last page.
+- CRITICAL LESSON COUNT RULE: Before writing any JSON, scan the ENTIRE document end-to-end and count every "### " heading (third-level markdown heading). Each "### " heading represents exactly one lesson. Your output MUST contain exactly that many lessons — no more, no fewer. Do NOT truncate, summarize, or omit any. If the document has 53 "### " headings you must emit 53 lessons. This rule overrides any default lesson-count preference. Only fall back to "aim for 10-30 lessons" when the document has NO "### " headings at all.
 - Tailor to the specified audience and level.
 - If a Focus/Scope is provided, only include lessons relevant to that focus.${videoRule}
 - Return ONLY valid JSON. No markdown fences, no explanation. Start with { and end with }.`
@@ -213,29 +213,8 @@ export async function POST(req: NextRequest) {
 
     const userParts: string[] = []
 
-    const slicedDocText = docText.slice(0, 200000)
-
-    // ── Extract Table of Contents if present ─────────────────────────────
-    // Look for TOC in the first portion of the document. Common markers:
-    // "Table of Contents", "Contents", "TABLE OF CONTENTS"
-    let tocText = ''
     if (structureSource === 'document') {
-      const tocMatch = slicedDocText.match(
-        /(?:^|\n)((?:Table of Contents|Contents|TABLE OF CONTENTS)\s*\n[\s\S]*?)(?:\n\s*\n\s*\n|\n(?:Chapter|CHAPTER|Preface|PREFACE|Introduction|INTRODUCTION)\s)/i
-      )
-      if (tocMatch) {
-        // Cap TOC at 10K chars to avoid sending a huge TOC
-        tocText = tocMatch[1].trim().slice(0, 10000)
-      }
-    }
-
-    if (structureSource === 'document') {
-      if (tocText) {
-        userParts.push(`Table of Contents (use this as the definitive structure — create one lesson per entry):\n"""\n${tocText}\n"""`)
-        userParts.push(`\nFull document text (for headingMarker lookup):\n"""\n${slicedDocText}\n"""`)
-      } else {
-        userParts.push(`Document:\n"""\n${slicedDocText}\n"""`)
-      }
+      userParts.push(`Document:\n"""\n${docText.slice(0, 200000)}\n"""`)
       if (videoData) {
         const chapterList = videoData.chapters.map((ch, i) => `  ${i}: "${ch.title}"`).join('\n')
         userParts.push(`Video chapters (for videoChapterIndex annotation):\n${chapterList}`)
@@ -250,20 +229,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (tocText) {
-      userParts.push(`STRUCTURE RULE: The Table of Contents above defines the course structure. Create one lesson for each lowest-level entry in the TOC. Do NOT consolidate or skip entries. The TOC is the source of truth for lesson count and titles.`)
-    } else {
-      userParts.push(`IMPORTANT: Process the ENTIRE document from beginning to end. Create one lesson per distinct sub-topic or section heading. Do NOT summarize or consolidate. Do NOT stop before reaching the end of the document.`)
-    }
-
     userParts.push(
       `Audience: ${audience}`,
       `Level: ${level}`,
       focus ? `Focus/Scope: ${focus}` : '',
       'Respond with JSON only.',
     )
-
-    console.log(`[courses/parse] tocFound=${!!tocText} tocLength=${tocText.length}`)
 
     console.log(`[courses/parse] model=${resolvedModel.id} structureSource=${structureSource} video=${hasVideo} docs=${files.length} rawText=${!!rawText}`)
     const t0 = Date.now()

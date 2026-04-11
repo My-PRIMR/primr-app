@@ -19,9 +19,14 @@ export function uploadBuffer(
   publicId: string
 ): Promise<string> {
   const resource_type = format === 'pdf' ? 'raw' : 'image'
+  // Don't pass `format` for raw resources — Cloudinary ignores it for raw
+  // uploads but it can cause delivery errors when appended to the URL.
+  const uploadOpts = resource_type === 'raw'
+    ? { folder: 'primr_documents', public_id: publicId, resource_type } as const
+    : { folder: 'primr_documents', public_id: publicId, format, resource_type } as const
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { folder: 'primr_documents', public_id: publicId, format, resource_type },
+      uploadOpts,
       (err, result) => {
         if (err || !result) return reject(err ?? new Error('Cloudinary upload returned no result'))
         resolve(result.secure_url)

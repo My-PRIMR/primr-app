@@ -15,7 +15,10 @@ export default function LearnHeader({ userName, userEmail, role, internalRole }:
 
   return (
     <header className={styles.header}>
-      <Link href={dashboardHref} className={styles.wordmark}>Primr</Link>
+      <div className={styles.left}>
+        <Link href={dashboardHref} className={styles.exitLink}>← Exit</Link>
+        <Link href={dashboardHref} className={styles.wordmark}>Primr</Link>
+      </div>
       <div className={styles.right}>
         <UserMenu userName={userName} userEmail={userEmail} role={role} internalRole={internalRole} internalUrl={internalUrl} />
       </div>

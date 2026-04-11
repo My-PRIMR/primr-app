@@ -260,27 +260,37 @@ export async function POST(req: NextRequest) {
         }>
       }>
     }
-    // Use Sonnet for structural parsing — Haiku stops early on very large
-    // documents (~100 lessons instead of 150+). Sonnet has better attention
-    // span for exhaustive document structure extraction. The user-selected
-    // model is used for lesson content generation, not parsing.
-    const parseModelId = MODELS.sonnet.id
     const stream = await client.messages.stream({
-      model: parseModelId,
+      model: resolvedModel.id,
       max_tokens: 32000,
       system: systemPrompt,
       messages: [{ role: 'user' as const, content: userParts.filter(Boolean).join('\n\n') }],
     })
     const message = await stream.finalMessage()
-    console.log(`[courses/parse] AI responded in ${Date.now() - t0}ms model=${parseModelId} stop_reason=${message.stop_reason} output_tokens=${message.usage.output_tokens}`)
-    const raw = message.content[0].type === 'text' ? message.content[0].text : ''
+    console.log(`[courses/parse] AI responded in ${Date.now() - t0}ms model=${resolvedModel.id} stop_reason=${message.stop_reason} output_tokens=${message.usage.output_tokens}`)
+
+    // Log all content blocks — shows thinking blocks (if any) plus the text response
+    for (const block of message.content) {
+      if (block.type === 'thinking') {
+        console.log(`[courses/parse] THINKING block (${block.thinking.length} chars): ${block.thinking.slice(0, 500)}...`)
+      } else if (block.type === 'text') {
+        console.log(`[courses/parse] TEXT block (${block.text.length} chars), last 200 chars: ...${block.text.slice(-200)}`)
+      } else {
+        console.log(`[courses/parse] ${block.type} block`)
+      }
+    }
+
+    const raw = message.content.filter(b => b.type === 'text').map(b => b.type === 'text' ? b.text : '').join('')
 
     try {
       parsed = JSON.parse(extractJSON(raw))
     } catch {
-      console.error('[courses/parse] JSON parse failed. Raw:', raw)
+      console.error('[courses/parse] JSON parse failed. Raw:', raw.slice(0, 2000))
       return NextResponse.json({ error: 'AI returned invalid JSON', raw }, { status: 500 })
     }
+
+    const lessonCount = parsed.sections.reduce((sum, s) => sum + s.chapters.reduce((cs, c) => cs + c.lessons.length, 0), 0)
+    console.log(`[courses/parse] Parsed ${lessonCount} lessons across ${parsed.sections.length} sections`)
 
     // ── Build all heading markers list (for sliceTextByMarker next-marker lookup) ──
     const allDocMarkers = parsed.sections.flatMap(s =>

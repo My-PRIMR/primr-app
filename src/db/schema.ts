@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, text, jsonb, timestamp, uuid, real, integer, smallint, boolean, unique, uniqueIndex, index, type AnyPgColumn } from 'drizzle-orm/pg-core'
+import { pgTable, pgEnum, text, jsonb, timestamp, uuid, real, integer, smallint, boolean, unique, uniqueIndex, index, check, type AnyPgColumn } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import type { LessonManifest } from '@primr/components'
 
@@ -434,7 +434,15 @@ export const subscriptions = pgTable('subscriptions', {
   currentPeriodEnd:     timestamp('current_period_end').notNull(),
   createdAt:            timestamp('created_at').notNull().defaultNow(),
   updatedAt:            timestamp('updated_at').notNull().defaultNow(),
-})
+}, (t) => [
+  // Composite index for common lookups like "does this learner have an active sub to this creator?"
+  index('subscriptions_subscriber_creator_status_idx').on(t.subscriberId, t.creatorId, t.status),
+  // A learner may have at most one active subscription per creator. Historical (canceled/past_due)
+  // rows are unconstrained so a learner can re-subscribe after cancellation.
+  uniqueIndex('subscriptions_one_active_per_pair_idx')
+    .on(t.subscriberId, t.creatorId)
+    .where(sql`status = 'active'`),
+])
 
 export type Subscription = typeof subscriptions.$inferSelect
 export type NewSubscription = typeof subscriptions.$inferInsert
@@ -443,14 +451,22 @@ export type NewSubscription = typeof subscriptions.$inferInsert
 export const purchases = pgTable('purchases', {
   id:                    uuid('id').primaryKey().defaultRandom(),
   buyerId:               uuid('buyer_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  lessonId:              uuid('lesson_id').references(() => lessons.id, { onDelete: 'cascade' }),
-  courseId:              uuid('course_id').references(() => courses.id, { onDelete: 'cascade' }),
+  // Intentionally NOT cascade: preserve the purchase/financial audit trail even
+  // if the underlying content is later deleted. Matches the precedent set by
+  // teacherApplications.reviewedBy.
+  lessonId:              uuid('lesson_id').references(() => lessons.id, { onDelete: 'set null' }),
+  courseId:              uuid('course_id').references(() => courses.id, { onDelete: 'set null' }),
   stripePaymentIntentId: text('stripe_payment_intent_id').notNull().unique(),
   amountCents:           integer('amount_cents').notNull(),
   creatorRevenueCents:   integer('creator_revenue_cents').notNull(),
   primrFeeCents:         integer('primr_fee_cents').notNull(),
   createdAt:             timestamp('created_at').notNull().defaultNow(),
-})
+}, (t) => [
+  index('purchases_buyer_lesson_idx').on(t.buyerId, t.lessonId),
+  index('purchases_buyer_course_idx').on(t.buyerId, t.courseId),
+  // Exactly one of lesson_id / course_id must be set per purchase row.
+  check('purchases_exactly_one_target', sql`(${t.lessonId} IS NULL) != (${t.courseId} IS NULL)`),
+])
 
 export type Purchase = typeof purchases.$inferSelect
 export type NewPurchase = typeof purchases.$inferInsert

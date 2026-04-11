@@ -12,7 +12,7 @@
  *   with an optional docMarker so document text is included as supplementary.
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { generateText } from 'ai'
+import { streamText } from 'ai'
 import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
 import { extractJSON } from '@/lib/extract-json'
 import { getSession } from '@/session'
@@ -251,12 +251,15 @@ export async function POST(req: NextRequest) {
     // exhaustive lesson count rules. The user-selected model is used for
     // lesson content generation, not document structure extraction.
     const parseModelId = MODELS.haiku.id
-    const { text: raw, finishReason, usage } = await generateText({
+    const stream = streamText({
       model: resolveModelRef(parseModelId),
       maxOutputTokens: 32000,
       system: buildSystemPrompt(systemPrompt, parseModelId, { learnlm: false }),
-      prompt: userParts.filter(Boolean).join('\n\n'),
+      messages: [{ role: 'user' as const, content: userParts.filter(Boolean).join('\n\n') }],
     })
+    const raw = await stream.text
+    const finishReason = await stream.finishReason
+    const usage = await stream.usage
     console.log(`[courses/parse] AI responded in ${Date.now() - t0}ms model=${parseModelId} finishReason=${finishReason} outputTokens=${usage.outputTokens}`)
     if (finishReason === 'length') {
       console.warn('[courses/parse] WARNING: output was truncated at', usage.outputTokens, 'tokens')

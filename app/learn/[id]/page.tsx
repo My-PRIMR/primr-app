@@ -4,6 +4,8 @@ import { lessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { canAccessLesson } from '@/lib/lesson-access'
+import { hasAccessToLesson } from '@/access'
+import { Paywall } from '../../components/Paywall'
 import LessonPlayer from './LessonPlayer'
 import LearnHeader from '../LearnHeader'
 
@@ -29,6 +31,21 @@ export default async function LearnPage({ params, searchParams }: { params: Prom
         <h1>Access Denied</h1>
         <p>You do not have permission to view this lesson.</p>
       </main>
+    )
+  }
+
+  // Monetization gate: system lessons, free lessons, the creator, and
+  // subscribers/purchasers always pass. Everyone else sees the paywall.
+  const hasPaidAccess = await hasAccessToLesson(session.user.id, lesson.id)
+  if (!hasPaidAccess) {
+    return (
+      <Paywall
+        kind="lesson"
+        id={lesson.id}
+        title={lesson.title}
+        priceCents={lesson.priceCents}
+        creatorId={lesson.createdBy}
+      />
     )
   }
 

@@ -1,0 +1,81 @@
+.wrapper {
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--surface, #ffffff);
+  border: 1.5px solid var(--border, rgba(15, 17, 23, 0.10));
+  border-radius: 16px;
+  padding: 2.5rem 2.25rem;
+  text-align: center;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
+}
+
+.eyebrow {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent, #6B5CE7);
+  background: var(--accent-soft, rgba(107, 92, 231, 0.12));
+  border-radius: 20px;
+  padding: 3px 10px;
+  margin: 0 0 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.title {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--ink, #0F1117);
+  margin: 0 0 0.5rem;
+  line-height: 1.2;
+}
+
+.subtitle {
+  font-size: 14.5px;
+  color: var(--ink-muted, #4A4D5E);
+  margin: 0 0 1.5rem;
+  line-height: 1.5;
+}
+
+.price {
+  font-family: 'DM Mono', monospace;
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--ink, #0F1117);
+  margin: 0 0 1rem;
+}
+
+.hint {
+  font-size: 12.5px;
+  color: var(--ink-muted, #8A8FA8);
+  margin: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .card {
+    background: var(--surface, #1A1C28);
+    border-color: var(--border, rgba(255, 255, 255, 0.08));
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  }
+  :root:not([data-theme="light"]) .title { color: var(--ink, #EDEEF5); }
+  :root:not([data-theme="light"]) .subtitle { color: var(--ink-muted, #B0B3C8); }
+  :root:not([data-theme="light"]) .price { color: var(--ink, #EDEEF5); }
+}
+
+:root[data-theme="dark"] .card {
+  background: var(--surface, #1A1C28);
+  border-color: var(--border, rgba(255, 255, 255, 0.08));
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}
+:root[data-theme="dark"] .title { color: var(--ink, #EDEEF5); }
+:root[data-theme="dark"] .subtitle { color: var(--ink-muted, #B0B3C8); }
+:root[data-theme="dark"] .price { color: var(--ink, #EDEEF5); }

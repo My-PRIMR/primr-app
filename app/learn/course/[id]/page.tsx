@@ -3,6 +3,8 @@ import { redirect, notFound } from 'next/navigation'
 import { db } from '@/db'
 import { courses, courseSections, courseChapters, chapterLessons, courseEnrollments, lessons } from '@/db/schema'
 import { eq, asc, and } from 'drizzle-orm'
+import { hasAccessToCourse } from '@/access'
+import { Paywall } from '../../../components/Paywall'
 import CoursePlayer from './CoursePlayer'
 import type { LessonManifest } from '@primr/components'
 
@@ -37,6 +39,21 @@ export default async function CourseLearnPage({
       ),
     })
     if (!enrollment) redirect('/creator')
+  }
+
+  // Monetization gate: system courses, free courses, the creator, and
+  // subscribers/purchasers always pass. Everyone else sees the paywall.
+  const hasPaidAccess = await hasAccessToCourse(userId, course.id)
+  if (!hasPaidAccess) {
+    return (
+      <Paywall
+        kind="course"
+        id={course.id}
+        title={course.title}
+        priceCents={course.priceCents}
+        creatorId={course.createdBy}
+      />
+    )
   }
 
   // Load full course tree

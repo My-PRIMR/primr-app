@@ -23,3 +23,11 @@ export function getStripeWebhookSecret(): string {
   }
   return secret
 }
+
+export function getCreatorWebhookSecret(): string {
+  const secret = process.env.STRIPE_WEBHOOK_SECRET
+  if (!secret) {
+    throw new Error('STRIPE_WEBHOOK_SECRET is not set')
+  }
+  return secret
+}

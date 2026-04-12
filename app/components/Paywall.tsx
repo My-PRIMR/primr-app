@@ -41,6 +41,10 @@ export function Paywall({
         ),
       })
       if (!res.ok) {
+        if (res.status === 401) {
+          window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`
+          return
+        }
         const body = await res.json().catch(() => ({}))
         throw new Error(body.error ?? 'Failed to start checkout')
       }
@@ -63,6 +67,10 @@ export function Paywall({
         body: JSON.stringify({ creatorId }),
       })
       if (!res.ok) {
+        if (res.status === 401) {
+          window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`
+          return
+        }
         const body = await res.json().catch(() => ({}))
         throw new Error(body.error ?? 'Failed to start subscription')
       }

@@ -16,6 +16,39 @@
 }
 .navLink:hover { opacity: 0.8; }
 
+/* ── Settings dropdown ──────────────────────────────────────────────────── */
+.settingsWrap {
+  position: relative;
+}
+
+.settingsBtn {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--border-mid, var(--border));
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.settingsBtn:hover {
+  background: var(--accent-soft, rgba(107,92,231,0.1));
+}
+
+.settingsDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 100;
+  min-width: 300px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
 /* ── Body ────────────────────────────────────────────────────────────────── */
 .body {
   flex: 1;

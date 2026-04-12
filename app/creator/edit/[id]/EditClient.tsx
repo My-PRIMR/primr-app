@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import type { LessonManifest } from '@/types/outline'
 import LessonBlockEditor from '../../components/LessonBlockEditor'
@@ -115,6 +115,25 @@ export default function EditClient({
     </div>
   )
 
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsRef = useRef<HTMLDivElement>(null)
+
+  // Close settings dropdown on outside click
+  useEffect(() => {
+    if (!settingsOpen) return
+    const handler = (e: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setSettingsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [settingsOpen])
+
+  const priceLabel = isPaid && priceCents != null
+    ? `$${(priceCents / 100).toFixed(2)}`
+    : null
+
   return (
     <div className={styles.root}>
       {/* ── Nav ── */}
@@ -124,6 +143,24 @@ export default function EditClient({
           <>
             <Link href={`/creator/preview/${lessonId}`} className={styles.navLink}>Preview →</Link>
             <Link href={`/learn/${lessonId}`} className={styles.navLink}>Take lesson →</Link>
+            <div className={styles.settingsWrap} ref={settingsRef}>
+              <button
+                className={styles.settingsBtn}
+                onClick={() => setSettingsOpen(v => !v)}
+                title="Lesson settings"
+              >
+                {priceLabel ? `⚙ ${priceLabel}` : '⚙ Settings'}
+              </button>
+              {settingsOpen && (
+                <div className={styles.settingsDropdown}>
+                  <PricingSection
+                    lessonId={lessonId}
+                    initialPriceCents={priceCents}
+                    initialIsPaid={isPaid}
+                  />
+                </div>
+              )}
+            </div>
           </>
         }
       />
@@ -140,15 +177,6 @@ export default function EditClient({
           canAiEdit={aiEditEnabled}
           plan={plan}
           isInternal={!!internalRole}
-        />
-      </div>
-
-      {/* ── Pricing (below editor) ── */}
-      <div className={styles.body}>
-        <PricingSection
-          lessonId={lessonId}
-          initialPriceCents={priceCents}
-          initialIsPaid={isPaid}
         />
       </div>
     </div>

@@ -114,20 +114,17 @@ export async function POST(req: Request) {
       const priceId = sub.items.data[0]?.price?.id ?? null
       const planFromPrice = priceId ? getPlanForPriceId(priceId) : null
 
-      const updates: Record<string, unknown> = {
-        status,
-        currentPeriodEnd: new Date(sub.current_period_end * 1000),
-        cancelAtPeriodEnd: sub.cancel_at_period_end ?? false,
-        updatedAt: new Date(),
-      }
-      if (planFromPrice) {
-        updates.tier = planFromPrice.tier
-        updates.billingPeriod = planFromPrice.period
-      }
-
       await db
         .update(planSubscriptions)
-        .set(updates)
+        .set({
+          status,
+          currentPeriodEnd: new Date(sub.current_period_end * 1000),
+          cancelAtPeriodEnd: sub.cancel_at_period_end ?? false,
+          updatedAt: new Date(),
+          ...(planFromPrice
+            ? { tier: planFromPrice.tier, billingPeriod: planFromPrice.period }
+            : {}),
+        })
         .where(eq(planSubscriptions.stripeSubscriptionId, sub.id))
 
       // Recover user plan if active after prior downgrade

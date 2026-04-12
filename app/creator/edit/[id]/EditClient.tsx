@@ -36,6 +36,8 @@ export default function EditClient({
   const [inviteLink, setInviteLink] = useState<string | null>(null)
   const [inviting, setInviting] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
+  const [currentIsPaid, setCurrentIsPaid] = useState(isPaid)
+  const [currentPriceCents, setCurrentPriceCents] = useState(priceCents)
 
   const loadInvitations = useCallback(async () => {
     const res = await fetch(`/api/lessons/${lessonId}/invite`)
@@ -87,27 +89,31 @@ export default function EditClient({
   const sharePanel = (
     <div className={styles.shareSection}>
       <p className={styles.shareHeading}>Share lesson</p>
-      <div className={styles.shareRow}>
-        <input
-          className={styles.shareInput}
-          placeholder="email1@example.com, email2@example.com"
-          value={inviteEmails}
-          onChange={e => setInviteEmails(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && sendInvites()}
-        />
-        <button className={styles.shareBtn} onClick={sendInvites} disabled={inviting}>
-          {inviting ? '…' : 'Invite'}
-        </button>
-      </div>
-      {invitedList.length > 0 && (
-        <ul className={styles.invitedList}>
-          {invitedList.map(inv => (
-            <li key={inv.id} className={styles.invitedItem}>
-              <span>{inv.email}</span>
-              <button className={styles.removeBtn} onClick={() => removeInvite(inv.email)}>Remove</button>
-            </li>
-          ))}
-        </ul>
+      {!currentIsPaid && (
+        <>
+          <div className={styles.shareRow}>
+            <input
+              className={styles.shareInput}
+              placeholder="email1@example.com, email2@example.com"
+              value={inviteEmails}
+              onChange={e => setInviteEmails(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && sendInvites()}
+            />
+            <button className={styles.shareBtn} onClick={sendInvites} disabled={inviting}>
+              {inviting ? '…' : 'Invite'}
+            </button>
+          </div>
+          {invitedList.length > 0 && (
+            <ul className={styles.invitedList}>
+              {invitedList.map(inv => (
+                <li key={inv.id} className={styles.invitedItem}>
+                  <span>{inv.email}</span>
+                  <button className={styles.removeBtn} onClick={() => removeInvite(inv.email)}>Remove</button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
       <button className={styles.linkBtn} onClick={copyInviteLink}>
         {linkCopied ? 'Copied!' : 'Copy invite link'}
@@ -117,8 +123,6 @@ export default function EditClient({
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const settingsRef = useRef<HTMLDivElement>(null)
-  const [currentIsPaid, setCurrentIsPaid] = useState(isPaid)
-  const [currentPriceCents, setCurrentPriceCents] = useState(priceCents)
 
   // Close settings dropdown on outside click
   useEffect(() => {

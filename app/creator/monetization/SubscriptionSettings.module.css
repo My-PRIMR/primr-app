@@ -54,7 +54,7 @@
   font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 14px;
   color: var(--ink);
-  background: #fff;
+  background: var(--surface-alt, var(--surface));
   border: 1.5px solid var(--border);
   border-radius: 7px;
   padding: 9px 12px;

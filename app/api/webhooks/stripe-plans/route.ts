@@ -9,6 +9,14 @@ import { downgradeUserToFree, downgradeOrganization } from '@/lib/billing'
 
 export const runtime = 'nodejs'
 
+function parseTimestamp(value: unknown): Date {
+  if (typeof value === 'number' && value > 0) {
+    return value > 1e12 ? new Date(value) : new Date(value * 1000)
+  }
+  if (typeof value === 'string') return new Date(value)
+  return new Date()
+}
+
 export async function POST(req: Request) {
   const signature = req.headers.get('stripe-signature')
   if (!signature) {
@@ -69,7 +77,7 @@ export async function POST(req: Request) {
                 : subscription.status === 'incomplete'
                   ? 'incomplete'
                   : 'canceled',
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          currentPeriodEnd: parseTimestamp((subscription as Record<string, unknown>).current_period_end),
           cancelAtPeriodEnd: subscription.cancel_at_period_end ?? false,
         })
       } catch (err: unknown) {
@@ -118,7 +126,7 @@ export async function POST(req: Request) {
         .update(planSubscriptions)
         .set({
           status,
-          currentPeriodEnd: new Date(sub.current_period_end * 1000),
+          currentPeriodEnd: parseTimestamp((sub as Record<string, unknown>).current_period_end),
           cancelAtPeriodEnd: sub.cancel_at_period_end ?? false,
           updatedAt: new Date(),
           ...(planFromPrice

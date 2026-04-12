@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { getSession } from '@/session'
 import { db } from '@/db'
 import { planSubscriptions } from '@/db/schema'
@@ -27,9 +28,8 @@ export default async function BillingPage() {
 
   return (
     <>
-      <PageHeaderServer />
+      <PageHeaderServer leftSlot={<Link href="/creator" className={styles.exitLink}>← Exit</Link>} />
       <main className={styles.main}>
-        <a href="/creator" className={styles.backLink}>← Back to dashboard</a>
         <h1 className={styles.title}>Billing</h1>
       <section className={styles.card}>
         <h2 className={styles.cardHeading}>Current plan</h2>

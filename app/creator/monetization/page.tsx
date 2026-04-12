@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { getSession } from '@/session'
 import { db } from '@/db'
 import { creatorProfiles } from '@/db/schema'
@@ -23,9 +24,8 @@ export default async function MonetizationPage() {
 
   return (
     <main className={styles.main}>
-      <PageHeaderServer />
+      <PageHeaderServer leftSlot={<Link href="/creator" className={styles.exitLink}>← Exit</Link>} />
       <div className={styles.content}>
-        <a href="/creator" className={styles.backLink}>← Back to dashboard</a>
         <h1 className={styles.heading}>Monetization</h1>
         <p className={styles.subhead}>
           Connect with Stripe to start selling lessons, courses, and subscriptions.

@@ -29,6 +29,7 @@ export default async function BillingPage() {
     <>
       <PageHeaderServer />
       <main className={styles.main}>
+        <a href="/creator" className={styles.backLink}>← Back to dashboard</a>
         <h1 className={styles.title}>Billing</h1>
       <section className={styles.card}>
         <h2 className={styles.cardHeading}>Current plan</h2>

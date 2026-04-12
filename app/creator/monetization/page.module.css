@@ -8,6 +8,17 @@
   padding: 2.5rem 2rem;
 }
 
+.backLink {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  text-decoration: none;
+  margin-bottom: 1rem;
+}
+.backLink:hover {
+  color: var(--ink);
+}
+
 .heading {
   font-family: 'DM Serif Display', Georgia, serif;
   font-size: 28px;

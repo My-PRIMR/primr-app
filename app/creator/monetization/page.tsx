@@ -25,6 +25,7 @@ export default async function MonetizationPage() {
     <main className={styles.main}>
       <PageHeaderServer />
       <div className={styles.content}>
+        <a href="/creator" className={styles.backLink}>← Back to dashboard</a>
         <h1 className={styles.heading}>Monetization</h1>
         <p className={styles.subhead}>
           Connect with Stripe to start selling lessons, courses, and subscriptions.

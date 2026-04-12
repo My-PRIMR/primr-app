@@ -30,6 +30,17 @@
   --accent-soft: rgba(107,92,231,0.18);
 }
 
+.backLink {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  text-decoration: none;
+  margin-bottom: 1rem;
+}
+.backLink:hover {
+  color: var(--ink);
+}
+
 /* ── Page Title ──────────────────────────────────────────────────────────── */
 .title {
   font-family: 'DM Serif Display', Georgia, serif;

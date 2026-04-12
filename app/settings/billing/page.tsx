@@ -3,6 +3,7 @@ import { getSession } from '@/session'
 import { db } from '@/db'
 import { planSubscriptions } from '@/db/schema'
 import { and, eq } from 'drizzle-orm'
+import PageHeaderServer from '../../components/PageHeaderServer'
 import { ManageSubscriptionButton } from './ManageSubscriptionButton'
 import styles from './page.module.css'
 
@@ -26,6 +27,7 @@ export default async function BillingPage() {
 
   return (
     <main className={styles.main}>
+      <PageHeaderServer />
       <h1 className={styles.title}>Billing</h1>
       <section className={styles.card}>
         <h2 className={styles.cardHeading}>Current plan</h2>

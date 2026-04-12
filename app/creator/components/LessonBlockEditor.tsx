@@ -302,8 +302,8 @@ export default function LessonBlockEditor({
 
   const panelContent = (
     <>
-      {editPanel}
       {rightPanelExtra}
+      {editPanel}
     </>
   )
 

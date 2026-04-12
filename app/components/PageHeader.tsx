@@ -44,6 +44,7 @@ export function PageHeader({
           userName={user.name}
           userEmail={user.email}
           role={user.productRole}
+          plan={user.plan}
           internalRole={user.internalRole}
           internalUrl={internalUrl ?? user.internalUrl}
         />

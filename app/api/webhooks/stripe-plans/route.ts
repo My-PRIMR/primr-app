@@ -77,7 +77,7 @@ export async function POST(req: Request) {
                 : subscription.status === 'incomplete'
                   ? 'incomplete'
                   : 'canceled',
-          currentPeriodEnd: parseTimestamp((subscription as Record<string, unknown>).current_period_end),
+          currentPeriodEnd: parseTimestamp(subscription.current_period_end),
           cancelAtPeriodEnd: subscription.cancel_at_period_end ?? false,
         })
       } catch (err: unknown) {
@@ -126,7 +126,7 @@ export async function POST(req: Request) {
         .update(planSubscriptions)
         .set({
           status,
-          currentPeriodEnd: parseTimestamp((sub as Record<string, unknown>).current_period_end),
+          currentPeriodEnd: parseTimestamp(sub.current_period_end),
           cancelAtPeriodEnd: sub.cancel_at_period_end ?? false,
           updatedAt: new Date(),
           ...(planFromPrice

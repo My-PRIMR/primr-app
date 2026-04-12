@@ -10,6 +10,7 @@ export interface PageHeaderUser {
   name: string | null
   email: string
   productRole: string
+  plan?: string | null
   internalRole?: string | null
   internalUrl?: string
 }
@@ -19,12 +20,14 @@ export function toPageHeaderUser(user: {
   name: string | null
   email: string
   productRole: string
+  plan: string
   internalRole: string | null
 }): PageHeaderUser {
   return {
     name: user.name,
     email: user.email,
     productRole: user.productRole,
+    plan: user.plan,
     internalRole: user.internalRole,
     internalUrl: process.env.PRIMR_INTERNAL_URL ?? 'http://localhost:3004',
   }

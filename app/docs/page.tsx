@@ -18,6 +18,7 @@ export default async function DocsPage() {
       userName={session.user.name}
       userEmail={session.user.email}
       role={session.user.productRole}
+      plan={session.user.plan}
       internalRole={session.user.internalRole}
      
     />

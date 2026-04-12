@@ -12,6 +12,7 @@ interface UserMenuProps {
   userName: string | null
   userEmail: string
   role: string
+  plan?: string | null
   internalRole?: string | null
   internalUrl?: string
 }
@@ -26,7 +27,7 @@ function roleLabel(role: string) {
   }
 }
 
-export function UserMenu({ userName, userEmail, role, internalRole, internalUrl }: UserMenuProps) {
+export function UserMenu({ userName, userEmail, role, plan, internalRole, internalUrl }: UserMenuProps) {
   const [open, setOpen] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [showTeacher, setShowTeacher] = useState(false)
@@ -76,8 +77,8 @@ export function UserMenu({ userName, userEmail, role, internalRole, internalUrl 
 
       <div className={styles.divider} />
 
-      {/* Upgrade options — learners and free creators; hidden for internal staff */}
-      {(role === 'learner' || role === 'creator') && !internalRole && (
+      {/* Upgrade options — learners and free creators; hidden for internal staff and Pro+ */}
+      {(role === 'learner' || role === 'creator') && !internalRole && plan !== 'pro' && plan !== 'enterprise' && (
         <>
           {role === 'learner' && (
             <button

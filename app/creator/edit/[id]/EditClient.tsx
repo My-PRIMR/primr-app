@@ -117,6 +117,8 @@ export default function EditClient({
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const settingsRef = useRef<HTMLDivElement>(null)
+  const [currentIsPaid, setCurrentIsPaid] = useState(isPaid)
+  const [currentPriceCents, setCurrentPriceCents] = useState(priceCents)
 
   // Close settings dropdown on outside click
   useEffect(() => {
@@ -130,8 +132,8 @@ export default function EditClient({
     return () => document.removeEventListener('mousedown', handler)
   }, [settingsOpen])
 
-  const priceLabel = isPaid && priceCents != null
-    ? `$${(priceCents / 100).toFixed(2)}`
+  const priceLabel = currentIsPaid && currentPriceCents != null
+    ? `$${(currentPriceCents / 100).toFixed(2)}`
     : null
 
   return (
@@ -157,6 +159,10 @@ export default function EditClient({
                     lessonId={lessonId}
                     initialPriceCents={priceCents}
                     initialIsPaid={isPaid}
+                    onSave={(paid, cents) => {
+                      setCurrentIsPaid(paid)
+                      setCurrentPriceCents(cents)
+                    }}
                   />
                 </div>
               )}

@@ -7,12 +7,14 @@ interface Props {
   lessonId: string
   initialPriceCents: number | null
   initialIsPaid: boolean
+  onSave?: (isPaid: boolean, priceCents: number | null) => void
 }
 
 export function PricingSection({
   lessonId,
   initialPriceCents,
   initialIsPaid,
+  onSave: onSaveCallback,
 }: Props) {
   const [isPaid, setIsPaid] = useState(initialIsPaid)
   const [dollars, setDollars] = useState(
@@ -39,6 +41,7 @@ export function PricingSection({
       return
     }
     setStatus('saved')
+    onSaveCallback?.(isPaid, priceCents)
   }
 
   return (

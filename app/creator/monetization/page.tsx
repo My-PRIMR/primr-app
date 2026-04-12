@@ -3,6 +3,7 @@ import { getSession } from '@/session'
 import { db } from '@/db'
 import { creatorProfiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import PageHeaderServer from '../../components/PageHeaderServer'
 import { ConnectStripeButton } from './ConnectStripeButton'
 import { SubscriptionSettings } from './SubscriptionSettings'
 import { RevenueSummary } from './RevenueSummary'
@@ -22,6 +23,7 @@ export default async function MonetizationPage() {
 
   return (
     <main className={styles.main}>
+      <PageHeaderServer />
       <div className={styles.content}>
         <h1 className={styles.heading}>Monetization</h1>
         <p className={styles.subhead}>

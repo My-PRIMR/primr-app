@@ -116,6 +116,18 @@ export function UserMenu({ userName, userEmail, role, plan, internalRole, intern
         </>
       )}
 
+      {/* Pro account links */}
+      {(plan === 'pro' || plan === 'enterprise') && (
+        <>
+          <a href="/creator/monetization" className={styles.docItem} onClick={() => setOpen(false)}>
+            Monetization
+          </a>
+          <a href="/settings/billing" className={styles.docItem} onClick={() => setOpen(false)}>
+            Billing
+          </a>
+        </>
+      )}
+
       {/* Documentation */}
       <a href="/docs" className={styles.docItem} onClick={() => setOpen(false)}>
         Documentation

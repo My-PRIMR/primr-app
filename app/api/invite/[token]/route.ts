@@ -10,7 +10,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
   const appUrl = process.env.PRIMR_APP_URL ?? 'http://localhost:3000'
 
   if (!session?.user?.id || !session.user.email) {
-    return NextResponse.redirect(new URL('/login', appUrl))
+    const authUrl = process.env.PRIMR_AUTH_URL ?? 'http://localhost:3001'
+    const callbackUrl = `${appUrl}/api/invite/${(await params).token}`
+    return NextResponse.redirect(new URL(`${authUrl}/login?callbackUrl=${encodeURIComponent(callbackUrl)}`))
   }
 
   const { token } = await params

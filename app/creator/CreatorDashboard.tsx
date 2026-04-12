@@ -207,7 +207,7 @@ export default function CreatorDashboard({
             )}
           </button>
         )}
-        {plan === 'teacher' && (
+        {(plan === 'teacher' || plan === 'pro' || plan === 'enterprise') && (
           <button
             className={`${styles.tab} ${tab === 'students' ? styles.tabActive : ''}`}
             onClick={() => setTab('students')}
@@ -501,7 +501,7 @@ export default function CreatorDashboard({
       )}
 
       {/* ── Students tab ── */}
-      {tab === 'students' && plan === 'teacher' && (
+      {tab === 'students' && (plan === 'teacher' || plan === 'pro' || plan === 'enterprise') && (
         <StudentsTable roster={roster ?? []} />
       )}
 

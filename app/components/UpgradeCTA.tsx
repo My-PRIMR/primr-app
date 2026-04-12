@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { UpgradeModal } from './UpgradeModal'
-import styles from '../creator/page.module.css'
+import styles from '../(shell)/creator/page.module.css'
 
 export function UpgradeCTA() {
   const [showModal, setShowModal] = useState(false)

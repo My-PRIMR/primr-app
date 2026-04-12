@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import styles from './UpgradeModal.module.css'
 
@@ -49,7 +50,7 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
     router.push('/creator')
   }
 
-  return (
+  return createPortal(
     <div className={styles.backdrop} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div className={styles.card} ref={cardRef} role="dialog" aria-modal="true">
         <button className={styles.closeBtn} onClick={onClose} aria-label="Close">✕</button>
@@ -78,6 +79,7 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
 
         <p className={styles.fine}>Free forever. No catch.</p>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

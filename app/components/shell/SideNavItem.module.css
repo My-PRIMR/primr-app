@@ -1,0 +1,128 @@
+.root {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Main item ───────────────────────────────────────────────── */
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.75rem;
+  margin: 0 0.5rem;
+  border-radius: 7px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  transition: background 120ms, color 120ms;
+  width: calc(100% - 1rem);
+  text-align: left;
+}
+.item:hover {
+  background: var(--surface-alt);
+  color: var(--ink);
+}
+
+.itemActive {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.itemActive:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.itemCollapsed {
+  justify-content: center;
+  padding: 0.6rem;
+}
+
+/* ── Icon ────────────────────────────────────────────────────── */
+.icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+  line-height: 1;
+}
+
+/* ── Label ───────────────────────────────────────────────────── */
+.label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* ── Badge ───────────────────────────────────────────────────── */
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 4px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+
+/* ── Chevron ─────────────────────────────────────────────────── */
+.chevron {
+  font-size: 10px;
+  color: var(--ink-muted);
+  flex-shrink: 0;
+  transition: transform 150ms;
+  display: inline-block;
+  margin-left: auto;
+}
+.chevronCollapsed {
+  transform: rotate(-90deg);
+}
+
+/* ── Children ────────────────────────────────────────────────── */
+.children {
+  display: flex;
+  flex-direction: column;
+  padding: 0.125rem 0 0.25rem;
+}
+
+.child {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem 0.4rem 2.75rem;
+  margin: 0 0.5rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--ink-muted);
+  transition: background 120ms, color 120ms;
+}
+.child:hover {
+  background: var(--surface-alt);
+  color: var(--ink);
+}
+
+.childActive {
+  color: var(--accent);
+  font-weight: 500;
+}
+.childActive:hover {
+  color: var(--accent);
+}
+
+.childLabel {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}

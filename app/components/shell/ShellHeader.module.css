@@ -1,0 +1,84 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 0.5px solid var(--border, rgba(15,17,23,0.10));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .header {
+    background: rgba(20, 21, 32, 0.92);
+  }
+}
+:root[data-theme="dark"] .header {
+  background: rgba(20, 21, 32, 0.92);
+}
+
+/* ── Hamburger ───────────────────────────────────────────────── */
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 120ms;
+}
+.hamburger:hover {
+  background: var(--surface-alt);
+}
+
+.hamburgerBar {
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ink-muted);
+  transition: background 120ms;
+}
+.hamburger:hover .hamburgerBar {
+  background: var(--ink);
+}
+
+/* ── Wordmark ────────────────────────────────────────────────── */
+.wordmark {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--ink, #0F1117);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.wordmark:hover { opacity: 0.85; }
+
+/* ── Slots ───────────────────────────────────────────────────── */
+.leftSlot {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.rightSlot {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "dashboard",
+    "label": "Dashboard",
+    "icon": "⌂",
+    "href": "/creator",
+    "visibleTo": { "role": "creator" },
+    "children": [
+      { "label": "Lessons", "href": "/creator/lessons" },
+      { "label": "Courses", "href": "/creator/courses", "badgeWhen": { "plan": "free" }, "badgeLabel": "Pro" },
+      { "label": "Students", "href": "/students", "visibleTo": { "plan": ["teacher", "pro", "enterprise"] } }
+    ]
+  },
+  {
+    "id": "learning",
+    "label": "My Learning",
+    "icon": "◈",
+    "href": "/learning"
+  },
+  {
+    "id": "billing",
+    "label": "Billing",
+    "icon": "⊡",
+    "href": "/settings/billing",
+    "hrefWhenFree": "/upgrade"
+  },
+  {
+    "id": "monetization",
+    "label": "Monetization",
+    "icon": "◎",
+    "href": "/creator/monetization",
+    "visibleTo": { "role": "creator" },
+    "badgeWhen": { "planNot": ["pro", "enterprise"] },
+    "badgeLabel": "Pro"
+  },
+  {
+    "id": "settings",
+    "label": "Settings",
+    "icon": "⚙",
+    "href": "/settings"
+  }
+]

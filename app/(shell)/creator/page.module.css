@@ -1,0 +1,169 @@
+.main {
+  min-height: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .main {
+    --ink:         #EDEEF5;
+    --ink-soft:    #B0B3C8;
+    --ink-muted:   #6B6E85;
+    --surface:     #1A1C28;
+    --surface-alt: #141520;
+    --border:      rgba(255,255,255,0.08);
+    --border-mid:  rgba(255,255,255,0.14);
+    --accent-soft: rgba(107,92,231,0.18);
+  }
+}
+
+:root[data-theme="dark"] .main {
+  --ink:         #EDEEF5;
+  --ink-soft:    #B0B3C8;
+  --ink-muted:   #6B6E85;
+  --surface:     #1A1C28;
+  --surface-alt: #141520;
+  --border:      rgba(255,255,255,0.08);
+  --border-mid:  rgba(255,255,255,0.14);
+  --accent-soft: rgba(107,92,231,0.18);
+}
+
+.newBtn {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--accent);
+  padding: 8px 18px;
+  border-radius: 7px;
+  transition: opacity 150ms;
+}
+.newBtn:hover { opacity: 0.88; }
+
+.newCourseBtn {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 8px 18px;
+  border-radius: 7px;
+  transition: opacity 150ms;
+}
+.newCourseBtn:hover { opacity: 0.85; }
+
+.content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem;
+}
+
+.heading {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0 0 1.5rem;
+}
+
+.empty {
+  font-size: 15px;
+  color: var(--ink-muted);
+}
+
+.link {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  transition: border-color 120ms;
+}
+.card:hover { border-color: var(--border-mid); }
+
+.cardBody { flex: 1; }
+
+.cardTitle {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.cardMeta {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  margin: 4px 0 0;
+}
+
+.cardActions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.editLink {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.previewLink {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+.previewLink:hover { color: var(--ink-soft); }
+
+.deleteBtn {
+  font-size: 13px;
+  font-weight: 500;
+  color: #c0392b;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+.deleteBtn:hover { color: #a93226; }
+.deleteBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.creatorCta {
+  margin-top: 3rem;
+  padding: 1.5rem 2rem;
+  background: var(--accent-soft);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.creatorCtaText {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin: 0 0 0.5rem;
+}
+
+.creatorCtaLink {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  transition: opacity 150ms;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+}
+.creatorCtaLink:hover { opacity: 0.8; }

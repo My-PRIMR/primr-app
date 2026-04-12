@@ -115,17 +115,6 @@ export default function EditClient({
     </div>
   )
 
-  const rightPanel = (
-    <>
-      <PricingSection
-        lessonId={lessonId}
-        initialPriceCents={priceCents}
-        initialIsPaid={isPaid}
-      />
-      {sharePanel}
-    </>
-  )
-
   return (
     <div className={styles.root}>
       {/* ── Nav ── */}
@@ -146,11 +135,20 @@ export default function EditClient({
           initialManifest={manifest}
           initialPublishedAt={publishedAt}
           panelMode="float"
-          rightPanelExtra={rightPanel}
+          rightPanelExtra={sharePanel}
           canPexels={canPexels}
           canAiEdit={aiEditEnabled}
           plan={plan}
           isInternal={!!internalRole}
+        />
+      </div>
+
+      {/* ── Pricing (below editor) ── */}
+      <div className={styles.body}>
+        <PricingSection
+          lessonId={lessonId}
+          initialPriceCents={priceCents}
+          initialIsPaid={isPaid}
         />
       </div>
     </div>

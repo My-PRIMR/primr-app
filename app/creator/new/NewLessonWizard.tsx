@@ -138,7 +138,7 @@ export default function NewLessonWizard({ user, internalRole, productRole, plan 
 
   return (
     <main className={styles.main}>
-      <PageHeader user={user} title="New lesson" />
+      <PageHeader user={user} leftSlot={<Link href="/creator" className={styles.exitLink}>← Exit</Link>} />
 
       <div className={styles.stepBar}>
         <StepIndicator current={state.step} />

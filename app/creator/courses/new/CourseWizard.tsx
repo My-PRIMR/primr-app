@@ -408,7 +408,7 @@ export default function CourseWizard({ user, internalRole, productRole }: Course
 
   return (
     <div className={styles.wrapper}>
-      <PageHeader user={user} title="New course" homeHref="/creator" />
+      <PageHeader user={user} leftSlot={<Link href="/creator" className={styles.exitLink}>← Exit</Link>} homeHref="/creator" />
 
       <div className={styles.content}>
         {/* Step indicator */}

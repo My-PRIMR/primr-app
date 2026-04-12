@@ -141,6 +141,9 @@ export default function EditClient({
       {/* ── Nav ── */}
       <PageHeader
         user={user}
+        leftSlot={
+          <Link href="/creator" className={styles.navLink}>← Exit</Link>
+        }
         rightSlot={
           <>
             <Link href={`/creator/preview/${lessonId}`} className={styles.navLink}>Preview →</Link>

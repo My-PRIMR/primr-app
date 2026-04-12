@@ -26,9 +26,10 @@ export default async function BillingPage() {
   const endingSoon = sub?.cancelAtPeriodEnd === true
 
   return (
-    <main className={styles.main}>
+    <>
       <PageHeaderServer />
-      <h1 className={styles.title}>Billing</h1>
+      <main className={styles.main}>
+        <h1 className={styles.title}>Billing</h1>
       <section className={styles.card}>
         <h2 className={styles.cardHeading}>Current plan</h2>
         <p className={styles.plan}>{tierLabel}</p>
@@ -46,6 +47,7 @@ export default async function BillingPage() {
           </a>
         )}
       </section>
-    </main>
+      </main>
+    </>
   )
 }

@@ -10,6 +10,8 @@ interface Props {
   priceCents: number | null
   creatorId: string | null
   creatorSubscriptionPriceCents: number | null
+  isAuthenticated?: boolean
+  loginRedirectPath?: string
 }
 
 /**
@@ -25,6 +27,8 @@ export function Paywall({
   priceCents,
   creatorId,
   creatorSubscriptionPriceCents,
+  isAuthenticated = true,
+  loginRedirectPath,
 }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -41,10 +45,6 @@ export function Paywall({
         ),
       })
       if (!res.ok) {
-        if (res.status === 401) {
-          window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`
-          return
-        }
         const body = await res.json().catch(() => ({}))
         throw new Error(body.error ?? 'Failed to start checkout')
       }
@@ -67,10 +67,6 @@ export function Paywall({
         body: JSON.stringify({ creatorId }),
       })
       if (!res.ok) {
-        if (res.status === 401) {
-          window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`
-          return
-        }
         const body = await res.json().catch(() => ({}))
         throw new Error(body.error ?? 'Failed to start subscription')
       }
@@ -95,23 +91,34 @@ export function Paywall({
         </p>
         <p className={styles.price}>{priceLabel}</p>
         <div className={styles.actions}>
-          <button
-            type="button"
-            onClick={buy}
-            disabled={loading}
-            className={styles.buyBtn}
-          >
-            {loading ? 'Redirecting…' : `Buy for ${priceLabel}`}
-          </button>
-          {creatorSubscriptionPriceCents != null && creatorId && (
-            <button
-              type="button"
-              onClick={subscribe}
-              disabled={loading}
-              className={styles.subscribeBtn}
+          {isAuthenticated ? (
+            <>
+              <button
+                type="button"
+                onClick={buy}
+                disabled={loading}
+                className={styles.buyBtn}
+              >
+                {loading ? 'Redirecting…' : `Buy for ${priceLabel}`}
+              </button>
+              {creatorSubscriptionPriceCents != null && creatorId && (
+                <button
+                  type="button"
+                  onClick={subscribe}
+                  disabled={loading}
+                  className={styles.subscribeBtn}
+                >
+                  Subscribe for ${(creatorSubscriptionPriceCents / 100).toFixed(2)}/mo
+                </button>
+              )}
+            </>
+          ) : (
+            <a
+              href={`/login?next=${encodeURIComponent(loginRedirectPath ?? '/')}`}
+              className={styles.buyBtn}
             >
-              Subscribe for ${(creatorSubscriptionPriceCents / 100).toFixed(2)}/mo
-            </button>
+              Sign in or create an account
+            </a>
           )}
         </div>
         {error && <p className={styles.error}>{error}</p>}

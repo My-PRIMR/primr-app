@@ -39,6 +39,12 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
+  // Let /learn/* through without auth — the page component handles
+  // auth-gating itself and shows a paywall for paid content.
+  if (req.nextUrl.pathname.startsWith('/learn/')) {
+    return NextResponse.next()
+  }
+
   const token = req.cookies.get(COOKIE_NAME)?.value
 
   if (!token) {

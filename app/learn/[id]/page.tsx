@@ -22,6 +22,42 @@ export default async function LearnPage({ params, searchParams }: { params: Prom
   if (!lesson) notFound()
 
   const session = await getSession()
+  const isAuthenticated = !!session?.user?.id
+
+  // Monetization gate: if the lesson is paid, check access.
+  // Unauthenticated users see the paywall with a "sign in" prompt.
+  if (lesson.isPaid && lesson.priceCents != null && !lesson.isSystem) {
+    const hasPaidAccess = isAuthenticated
+      ? await hasAccessToLesson(session!.user!.id, lesson.id)
+      : false
+
+    if (!hasPaidAccess) {
+      const creatorProfile = lesson.createdBy
+        ? await db.query.creatorProfiles.findFirst({
+            where: eq(creatorProfiles.userId, lesson.createdBy),
+          })
+        : null
+      const creatorSubPrice =
+        creatorProfile?.subscriptionEnabled
+          ? creatorProfile.subscriptionPriceCents
+          : null
+      return (
+        <Paywall
+          kind="lesson"
+          id={lesson.id}
+          title={lesson.title}
+          priceCents={lesson.priceCents}
+          creatorId={lesson.createdBy}
+          creatorSubscriptionPriceCents={creatorSubPrice}
+          isAuthenticated={isAuthenticated}
+          loginRedirectPath={`/learn/${id}`}
+        />
+      )
+    }
+  }
+
+  // For non-paid content or paid content the user has access to,
+  // require authentication to proceed.
   if (!session?.user?.id || !session.user.email) notFound()
 
   const hasAccess = await canAccessLesson(lesson.id, session.user.id, session.user.email, session.user.internalRole)
@@ -31,31 +67,6 @@ export default async function LearnPage({ params, searchParams }: { params: Prom
         <h1>Access Denied</h1>
         <p>You do not have permission to view this lesson.</p>
       </main>
-    )
-  }
-
-  // Monetization gate: system lessons, free lessons, the creator, and
-  // subscribers/purchasers always pass. Everyone else sees the paywall.
-  const hasPaidAccess = await hasAccessToLesson(session.user.id, lesson.id)
-  if (!hasPaidAccess) {
-    const creatorProfile = lesson.createdBy
-      ? await db.query.creatorProfiles.findFirst({
-          where: eq(creatorProfiles.userId, lesson.createdBy),
-        })
-      : null
-    const creatorSubPrice =
-      creatorProfile?.subscriptionEnabled
-        ? creatorProfile.subscriptionPriceCents
-        : null
-    return (
-      <Paywall
-        kind="lesson"
-        id={lesson.id}
-        title={lesson.title}
-        priceCents={lesson.priceCents}
-        creatorId={lesson.createdBy}
-        creatorSubscriptionPriceCents={creatorSubPrice}
-      />
     )
   }
 

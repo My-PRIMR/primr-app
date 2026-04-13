@@ -29,7 +29,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Name must be 100 characters or fewer.' }, { status: 400 })
   }
 
-  await db.update(users).set({ name: trimmed }).where(eq(users.id, session.user.id))
+  const [updated] = await db
+    .update(users)
+    .set({ name: trimmed })
+    .where(eq(users.id, session.user.id))
+    .returning({ name: users.name })
+
+  if (!updated) {
+    return NextResponse.json({ error: 'User not found.' }, { status: 404 })
+  }
 
   await issueSession({
     id:           session.user.id,

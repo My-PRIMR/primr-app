@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTheme, type Theme } from '../../components/useTheme'
 import styles from './page.module.css'
 
 export default function SettingsClient({ initialName }: { initialName: string }) {
+  const router = useRouter()
   // ── Profile state ──
   const [name, setName] = useState(initialName)
   const [profileLoading, setProfileLoading] = useState(false)
@@ -44,6 +46,7 @@ export default function SettingsClient({ initialName }: { initialName: string })
       } else {
         setProfileSuccess(true)
         setName(data.name)
+        router.refresh()
       }
     } catch {
       setProfileError('Something went wrong. Please try again.')

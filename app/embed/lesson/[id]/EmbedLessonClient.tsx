@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import '@primr/components/dist/style.css'
 import { LessonRenderer } from '@primr/components'
 import type { LessonManifest, LessonCompletePayload } from '@primr/components'
@@ -12,6 +12,8 @@ interface Props {
 }
 
 export default function EmbedLessonClient({ lessonId, manifest, initialTheme }: Props) {
+  const [loggedIn, setLoggedIn] = useState(false)
+
   useEffect(() => {
     if (initialTheme) {
       document.documentElement.setAttribute('data-theme', initialTheme)
@@ -19,6 +21,29 @@ export default function EmbedLessonClient({ lessonId, manifest, initialTheme }: 
     document.body.dataset.embedType = 'lesson'
     document.body.dataset.embedId = lessonId
   }, [initialTheme, lessonId])
+
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (e.data?.type === 'primr-auth-complete') {
+        setLoggedIn(true)
+        window.parent.postMessage({ type: 'primr-auth-complete', userId: e.data.userId }, '*')
+      }
+    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
+
+  function handleLogin() {
+    const authUrl = process.env.NEXT_PUBLIC_PRIMR_AUTH_URL || 'http://localhost:3001'
+    const w = window.open(
+      `${authUrl}/login?embed=true`,
+      'primr-login',
+      'width=500,height=700,menubar=no,toolbar=no'
+    )
+    if (!w) {
+      window.location.href = `${authUrl}/login?embed=true&returnUrl=${encodeURIComponent(window.location.href)}`
+    }
+  }
 
   // Fire anonymous view event
   useEffect(() => {
@@ -67,6 +92,28 @@ export default function EmbedLessonClient({ lessonId, manifest, initialTheme }: 
         onLessonComplete={handleComplete}
         hideAutoAdvance
       />
+      {!loggedIn && (
+        <div style={{
+          textAlign: 'center',
+          padding: '0.5rem',
+          fontSize: '12px',
+          color: 'var(--ink-muted)',
+        }}>
+          <button
+            onClick={handleLogin}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--accent)',
+              cursor: 'pointer',
+              fontSize: '12px',
+              textDecoration: 'underline',
+            }}
+          >
+            Sign in to save progress
+          </button>
+        </div>
+      )}
       <footer style={{
         textAlign: 'center',
         padding: '1rem',

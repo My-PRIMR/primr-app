@@ -58,6 +58,18 @@
   margin: 0;
 }
 
+.loginLink {
+  display: block;
+  margin-top: 8px;
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 11px;
+  text-decoration: underline;
+  padding: 0;
+}
+
 .treeNav {
   flex: 1;
   overflow-y: auto;

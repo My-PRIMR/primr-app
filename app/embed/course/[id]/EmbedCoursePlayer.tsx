@@ -35,6 +35,31 @@ function getOrCreateSessionId(): string {
 }
 
 export default function EmbedCoursePlayer({ courseId, courseTitle, tree, initialChapterLessonId, initialTheme }: Props) {
+  const [loggedIn, setLoggedIn] = useState(false)
+
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (e.data?.type === 'primr-auth-complete') {
+        setLoggedIn(true)
+        window.parent.postMessage({ type: 'primr-auth-complete', userId: e.data.userId }, '*')
+      }
+    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
+
+  function handleLogin() {
+    const authUrl = process.env.NEXT_PUBLIC_PRIMR_AUTH_URL || 'http://localhost:3001'
+    const w = window.open(
+      `${authUrl}/login?embed=true`,
+      'primr-login',
+      'width=500,height=700,menubar=no,toolbar=no'
+    )
+    if (!w) {
+      window.location.href = `${authUrl}/login?embed=true&returnUrl=${encodeURIComponent(window.location.href)}`
+    }
+  }
+
   const flatLessons = tree.flatMap(s =>
     s.chapters.flatMap(c =>
       c.lessons.map(l => ({ ...l, sectionTitle: s.title, chapterTitle: c.title }))
@@ -150,6 +175,14 @@ export default function EmbedCoursePlayer({ courseId, courseTitle, tree, initial
               <div className={styles.progressFill} style={{ width: totalCount > 0 ? `${(completedCount / totalCount) * 100}%` : '0%' }} />
             </div>
             <p className={styles.progressText}>{completedCount}/{totalCount} complete</p>
+            {!loggedIn && (
+              <button
+                onClick={handleLogin}
+                className={styles.loginLink}
+              >
+                Sign in to save progress
+              </button>
+            )}
           </div>
           <nav className={styles.treeNav}>
             {tree.map(section => (

@@ -52,9 +52,9 @@ export async function GET(req: NextRequest) {
   `)
 
   return NextResponse.json({
-    views: Number(viewsResult.rows[0]?.count || 0),
-    completions: Number(completionsResult.rows[0]?.count || 0),
-    topDomains: (topDomainsResult.rows as Array<{ embed_origin: string; count: string }>).map(r => ({
+    views: Number((viewsResult as Array<{ count: string }>)[0]?.count || 0),
+    completions: Number((completionsResult as Array<{ count: string }>)[0]?.count || 0),
+    topDomains: (topDomainsResult as Array<{ embed_origin: string; count: string }>).map(r => ({
       domain: r.embed_origin,
       count: Number(r.count),
     })),

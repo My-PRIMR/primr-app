@@ -15,7 +15,7 @@ export type CreatorContentData = {
   isCreator: boolean
   createdCourses: {
     id: string; title: string; status: string; createdAt: string
-    lessonCount: number; doneCount: number; priceCents: number | null; isPaid: boolean
+    lessonCount: number; doneCount: number; priceCents: number | null; isPaid: boolean; embeddable: boolean
   }[]
   createdLessons: {
     id: string; title: string; slug: string; createdAt: string; updatedAt: string
@@ -42,6 +42,7 @@ export async function fetchCreatorContent(userId: string, email: string, role: s
       createdAt: courses.createdAt,
       priceCents: courses.priceCents,
       isPaid: courses.isPaid,
+      embeddable: courses.embeddable,
       lessonCount: sql<number>`count(${chapterLessons.id})::int`,
       doneCount: sql<number>`count(case when ${chapterLessons.generationStatus} = 'done' then 1 end)::int`,
     })
@@ -290,7 +291,7 @@ export async function fetchCreatorContent(userId: string, email: string, role: s
     plan, isCreator,
     createdCourses: createdCoursesRaw.map(c => ({
       id: c.id, title: c.title, status: c.status, createdAt: c.createdAt.toISOString(),
-      lessonCount: c.lessonCount, doneCount: c.doneCount, priceCents: c.priceCents, isPaid: c.isPaid,
+      lessonCount: c.lessonCount, doneCount: c.doneCount, priceCents: c.priceCents, isPaid: c.isPaid, embeddable: c.embeddable,
     })),
     createdLessons: createdLessons.map(l => ({
       id: l.id, title: l.title, slug: l.slug, createdAt: l.createdAt.toISOString(), updatedAt: l.updatedAt.toISOString(),

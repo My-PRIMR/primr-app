@@ -114,6 +114,7 @@ export async function PATCH(
   if (body.description !== undefined) updates.description = body.description
   if (body.isPublic !== undefined) updates.isPublic = body.isPublic
   if (body.status !== undefined) updates.status = body.status
+  if (body.embeddable !== undefined) updates.embeddable = body.embeddable
 
   const [updated] = await db.update(courses)
     .set({ ...updates, updatedAt: new Date() })

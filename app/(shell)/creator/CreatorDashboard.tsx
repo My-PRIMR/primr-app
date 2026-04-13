@@ -10,6 +10,7 @@ import OnboardingStrip, { type OnboardingLesson } from './OnboardingStrip'
 import ResultsTab, { type ResultsData } from './ResultsTab'
 import ResultsTabBoundary from './ResultsTabBoundary'
 import { PriceBadge } from '../../components/PriceBadge'
+import EmbedCodeModal from './EmbedCodeModal'
 
 export type CourseItem = {
   id: string
@@ -20,6 +21,7 @@ export type CourseItem = {
   doneCount: number
   priceCents: number | null
   isPaid: boolean
+  embeddable: boolean
 }
 
 export type LessonItem = {
@@ -75,6 +77,7 @@ export default function CreatorDashboard({
   const [selectedLessons, setSelectedLessons] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState(false)
   const [publishingId, setPublishingId] = useState<string | null>(null)
+  const [embedModal, setEmbedModal] = useState<{ type: 'lesson' | 'course'; id: string; title: string } | null>(null)
   const [standaloneOnly, setStandaloneOnly] = useState(true)
 
   const isCourses = tab === 'courses'
@@ -131,6 +134,15 @@ export default function CreatorDashboard({
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ showcase: newValue }),
+    })
+    router.refresh()
+  }
+
+  async function toggleEmbeddable(id: string, newValue: boolean) {
+    await fetch(`/api/courses/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ embeddable: newValue }),
     })
     router.refresh()
   }
@@ -275,6 +287,8 @@ export default function CreatorDashboard({
                           : [
                               { type: 'link', label: 'Edit', href: `/creator/courses/${course.id}/edit` },
                               { type: 'link', label: 'Preview', href: `/learn/course/${course.id}` },
+                              { type: 'button', label: course.embeddable ? 'Embeddable: on' : 'Embeddable: off', onClick: () => toggleEmbeddable(course.id, !course.embeddable) },
+                              ...(course.embeddable ? [{ type: 'button' as const, label: 'Get embed code', onClick: () => setEmbedModal({ type: 'course', id: course.id, title: course.title }) }] : []),
                               { type: 'divider' },
                               { type: 'button', label: 'Delete', onClick: () => deleteOne(course.id, 'course'), danger: true },
                             ]
@@ -410,6 +424,10 @@ export default function CreatorDashboard({
                             }]
                           : []
                         ),
+                        ...(lesson.publishedAt && lesson.showcase
+                          ? [{ type: 'button' as const, label: 'Get embed code', onClick: () => setEmbedModal({ type: 'lesson', id: lesson.id, title: lesson.title }) }]
+                          : []
+                        ),
                         { type: 'divider' as const },
                         { type: 'button' as const, label: 'Delete', onClick: () => deleteOne(lesson.id, 'lesson'), danger: true },
                       ]}
@@ -429,6 +447,14 @@ export default function CreatorDashboard({
         </ResultsTabBoundary>
       )}
 
+      {embedModal && (
+        <EmbedCodeModal
+          type={embedModal.type}
+          id={embedModal.id}
+          title={embedModal.title}
+          onClose={() => setEmbedModal(null)}
+        />
+      )}
     </div>
   )
 }

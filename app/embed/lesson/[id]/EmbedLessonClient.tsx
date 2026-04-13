@@ -90,6 +90,7 @@ export default function EmbedLessonClient({ lessonId, manifest, initialTheme }: 
         mode="showcase"
         examEnforced={false}
         onLessonComplete={handleComplete}
+        autoAdvance={false}
         hideAutoAdvance
       />
       {!loggedIn && (

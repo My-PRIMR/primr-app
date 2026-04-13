@@ -224,7 +224,7 @@ export default function EmbedCoursePlayer({ courseId, courseTitle, tree, initial
             </div>
           ) : currentLesson?.manifest ? (
             <div className={styles.lessonWrap}>
-              <LessonRenderer key={currentLesson.id} manifest={currentLesson.manifest} adminMode={false} mode="showcase" examEnforced={false} onLessonComplete={stableOnComplete} hideAutoAdvance />
+              <LessonRenderer key={currentLesson.id} manifest={currentLesson.manifest} adminMode={false} mode="showcase" examEnforced={false} onLessonComplete={stableOnComplete} autoAdvance={false} hideAutoAdvance />
               {lessonCompleted && (
                 <div className={styles.nextBar}>
                   {hasNextLesson ? (

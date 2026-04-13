@@ -6,13 +6,10 @@ export const metadata = {
 
 export default function EmbedLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head />
-      <body style={{ margin: 0, padding: 0, overflow: 'auto' }}>
-        {children}
-        <EmbedBridge />
-      </body>
-    </html>
+    <>
+      {children}
+      <EmbedBridge />
+    </>
   )
 }
 

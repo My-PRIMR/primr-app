@@ -1,0 +1,98 @@
+.loading, .empty {
+  font-size: 13px;
+  color: var(--ink-muted);
+  padding: 1.5rem 0;
+}
+
+.container {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.rangeSelect {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.statValue {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.statLabel {
+  font-size: 11px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.domains { margin-top: 0.5rem; }
+
+.domainsTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin: 0 0 0.5rem;
+}
+
+.domainList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.domainItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 12.5px;
+  border-bottom: 1px solid var(--border);
+}
+
+.domainItem:last-child { border-bottom: none; }
+
+.domainName {
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
+}
+
+.domainCount {
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}

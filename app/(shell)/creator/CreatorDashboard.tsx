@@ -11,6 +11,7 @@ import ResultsTab, { type ResultsData } from './ResultsTab'
 import ResultsTabBoundary from './ResultsTabBoundary'
 import { PriceBadge } from '../../components/PriceBadge'
 import EmbedCodeModal from './EmbedCodeModal'
+import EmbedAnalytics from './EmbedAnalytics'
 
 export type CourseItem = {
   id: string
@@ -446,6 +447,8 @@ export default function CreatorDashboard({
           <ResultsTab results={results} />
         </ResultsTabBoundary>
       )}
+
+      <EmbedAnalytics />
 
       {embedModal && (
         <EmbedCodeModal

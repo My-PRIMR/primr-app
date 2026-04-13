@@ -29,7 +29,7 @@
     "label": "Monetization",
     "icon": "◎",
     "href": "/creator/monetization",
-    "visibleTo": { "role": "creator" },
+    "visibleTo": { "role": "creator", "notInternal": true },
     "badgeWhen": { "planNot": ["pro", "enterprise"] },
     "badgeLabel": "Pro"
   },

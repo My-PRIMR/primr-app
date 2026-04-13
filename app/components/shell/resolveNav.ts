@@ -8,6 +8,7 @@ type Condition = {
   role?: string
   plan?: string | string[]
   planNot?: string | string[]
+  notInternal?: boolean
 }
 
 type NavChildJson = {
@@ -34,6 +35,7 @@ function matchesCondition(cond: Condition, user: ShellUser): boolean {
   const plan = user.plan ?? 'free'
 
   if (cond.role === 'creator' && !CREATOR_ROLES.includes(user.productRole)) return false
+  if (cond.notInternal && user.internalRole) return false
 
   if (cond.plan) {
     const plans = Array.isArray(cond.plan) ? cond.plan : [cond.plan]

@@ -18,44 +18,54 @@ export default async function MonetizationPage() {
     where: eq(creatorProfiles.userId, session.user.id),
   })
 
+  const isInternal = !!session.user.internalRole
   const connected = !!profile?.stripeOnboardingComplete
 
   return (
     <main className={styles.main}>
       <div className={styles.content}>
         <h1 className={styles.heading}>Monetization</h1>
-        <p className={styles.subhead}>
-          Connect with Stripe to start selling lessons, courses, and subscriptions.
-        </p>
 
-        <section className={styles.card}>
-          <h2 className={styles.cardHeading}>Payments</h2>
-          {connected ? (
-            <p className={styles.connectedText}>
-              Connected to Stripe. You can now set prices on your content.
-            </p>
-          ) : (
-            <>
-              <p className={styles.cardBody}>
-                Primr uses Stripe Connect to handle payments and payouts. Primr
-                takes a 30% platform fee, reduced to 20% once your lifetime
-                revenue passes the threshold.
-              </p>
-              <ConnectStripeButton />
-            </>
-          )}
-        </section>
-
-        {connected && (
+        {isInternal ? (
+          <p className={styles.subhead}>
+            Monetization is not available for internal accounts. Content created by staff accounts is managed by Primr.
+          </p>
+        ) : (
           <>
-            <RevenueSummary
-              lifetimeRevenueCents={profile!.lifetimeRevenueCents ?? 0}
-              revenueThresholdCents={profile!.revenueThresholdCents ?? 0}
-            />
-            <SubscriptionSettings
-              initialEnabled={profile?.subscriptionEnabled ?? false}
-              initialPriceCents={profile?.subscriptionPriceCents ?? null}
-            />
+            <p className={styles.subhead}>
+              Connect with Stripe to start selling lessons, courses, and subscriptions.
+            </p>
+
+            <section className={styles.card}>
+              <h2 className={styles.cardHeading}>Payments</h2>
+              {connected ? (
+                <p className={styles.connectedText}>
+                  Connected to Stripe. You can now set prices on your content.
+                </p>
+              ) : (
+                <>
+                  <p className={styles.cardBody}>
+                    Primr uses Stripe Connect to handle payments and payouts. Primr
+                    takes a 30% platform fee, reduced to 20% once your lifetime
+                    revenue passes the threshold.
+                  </p>
+                  <ConnectStripeButton />
+                </>
+              )}
+            </section>
+
+            {connected && (
+              <>
+                <RevenueSummary
+                  lifetimeRevenueCents={profile!.lifetimeRevenueCents ?? 0}
+                  revenueThresholdCents={profile!.revenueThresholdCents ?? 0}
+                />
+                <SubscriptionSettings
+                  initialEnabled={profile?.subscriptionEnabled ?? false}
+                  initialPriceCents={profile?.subscriptionPriceCents ?? null}
+                />
+              </>
+            )}
           </>
         )}
       </div>

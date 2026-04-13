@@ -17,7 +17,12 @@ export default async function BillingPage() {
     ),
   })
 
-  const tierLabel = sub ? (sub.tier === 'pro' ? 'Pro' : 'Teams') : 'Free'
+  const userPlan = session.user.plan ?? 'free'
+  const tierLabel = sub
+    ? (sub.tier === 'pro' ? 'Pro' : 'Teams')
+    : (userPlan === 'pro' ? 'Pro' : userPlan === 'enterprise' ? 'Enterprise' : userPlan === 'teacher' ? 'Teacher' : 'Free')
+  const isFree = tierLabel === 'Free'
+  const isAdminGranted = !sub && !isFree
   const periodLabel = sub ? (sub.billingPeriod === 'monthly' ? 'Monthly' : 'Annual') : null
   const renewalDate = sub?.currentPeriodEnd
     ? new Date(sub.currentPeriodEnd).toLocaleDateString()
@@ -32,6 +37,7 @@ export default async function BillingPage() {
         <h2 className={styles.cardHeading}>Current plan</h2>
         <p className={styles.plan}>{tierLabel}</p>
         {periodLabel && <p className={styles.muted}>Billed {periodLabel.toLowerCase()}</p>}
+        {isAdminGranted && <p className={styles.muted}>Granted by admin</p>}
         {renewalDate && (
           <p className={styles.muted}>
             {endingSoon ? 'Ends on ' : 'Renews on '}
@@ -39,7 +45,7 @@ export default async function BillingPage() {
           </p>
         )}
         {sub && <ManageSubscriptionButton />}
-        {!sub && (
+        {isFree && (
           <a href="/upgrade" className={styles.upgradeLink}>
             Upgrade to Pro
           </a>

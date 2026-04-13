@@ -175,6 +175,8 @@ export const courses = pgTable('courses', {
   isSystem:    boolean('is_system').notNull().default(false),
   priceCents:  integer('price_cents'),
   isPaid:      boolean('is_paid').notNull().default(false),
+  /** When true, this course is publicly accessible for embedding on external sites */
+  embeddable:  boolean('embeddable').notNull().default(false),
   createdBy:   uuid('created_by').references(() => users.id),
   createdAt:   timestamp('created_at').notNull().defaultNow(),
   updatedAt:   timestamp('updated_at').notNull().defaultNow(),
@@ -241,6 +243,22 @@ export const courseEnrollments = pgTable('course_enrollments', {
 
 export type CourseEnrollment = typeof courseEnrollments.$inferSelect
 export type NewCourseEnrollment = typeof courseEnrollments.$inferInsert
+
+// ── Embed Events ─────────────────────────────────────────────────────────────
+export const embedEvents = pgTable('embed_events', {
+  id:                 uuid('id').primaryKey().defaultRandom(),
+  lessonId:           uuid('lesson_id').references(() => lessons.id, { onDelete: 'cascade' }),
+  courseId:            uuid('course_id').references(() => courses.id, { onDelete: 'cascade' }),
+  eventType:          text('event_type').notNull(),
+  embedOrigin:        text('embed_origin').notNull(),
+  anonymousSessionId: text('anonymous_session_id').notNull(),
+  userId:             uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  payload:            jsonb('payload').$type<Record<string, unknown>>(),
+  createdAt:          timestamp('created_at').notNull().defaultNow(),
+})
+
+export type EmbedEvent = typeof embedEvents.$inferSelect
+export type NewEmbedEvent = typeof embedEvents.$inferInsert
 
 // ── Course Invite Links ───────────────────────────────────────────────────────
 export const courseInviteLinks = pgTable('course_invite_links', {

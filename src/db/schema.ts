@@ -255,7 +255,11 @@ export const embedEvents = pgTable('embed_events', {
   userId:             uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
   payload:            jsonb('payload').$type<Record<string, unknown>>(),
   createdAt:          timestamp('created_at').notNull().defaultNow(),
-})
+}, (t) => [
+  index('embed_events_lesson_idx').on(t.lessonId),
+  index('embed_events_course_idx').on(t.courseId),
+  index('embed_events_created_idx').on(t.createdAt),
+])
 
 export type EmbedEvent = typeof embedEvents.$inferSelect
 export type NewEmbedEvent = typeof embedEvents.$inferInsert

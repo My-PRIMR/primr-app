@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/session'
 import { db } from '@/db'
-import { embedEvents, lessons, courses } from '@/db/schema'
+import { lessons, courses } from '@/db/schema'
 import { eq, sql } from 'drizzle-orm'
 
 export async function GET(req: NextRequest) {

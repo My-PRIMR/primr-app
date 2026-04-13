@@ -14,6 +14,9 @@ export default async function EmbedLessonPage({
   const { id } = await params
   const { theme } = await searchParams
 
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!UUID_RE.test(id)) notFound()
+
   const [lesson] = await db.select().from(lessons)
     .where(eq(lessons.id, id))
     .limit(1)

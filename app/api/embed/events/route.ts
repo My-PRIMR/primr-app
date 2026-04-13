@@ -4,6 +4,7 @@ import { embedEvents, lessons, courses } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 
 const ALLOWED_EVENT_TYPES = ['view', 'block_complete', 'lesson_complete', 'course_lesson_complete']
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>
@@ -32,6 +33,10 @@ export async function POST(req: NextRequest) {
 
   if (!lessonId && !courseId) {
     return NextResponse.json({ error: 'Must provide lessonId or courseId' }, { status: 400 })
+  }
+
+  if ((lessonId && !UUID_RE.test(lessonId)) || (courseId && !UUID_RE.test(courseId))) {
+    return NextResponse.json({ error: 'Invalid ID format' }, { status: 400 })
   }
 
   // Validate that the content is embeddable

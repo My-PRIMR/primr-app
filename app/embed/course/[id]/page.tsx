@@ -15,6 +15,9 @@ export default async function EmbedCoursePage({
   const { id: courseId } = await params
   const { theme, lesson: initialLessonId } = await searchParams
 
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!UUID_RE.test(courseId)) notFound()
+
   const course = await db.query.courses.findFirst({
     where: eq(courses.id, courseId),
   })

@@ -8,6 +8,7 @@ import LessonBlockEditor from '../../../components/LessonBlockEditor'
 import { ShellHeaderSlots } from '../../../../../components/shell/ShellHeaderSlots'
 import { canUsePexels, canAiEdit as canAiEditFn } from '@/lib/models'
 import { PricingSection } from './PricingSection'
+import { ThemeSection } from './ThemeSection'
 
 import styles from './CourseEditClient.module.css'
 
@@ -295,6 +296,7 @@ export default function CourseEditClient({ course, plan, internalRole }: { cours
             initialPriceCents={course.priceCents}
             initialIsPaid={course.isPaid}
           />}
+          {!outlineCollapsed && <ThemeSection courseId={course.id} currentTheme={course.theme} />}
           {!outlineCollapsed && <div className={styles.sidebarBody}>
             {course.sections.map(section => {
               const sectionCollapsed = collapsedSections.has(section.id)

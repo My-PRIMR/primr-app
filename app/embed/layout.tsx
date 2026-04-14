@@ -1,4 +1,5 @@
 import '@primr/tokens'
+import '@primr/tokens/themes.css'
 
 export const metadata = {
   robots: 'noindex, nofollow',
@@ -19,6 +20,7 @@ function EmbedBridge() {
       dangerouslySetInnerHTML={{
         __html: `
 (function() {
+  var KNOWN_THEMES = ['primr','slate','chalk','arctic','ember','enterprise'];
   var last = 0;
   var ro = new ResizeObserver(function() {
     var h = document.body.scrollHeight;
@@ -32,8 +34,8 @@ function EmbedBridge() {
   window.addEventListener('message', function(e) {
     if (e.data && e.data.type === 'primr-theme-change') {
       var theme = e.data.theme;
-      if (theme === 'light' || theme === 'dark') {
-        document.documentElement.setAttribute('data-theme', theme);
+      if (KNOWN_THEMES.indexOf(theme) !== -1) {
+        document.body.setAttribute('data-primr-theme', theme);
       }
     }
   });
@@ -43,16 +45,6 @@ function EmbedBridge() {
     contentType: document.body.dataset.embedType || 'lesson',
     contentId: document.body.dataset.embedId || ''
   }, '*');
-
-  // Also support legacy 'theme-change' from existing marketing embed
-  window.addEventListener('message', function(e) {
-    if (e.data && e.data.type === 'theme-change') {
-      var theme = e.data.theme;
-      if (theme === 'light' || theme === 'dark') {
-        document.documentElement.setAttribute('data-theme', theme);
-      }
-    }
-  });
 })();
         `,
       }}

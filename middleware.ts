@@ -14,6 +14,7 @@ function getSecret() {
 const PROTECTED_CREATOR_SUBPATHS = [
   'new',
   'edit',
+  'embed-preview',
   'preview',
   'video-status',
   'courses',

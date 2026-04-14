@@ -68,6 +68,7 @@ export async function GET(
     createdBy: course.createdBy,
     priceCents: course.priceCents,
     isPaid: course.isPaid,
+    theme: course.theme,
     sections: sections.map(section => ({
       id: section.id,
       title: section.title,

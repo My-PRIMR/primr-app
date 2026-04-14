@@ -58,6 +58,7 @@ export default async function CourseEditPage({ params }: { params: Promise<{ id:
     createdBy: course.createdBy,
     priceCents: course.priceCents,
     isPaid: course.isPaid,
+    theme: course.theme,
     sections: sections.map(s => ({
       id: s.id,
       title: s.title,

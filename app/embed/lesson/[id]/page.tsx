@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import { validateThemeId, DEFAULT_THEME } from '@/lib/themes'
 import EmbedLessonClient from './EmbedLessonClient'
 
 export default async function EmbedLessonPage({
@@ -12,7 +13,7 @@ export default async function EmbedLessonPage({
   searchParams: Promise<{ theme?: string }>
 }) {
   const { id } = await params
-  const { theme } = await searchParams
+  const { theme: themeQuery } = await searchParams
 
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   if (!UUID_RE.test(id)) notFound()
@@ -23,11 +24,14 @@ export default async function EmbedLessonPage({
 
   if (!lesson || !lesson.showcase || !lesson.publishedAt) notFound()
 
+  const resolvedTheme =
+    validateThemeId(themeQuery) ?? validateThemeId(lesson.theme) ?? DEFAULT_THEME
+
   return (
     <EmbedLessonClient
       lessonId={lesson.id}
       manifest={lesson.manifest}
-      initialTheme={theme === 'dark' ? 'dark' : theme === 'light' ? 'light' : undefined}
+      theme={resolvedTheme}
     />
   )
 }

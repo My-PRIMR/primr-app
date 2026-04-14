@@ -82,6 +82,7 @@ export interface FullCourseTree {
   createdBy: string | null
   priceCents: number | null
   isPaid: boolean
+  theme: string
   sections: Array<{
     id: string
     title: string

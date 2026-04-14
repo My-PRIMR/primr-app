@@ -8,6 +8,7 @@ import { ShellHeaderSlots } from '../../../../components/shell/ShellHeaderSlots'
 import styles from './EditClient.module.css'
 import { canUsePexels, canAiEdit as canAiEditFn } from '@/lib/models'
 import { PricingSection } from './PricingSection'
+import { ThemeSection } from './ThemeSection'
 
 export default function EditClient({
   lessonId,
@@ -15,6 +16,7 @@ export default function EditClient({
   publishedAt,
   priceCents,
   isPaid,
+  theme,
   plan,
   internalRole,
 }: {
@@ -23,6 +25,7 @@ export default function EditClient({
   publishedAt: string | null
   priceCents: number | null
   isPaid: boolean
+  theme: string
   plan: string
   internalRole: string | null
 }) {
@@ -163,6 +166,7 @@ export default function EditClient({
                       setCurrentPriceCents(cents)
                     }}
                   />
+                  <ThemeSection lessonId={lessonId} currentTheme={theme} />
                 </div>
               )}
             </div>

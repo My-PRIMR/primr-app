@@ -80,7 +80,7 @@ export default function EmbedLessonClient({ lessonId, manifest, theme }: Props) 
   }
 
   return (
-    <div data-primr-theme={theme} style={{ width: '100%' }}>
+    <div style={{ width: '100%' }}>
       <LessonRenderer
         manifest={manifest}
         adminMode={false}

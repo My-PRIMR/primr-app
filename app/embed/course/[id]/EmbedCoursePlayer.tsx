@@ -166,7 +166,7 @@ export default function EmbedCoursePlayer({ courseId, courseTitle, tree, initial
   useEffect(() => { activeLessonBtnRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }, [currentLesson?.id])
 
   return (
-    <div className={styles.layout} data-primr-theme={theme}>
+    <div className={styles.layout}>
       <div className={styles.body}>
         <aside className={styles.sidebar}>
           <div className={styles.sidebarHeader}>

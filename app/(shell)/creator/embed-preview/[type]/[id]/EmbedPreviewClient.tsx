@@ -60,7 +60,7 @@ export default function EmbedPreviewClient({ type, id, title, savedTheme, userPl
     setStatus('error')
   }
 
-  const iframeSrc = `/embed/${type}/${id}?theme=${selected}`
+  const initialSrc = useRef(`/embed/${type}/${id}?theme=${savedTheme}`)
 
   return (
     <div className={styles.root}>
@@ -104,12 +104,13 @@ export default function EmbedPreviewClient({ type, id, title, savedTheme, userPl
           </button>
         )}
         {status === 'saved' && <span className={styles.saved}>Saved</span>}
+        {status === 'error' && !upgradeRequired && <span className={styles.saved} style={{ color: 'var(--incorrect, #d94545)' }}>Save failed</span>}
       </div>
 
       <div className={styles.viewport}>
         <iframe
           ref={iframeRef}
-          src={iframeSrc}
+          src={initialSrc.current}
           className={styles.frame}
           title="Embed preview"
           height={700}

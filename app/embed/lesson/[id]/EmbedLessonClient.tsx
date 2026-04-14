@@ -8,19 +8,17 @@ import type { LessonManifest, LessonCompletePayload } from '@primr/components'
 interface Props {
   lessonId: string
   manifest: LessonManifest
-  initialTheme?: 'light' | 'dark'
+  theme: string
 }
 
-export default function EmbedLessonClient({ lessonId, manifest, initialTheme }: Props) {
+export default function EmbedLessonClient({ lessonId, manifest, theme }: Props) {
   const [loggedIn, setLoggedIn] = useState(false)
 
   useEffect(() => {
-    if (initialTheme) {
-      document.documentElement.setAttribute('data-theme', initialTheme)
-    }
+    document.body.setAttribute('data-primr-theme', theme)
     document.body.dataset.embedType = 'lesson'
     document.body.dataset.embedId = lessonId
-  }, [initialTheme, lessonId])
+  }, [theme, lessonId])
 
   useEffect(() => {
     function handleMessage(e: MessageEvent) {
@@ -38,14 +36,13 @@ export default function EmbedLessonClient({ lessonId, manifest, initialTheme }: 
     const w = window.open(
       `${authUrl}/login?embed=true`,
       'primr-login',
-      'width=500,height=700,menubar=no,toolbar=no'
+      'width=500,height=700,menubar=no,toolbar=no',
     )
     if (!w) {
       window.location.href = `${authUrl}/login?embed=true&returnUrl=${encodeURIComponent(window.location.href)}`
     }
   }
 
-  // Fire anonymous view event
   useEffect(() => {
     const sid = getOrCreateSessionId()
     fetch('/api/embed/events', {
@@ -83,7 +80,7 @@ export default function EmbedLessonClient({ lessonId, manifest, initialTheme }: 
   }
 
   return (
-    <div style={{ width: '100%' }}>
+    <div data-primr-theme={theme} style={{ width: '100%' }}>
       <LessonRenderer
         manifest={manifest}
         adminMode={false}
@@ -98,14 +95,14 @@ export default function EmbedLessonClient({ lessonId, manifest, initialTheme }: 
           textAlign: 'center',
           padding: '0.5rem',
           fontSize: '12px',
-          color: 'var(--ink-muted)',
+          color: 'var(--lesson-ink-muted)',
         }}>
           <button
             onClick={handleLogin}
             style={{
               background: 'none',
               border: 'none',
-              color: 'var(--accent)',
+              color: 'var(--lesson-accent)',
               cursor: 'pointer',
               fontSize: '12px',
               textDecoration: 'underline',
@@ -119,8 +116,8 @@ export default function EmbedLessonClient({ lessonId, manifest, initialTheme }: 
         textAlign: 'center',
         padding: '1rem',
         fontSize: '11px',
-        color: 'var(--ink-muted)',
-        borderTop: '1px solid var(--border)',
+        color: 'var(--lesson-ink-muted)',
+        borderTop: '1px solid var(--lesson-divider)',
       }}>
         Powered by <a href="https://getprimr.com" target="_blank" rel="noopener" style={{ color: 'inherit' }}>Primr</a>
       </footer>

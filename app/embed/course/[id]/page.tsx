@@ -3,6 +3,7 @@ import { db } from '@/db'
 import { courses, courseSections, courseChapters, chapterLessons, lessons } from '@/db/schema'
 import { eq, asc, and } from 'drizzle-orm'
 import type { LessonManifest } from '@primr/components'
+import { getSession } from '@/session'
 import { validateThemeId, DEFAULT_THEME } from '@/lib/themes'
 import EmbedCoursePlayer from './EmbedCoursePlayer'
 
@@ -11,10 +12,10 @@ export default async function EmbedCoursePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ theme?: string; lesson?: string }>
+  searchParams: Promise<{ theme?: string; lesson?: string; preview?: string }>
 }) {
   const { id: courseId } = await params
-  const { theme, lesson: initialLessonId } = await searchParams
+  const { theme, lesson: initialLessonId, preview } = await searchParams
 
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   if (!UUID_RE.test(courseId)) notFound()
@@ -23,7 +24,14 @@ export default async function EmbedCoursePage({
     where: eq(courses.id, courseId),
   })
 
-  if (!course || !course.embeddable || course.status !== 'published') notFound()
+  if (!course) notFound()
+
+  if (preview === 'true') {
+    const session = await getSession()
+    if (!session?.user?.id || session.user.id !== course.createdBy) notFound()
+  } else if (!course.embeddable || course.status !== 'published') {
+    notFound()
+  }
 
   const resolvedTheme =
     validateThemeId(theme) ?? validateThemeId(course.theme) ?? DEFAULT_THEME

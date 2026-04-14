@@ -60,7 +60,7 @@ export default function EmbedPreviewClient({ type, id, title, savedTheme, userPl
     setStatus('error')
   }
 
-  const initialSrc = useRef(`/embed/${type}/${id}?theme=${savedTheme}`)
+  const initialSrc = useRef(`/embed/${type}/${id}?theme=${savedTheme}&preview=true`)
 
   return (
     <div className={styles.root}>

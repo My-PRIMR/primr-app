@@ -5,30 +5,6 @@
   min-height: 100vh;
 }
 
-/* ── Dark mode token overrides (match upgrade page) ─────────────────────── */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .main {
-    --ink:         #EDEEF5;
-    --ink-soft:    #B0B3C8;
-    --ink-muted:   #6B6E85;
-    --surface:     #1A1C28;
-    --surface-alt: #141520;
-    --border:      rgba(255,255,255,0.08);
-    --border-mid:  rgba(255,255,255,0.14);
-    --accent-soft: rgba(107,92,231,0.18);
-  }
-}
-
-:root[data-theme="dark"] .main {
-  --ink:         #EDEEF5;
-  --ink-soft:    #B0B3C8;
-  --ink-muted:   #6B6E85;
-  --surface:     #1A1C28;
-  --surface-alt: #141520;
-  --border:      rgba(255,255,255,0.08);
-  --border-mid:  rgba(255,255,255,0.14);
-  --accent-soft: rgba(107,92,231,0.18);
-}
 
 .exitLink {
   font-size: 13px;

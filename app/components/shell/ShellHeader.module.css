@@ -11,14 +11,6 @@
   border-bottom: 0.5px solid var(--border, rgba(15,17,23,0.10));
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .header {
-    background: rgba(20, 21, 32, 0.92);
-  }
-}
-:root[data-theme="dark"] .header {
-  background: rgba(20, 21, 32, 0.92);
-}
 
 /* ── Hamburger ───────────────────────────────────────────────── */
 .hamburger {

@@ -5,8 +5,6 @@ import { createPortal } from 'react-dom'
 import styles from './UserMenu.module.css'
 import { UpgradeModal } from './UpgradeModal'
 import { TeacherModal } from './TeacherModal'
-import { useTheme } from './useTheme'
-import type { Theme } from './useTheme'
 
 interface UserMenuProps {
   userName: string | null
@@ -32,7 +30,6 @@ export function UserMenu({ userName, userEmail, role, plan, internalRole, intern
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [showTeacher, setShowTeacher] = useState(false)
   const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 })
-  const { theme, setTheme } = useTheme()
   const wrapperRef = useRef<HTMLDivElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -132,22 +129,6 @@ export function UserMenu({ userName, userEmail, role, plan, internalRole, intern
       <a href="/docs" className={styles.docItem} onClick={() => setOpen(false)}>
         Documentation
       </a>
-
-      <div className={styles.divider} />
-
-      {/* Theme toggle */}
-      <div className={styles.themeRow}>
-        {(['light', 'system', 'dark'] as Theme[]).map(t => (
-          <button
-            key={t}
-            className={`${styles.themeBtn} ${theme === t ? styles.themeBtnActive : ''}`}
-            onClick={() => setTheme(t)}
-            title={t.charAt(0).toUpperCase() + t.slice(1)}
-          >
-            {t === 'light' ? '☀' : t === 'dark' ? '☾' : '⊙'}
-          </button>
-        ))}
-      </div>
 
       <div className={styles.divider} />
 

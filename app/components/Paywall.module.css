@@ -117,22 +117,3 @@
   margin: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .card {
-    background: var(--surface, #1A1C28);
-    border-color: var(--border, rgba(255, 255, 255, 0.08));
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
-  }
-  :root:not([data-theme="light"]) .title { color: var(--ink, #EDEEF5); }
-  :root:not([data-theme="light"]) .subtitle { color: var(--ink-muted, #B0B3C8); }
-  :root:not([data-theme="light"]) .price { color: var(--ink, #EDEEF5); }
-}
-
-:root[data-theme="dark"] .card {
-  background: var(--surface, #1A1C28);
-  border-color: var(--border, rgba(255, 255, 255, 0.08));
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
-}
-:root[data-theme="dark"] .title { color: var(--ink, #EDEEF5); }
-:root[data-theme="dark"] .subtitle { color: var(--ink-muted, #B0B3C8); }
-:root[data-theme="dark"] .price { color: var(--ink, #EDEEF5); }

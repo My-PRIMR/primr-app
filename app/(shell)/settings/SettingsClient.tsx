@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useTheme, type Theme } from '../../components/useTheme'
 import styles from './page.module.css'
 
 export default function SettingsClient({ initialName }: { initialName: string }) {
@@ -20,9 +19,6 @@ export default function SettingsClient({ initialName }: { initialName: string })
   const [pwLoading, setPwLoading] = useState(false)
   const [pwError, setPwError] = useState('')
   const [pwSuccess, setPwSuccess] = useState(false)
-
-  // ── Theme ──
-  const { theme, setTheme } = useTheme()
 
   async function handleProfileSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -156,24 +152,6 @@ export default function SettingsClient({ initialName }: { initialName: string })
         </form>
       </section>
 
-      {/* ── Theme ── */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionHeading}>Theme</h2>
-        <div className={styles.themeRow}>
-          {(['light', 'system', 'dark'] as Theme[]).map(t => (
-            <button
-              key={t}
-              className={`${styles.themeBtn} ${theme === t ? styles.themeBtnActive : ''}`}
-              onClick={() => setTheme(t)}
-            >
-              <span className={styles.themeIcon}>
-                {t === 'light' ? '\u2600' : t === 'dark' ? '\u263E' : '\u2299'}
-              </span>
-              <span>{t.charAt(0).toUpperCase() + t.slice(1)}</span>
-            </button>
-          ))}
-        </div>
-      </section>
     </main>
   )
 }

@@ -1,5 +1,4 @@
 .layout {
-  --green:       #16a34a;
   display: flex;
   flex-direction: column;
   height: 100vh;

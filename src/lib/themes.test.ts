@@ -5,10 +5,19 @@ describe('themes helpers', () => {
     expect(DEFAULT_THEME).toBe('primr')
   })
 
-  test('KNOWN_THEME_IDS contains all six themes', () => {
+  test('KNOWN_THEME_IDS contains all themes', () => {
     expect(KNOWN_THEME_IDS.sort()).toEqual(
-      ['arctic', 'chalk', 'ember', 'enterprise', 'primr', 'slate'].sort(),
+      ['arctic', 'chalk', 'ember', 'enterprise', 'primr', 'primr-dark', 'slate'].sort(),
     )
+  })
+
+  test('validateThemeId accepts primr-dark', () => {
+    expect(validateThemeId('primr-dark')).toBe('primr-dark')
+  })
+
+  test('primr-dark is free tier and available to free users', () => {
+    expect(requiredTier('primr-dark')).toBe('free')
+    expect(canUseTheme('primr-dark', 'free')).toBe(true)
   })
 
   test('validateThemeId returns the id for known themes', () => {

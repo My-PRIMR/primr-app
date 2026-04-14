@@ -20,7 +20,7 @@ function EmbedBridge() {
       dangerouslySetInnerHTML={{
         __html: `
 (function() {
-  var KNOWN_THEMES = ['primr','slate','chalk','arctic','ember','enterprise'];
+  var KNOWN_THEMES = ['primr','primr-dark','slate','chalk','arctic','ember','enterprise'];
   var last = 0;
   var ro = new ResizeObserver(function() {
     var h = document.body.scrollHeight;

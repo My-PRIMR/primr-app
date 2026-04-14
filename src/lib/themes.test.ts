@@ -7,8 +7,21 @@ describe('themes helpers', () => {
 
   test('KNOWN_THEME_IDS contains all themes', () => {
     expect(KNOWN_THEME_IDS.sort()).toEqual(
-      ['arctic', 'chalk', 'ember', 'enterprise', 'primr', 'primr-dark', 'slate'].sort(),
+      ['amber','apex','arctic','chalk','ember','enterprise','graphite','primr','primr-dark','signal','slate'].sort(),
     )
+  })
+
+  test('amber is free tier', () => {
+    expect(requiredTier('amber')).toBe('free')
+    expect(canUseTheme('amber', 'free')).toBe(true)
+  })
+
+  test('graphite / apex / signal are pro tier', () => {
+    for (const id of ['graphite', 'apex', 'signal']) {
+      expect(requiredTier(id)).toBe('pro')
+      expect(canUseTheme(id, 'free')).toBe(false)
+      expect(canUseTheme(id, 'pro')).toBe(true)
+    }
   })
 
   test('validateThemeId accepts primr-dark', () => {

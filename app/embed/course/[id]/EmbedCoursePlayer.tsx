@@ -21,7 +21,7 @@ interface CourseSectionData {
 
 interface Props {
   courseId: string; courseTitle: string; tree: CourseSectionData[]
-  initialChapterLessonId: string | null; initialTheme?: 'light' | 'dark'
+  initialChapterLessonId: string | null; theme: string
 }
 
 function getOrCreateSessionId(): string {
@@ -34,7 +34,7 @@ function getOrCreateSessionId(): string {
   return sid
 }
 
-export default function EmbedCoursePlayer({ courseId, courseTitle, tree, initialChapterLessonId, initialTheme }: Props) {
+export default function EmbedCoursePlayer({ courseId, courseTitle, tree, initialChapterLessonId, theme }: Props) {
   const [loggedIn, setLoggedIn] = useState(false)
 
   useEffect(() => {
@@ -77,10 +77,10 @@ export default function EmbedCoursePlayer({ courseId, courseTitle, tree, initial
   const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    if (initialTheme) document.documentElement.setAttribute('data-theme', initialTheme)
+    document.body.setAttribute('data-primr-theme', theme)
     document.body.dataset.embedType = 'course'
     document.body.dataset.embedId = courseId
-  }, [initialTheme, courseId])
+  }, [theme, courseId])
 
   // Restore position from localStorage
   useEffect(() => {
@@ -166,7 +166,7 @@ export default function EmbedCoursePlayer({ courseId, courseTitle, tree, initial
   useEffect(() => { activeLessonBtnRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }, [currentLesson?.id])
 
   return (
-    <div className={styles.layout}>
+    <div className={styles.layout} data-primr-theme={theme}>
       <div className={styles.body}>
         <aside className={styles.sidebar}>
           <div className={styles.sidebarHeader}>

@@ -3,6 +3,7 @@ import { db } from '@/db'
 import { courses, courseSections, courseChapters, chapterLessons, lessons } from '@/db/schema'
 import { eq, asc, and } from 'drizzle-orm'
 import type { LessonManifest } from '@primr/components'
+import { validateThemeId, DEFAULT_THEME } from '@/lib/themes'
 import EmbedCoursePlayer from './EmbedCoursePlayer'
 
 export default async function EmbedCoursePage({
@@ -23,6 +24,9 @@ export default async function EmbedCoursePage({
   })
 
   if (!course || !course.embeddable || course.status !== 'published') notFound()
+
+  const resolvedTheme =
+    validateThemeId(theme) ?? validateThemeId(course.theme) ?? DEFAULT_THEME
 
   // Build course tree (same logic as learn/course/[id]/page.tsx, without auth)
   const sections = await db.select().from(courseSections)
@@ -76,7 +80,7 @@ export default async function EmbedCoursePage({
       courseTitle={course.title}
       tree={tree}
       initialChapterLessonId={initialLessonId || null}
-      initialTheme={theme === 'dark' ? 'dark' : theme === 'light' ? 'light' : undefined}
+      theme={resolvedTheme}
     />
   )
 }

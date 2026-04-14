@@ -90,6 +90,7 @@ export const lessons = pgTable('lessons', {
   isSystem:         boolean('is_system').notNull().default(false),
   priceCents:       integer('price_cents'),
   isPaid:           boolean('is_paid').notNull().default(false),
+  theme:            text('theme').notNull().default('primr'),
   createdAt:        timestamp('created_at').notNull().defaultNow(),
   updatedAt:        timestamp('updated_at').notNull().defaultNow(),
 })
@@ -177,6 +178,7 @@ export const courses = pgTable('courses', {
   isPaid:      boolean('is_paid').notNull().default(false),
   /** When true, this course is publicly accessible for embedding on external sites */
   embeddable:  boolean('embeddable').notNull().default(false),
+  theme:       text('theme').notNull().default('primr'),
   createdBy:   uuid('created_by').references(() => users.id),
   createdAt:   timestamp('created_at').notNull().defaultNow(),
   updatedAt:   timestamp('updated_at').notNull().defaultNow(),

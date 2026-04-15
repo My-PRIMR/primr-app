@@ -21,7 +21,7 @@ import { LESSON_GEN_SYSTEM_PROMPT_TEMPLATE } from '@/lib/prompts/lesson-gen-syst
 
 const OUTLINE_LESSON_SYSTEM_PROMPT = LESSON_GEN_SYSTEM_PROMPT_TEMPLATE.replace(
   '${BLOCK_SCHEMAS}',
-  BLOCK_SCHEMAS
+  () => BLOCK_SCHEMAS
 )
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

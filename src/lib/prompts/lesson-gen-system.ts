@@ -11,6 +11,8 @@
 // playground:variant_id = baseline
 // playground:exported_at = 2026-04-15T00:00:00Z
 // playground:exported_by = manual
+// NOTE: ${BLOCK_SCHEMAS} is intentionally escaped in the template below — this
+// placeholder is resolved by lesson-gen.ts at runtime. Do not remove the backslash.
 export const LESSON_GEN_SYSTEM_PROMPT_TEMPLATE = `You are an expert instructional designer. Generate a complete Primr lesson as JSON from the provided outline. Each block in the outline specifies a type, summary of what it should cover, and optionally an item count.
 
 Return this structure:

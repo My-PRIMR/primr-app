@@ -19,6 +19,7 @@ import { resolveModel, DEFAULT_MODEL, modelById } from '@/lib/models'
 import { extractJSON } from '@/lib/extract-json'
 import type { ParsedCourseTree, CourseTree } from '@/types/course'
 import { fetchYouTubeData } from '@/lib/video-ingest'
+import { extractTocSection, sliceTextByMarker } from '@/lib/course-source-slice'
 
 // ── System prompts ────────────────────────────────────────────────────────────
 
@@ -129,32 +130,6 @@ async function extractTextFromFile(file: File): Promise<string> {
     return buffer.toString('utf-8')
   }
   throw new Error(`Unsupported file type: ${file.name}. Use PDF, DOCX, TXT, or MD.`)
-}
-
-function sliceTextByMarker(fullText: string, marker: string, nextMarker: string | undefined): string {
-  const startIdx = fullText.indexOf(marker)
-  if (startIdx === -1) return ''
-  const endIdx = nextMarker ? fullText.indexOf(nextMarker, startIdx + 1) : -1
-  const chunk = endIdx === -1 ? fullText.slice(startIdx) : fullText.slice(startIdx, endIdx)
-  return chunk.slice(0, 8000).trim()
-}
-
-/**
- * Attempt to extract the Table of Contents from a document's text.
- * Returns the TOC text (up to 30K chars from the marker) or null if
- * no TOC marker is found. When a TOC is present, sending only that
- * section to the model (instead of the full 200K char document)
- * dramatically improves structural extraction accuracy.
- */
-function extractTocSection(text: string): string | null {
-  // Case-insensitive match for "Table of Contents" or a bare "Contents" line
-  const tocMatch = text.match(/(table of contents|^contents\s*$)/im)
-  if (!tocMatch || tocMatch.index == null) return null
-
-  const start = tocMatch.index
-  // Grab up to 30K chars after the TOC marker — enough for very long TOCs
-  // but small enough to be a focused input for the model.
-  return text.slice(start, start + 30000)
 }
 
 // ── Route ─────────────────────────────────────────────────────────────────────

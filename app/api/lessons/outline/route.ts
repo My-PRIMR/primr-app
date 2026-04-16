@@ -20,8 +20,12 @@ function blockCountRange(documentText?: string): string {
   return '18–24'
 }
 
+const EXAM_RULE = '\n- The final block must always be type "exam" with itemCount of 5–12 questions covering the full lesson'
+
 function buildOutlineSystemPrompt(blockRange: string): string {
-  return OUTLINE_SYSTEM_PROMPT_TEMPLATE.replace('${blockRange}', () => blockRange)
+  return OUTLINE_SYSTEM_PROMPT_TEMPLATE
+    .replace('${blockRange}', () => blockRange)
+    .replace('${examRule}', () => EXAM_RULE)
 }
 
 export async function POST(req: NextRequest) {

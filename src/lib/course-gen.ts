@@ -12,7 +12,7 @@ import { DEFAULT_MODEL } from '@/lib/models'
 import { sendEmail } from '@/lib/email'
 import { courseCompleteEmail } from '@/lib/email-templates'
 import { PASSIVE_LESSON_OVERRIDE } from '@/lib/block-schemas'
-import { COURSE_GEN_OUTLINE_SYSTEM_PROMPT_TEMPLATE } from '@/lib/prompts/course-gen-outline-system'
+import { OUTLINE_SYSTEM_PROMPT_TEMPLATE } from '@/lib/prompts/outline-system'
 import type { LessonOutline } from '@/types/outline'
 import { generateLessonFromOutline } from '@/lib/lesson-gen'
 
@@ -43,7 +43,12 @@ export function cancelLessonGeneration(chapterLessonId: string) {
 
 // ── Outline generation ────────────────────────────────────────────────────────
 
-const OUTLINE_SYSTEM_PROMPT = COURSE_GEN_OUTLINE_SYSTEM_PROMPT_TEMPLATE
+// Course-gen lessons get per-lesson slices (~8K chars) from the parse step;
+// '8–12' is a sensible default block-count range. No mandatory exam block in
+// course-gen lessons — exams will be handled at section/course level later.
+const OUTLINE_SYSTEM_PROMPT = OUTLINE_SYSTEM_PROMPT_TEMPLATE
+  .replace('${blockRange}', () => '8–12')
+  .replace('${examRule}', () => '')
 
 async function generateOutline(params: {
   title: string

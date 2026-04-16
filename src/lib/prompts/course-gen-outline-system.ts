@@ -1,7 +1,7 @@
 // playground:variant_id = baseline
 // playground:exported_at = 2026-04-15T00:00:00Z
 // playground:exported_by = manual
-export const TOC_SYSTEM_PROMPT_TEMPLATE = `You are an expert instructional designer. Given a lesson title, topic description, target audience, and level, generate a lesson outline as JSON.
+export const COURSE_GEN_OUTLINE_SYSTEM_PROMPT_TEMPLATE =`You are an expert instructional designer. Given a lesson title, topic description, target audience, and level, generate a lesson outline as JSON.
 
 Return this exact structure:
 {

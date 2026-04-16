@@ -131,6 +131,7 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
     props: {
       prompt:  { type: 'string', required: true, description: 'a SINGLE sentence or phrase with {{blank}} placeholders — this is a flat string, NOT an array or object' },
       answers: { type: 'Array<string | string[]>', required: true, description: 'one entry per blank, can be array of accepted answers' },
+      options: { type: 'Array<string[]>', required: true, description: 'per-blank dropdown choices — each inner array has 4-5 plausible options (one must match the correct answer). Options are shown as a dropdown; the learner picks instead of typing.' },
       hint:    { type: 'string' },
       sourceQuote: { type: 'string', description: 'verbatim excerpt from the preceding narrative block this prompt was derived from' },
       ...common,
@@ -138,6 +139,7 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
     notes: [
       'IMPORTANT: `prompt` is a single flat string — do NOT use a `questions` array. One fill-in-the-blank block = one prompt string.',
       'IMPORTANT: Each answer must be 1-2 words only, no punctuation. The `answers` array must contain exactly one entry per `{{blank}}` in the prompt — no more, no less.',
+      'IMPORTANT: `options` must have exactly one entry per `{{blank}}`. Each entry is an array of 4-5 strings. Exactly one option per blank must match the corresponding answer. The other options must be plausible distractors drawn from the same domain — not obviously wrong.',
     ],
   },
   {
@@ -339,6 +341,54 @@ const RAW_DEFINITIONS: BlockSchemaDef[] = [
       context:    { type: 'string', description: 'optional markdown (1–3 sentences) explaining what this tool does and how the learner should interact with it. Use when the interface needs orientation beyond what the preceding narrative already covers.' },
       ...common,
     },
+  },
+  // ── Math ────────────────────────────────────────────────────────────────────
+  {
+    type: 'number-line',
+    isInteractive: true,
+    props: {
+      min:     { type: 'number', required: true, description: 'left bound of the visible number line' },
+      max:     { type: 'number', required: true, description: 'right bound of the visible number line' },
+      step:    { type: 'number', description: 'tick spacing', default: '1' },
+      targets: {
+        type: 'Array<{ id: string, type: "point" | "open-point" | "ray-left" | "ray-right" | "segment", correctValue: number | [number, number], label?: string, tolerance?: number }>',
+        required: true,
+        description: 'markers the learner must drag onto the line. correctValue is a single number for points/rays, or a [start, end] tuple for segments. tolerance defaults to 0.25.',
+      },
+      prompt:  { type: 'string', description: 'instruction text shown above the number line' },
+      context: { type: 'string', description: 'optional markdown (1–3 sentences) explaining what this tool does and how the learner should interact with it. Use when the interface needs orientation beyond what the preceding narrative already covers.' },
+      ...common,
+    },
+    notes: [
+      'IMPORTANT: The prop is `targets` (not `targetValues`), and the range is set via `min` and `max` (not `range`). The instruction text prop is `prompt` (not `instructions`).',
+      'Each target needs a unique `id` and a `type` from the enum above — most placements use `"point"`.',
+    ],
+  },
+  {
+    type: 'coordinate-plane',
+    isInteractive: true,
+    props: {
+      taskType: { type: '"plot-points" | "draw-line" | "identify-region"', required: true, description: 'what the learner must do on the grid' },
+      prompt:   { type: 'string', required: true, description: 'instruction text shown above the grid' },
+      correctPoints: {
+        type: 'Array<{ x: number, y: number, label?: string }>',
+        description: 'for taskType "plot-points": the correct point positions the learner must place',
+      },
+      correctLine:   { type: '{ m: number, b: number }', description: 'for taskType "draw-line": slope `m` and y-intercept `b` of the target line (y = m·x + b)' },
+      correctRegion: { type: 'string', description: 'for taskType "identify-region": inequality expression, e.g. "y > 2x + 1"' },
+      xMin:      { type: 'number', default: '-10' },
+      xMax:      { type: 'number', default: '10' },
+      yMin:      { type: 'number', default: '-10' },
+      yMax:      { type: 'number', default: '10' },
+      snap:      { type: 'boolean', description: 'snap clicks to integer grid', default: 'true' },
+      tolerance: { type: 'number', description: 'point placement tolerance', default: '0.5' },
+      context:   { type: 'string', description: 'optional markdown (1–3 sentences) explaining what this tool does and how the learner should interact with it. Use when the interface needs orientation beyond what the preceding narrative already covers.' },
+      ...common,
+    },
+    notes: [
+      'IMPORTANT: The prop is `taskType` (not `gridSize`), and the expected answer lives in `correctPoints` / `correctLine` / `correctRegion` depending on taskType — never `targetPoints`. The instruction text prop is `prompt` (not `instructions`).',
+      'Viewport bounds are set via `xMin`/`xMax`/`yMin`/`yMax`, not a single `gridSize` value.',
+    ],
   },
 ]
 

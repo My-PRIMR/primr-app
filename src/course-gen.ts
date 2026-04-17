@@ -10,8 +10,7 @@ import { eq } from 'drizzle-orm'
 import { DEFAULT_MODEL } from '@/lib/models'
 import { sendEmail } from '@/lib/email'
 import { courseCompleteEmail } from '@/lib/email-templates'
-import { BLOCK_SCHEMAS, PASSIVE_LESSON_OVERRIDE, INFORMATIONAL_TYPES } from '@/lib/block-schemas'
-import type { LessonManifest } from '@primr/components'
+import { BLOCK_SCHEMAS, PASSIVE_LESSON_OVERRIDE, INFORMATIONAL_TYPES, type LessonManifest } from '@primr/components'
 import type { LessonOutline } from '@/types/outline'
 
 const client = new Anthropic()

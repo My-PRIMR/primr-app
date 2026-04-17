@@ -19,7 +19,7 @@ import { resolveModel, DEFAULT_MODEL, modelById } from '@/lib/models'
 import { extractJSON } from '@/lib/extract-json'
 import type { ParsedCourseTree, CourseTree } from '@/types/course'
 import { fetchYouTubeData } from '@/lib/video-ingest'
-import { extractTocSection, sliceTextByMarker } from '@/lib/course-source-slice'
+import { extractTocSection, sliceTextByMarker } from '@primr/components'
 import { TOC_SYSTEM_PROMPT_TEMPLATE } from '@/lib/prompts/toc-system'
 
 // ── System prompts ────────────────────────────────────────────────────────────

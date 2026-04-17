@@ -11,7 +11,7 @@ import { extractJSON } from '@/lib/extract-json'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { DEFAULT_MODEL } from '@/lib/models'
-import { BLOCK_SCHEMAS, PASSIVE_LESSON_OVERRIDE } from '@primr/components/lib'
+import { BLOCK_SCHEMAS, PASSIVE_LESSON_OVERRIDE, shuffleQuizOptions } from '@primr/components/lib'
 import { enrichWithPexelsImages, IMAGE_PROMPT_SNIPPET } from '@/lib/pexels'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline, DocumentAsset } from '@/types/outline'
@@ -110,6 +110,9 @@ export async function generateLessonFromOutline(params: {
     console.error('[lesson-gen] full raw response:\n' + raw)
     throw err
   }
+
+  // Shuffle quiz/exam options to eliminate AI positional bias (slot B)
+  shuffleQuizOptions(manifest)
 
   if (params.includeImages) {
     await enrichWithPexelsImages(manifest, process.env.PEXELS_API_KEY ?? '')

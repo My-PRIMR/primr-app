@@ -16,13 +16,7 @@ import { enrichWithPexelsImages, IMAGE_PROMPT_SNIPPET } from '@/lib/pexels'
 import type { LessonManifest } from '@primr/components'
 import type { LessonOutline, DocumentAsset } from '@/types/outline'
 import { LESSON_GEN_SYSTEM_PROMPT_TEMPLATE } from '@/lib/prompts/lesson-gen-system'
-
-// ── System prompt ─────────────────────────────────────────────────────────────
-
-const OUTLINE_LESSON_SYSTEM_PROMPT = LESSON_GEN_SYSTEM_PROMPT_TEMPLATE.replace(
-  '${BLOCK_SCHEMAS}',
-  () => BLOCK_SCHEMAS
-)
+import { resolvePromptTemplate } from '@/lib/prompt-resolver'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -66,8 +60,11 @@ export async function generateLessonFromOutline(params: {
   userId: string | null
   signal?: AbortSignal
 }): Promise<{ lessonId: string; manifest: LessonManifest }> {
+  const template = await resolvePromptTemplate('lesson_gen', LESSON_GEN_SYSTEM_PROMPT_TEMPLATE)
+  const resolvedSystem = template.replace('${BLOCK_SCHEMAS}', () => BLOCK_SCHEMAS)
+
   // Build system prompt
-  let systemPrompt = OUTLINE_LESSON_SYSTEM_PROMPT
+  let systemPrompt = resolvedSystem
   if (params.passiveLesson) {
     systemPrompt += PASSIVE_LESSON_OVERRIDE
   }

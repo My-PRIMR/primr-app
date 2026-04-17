@@ -21,10 +21,11 @@ import type { ParsedCourseTree, CourseTree } from '@/types/course'
 import { fetchYouTubeData } from '@/lib/video-ingest'
 import { extractTocSection, sliceTextByMarker } from '@primr/components/lib'
 import { TOC_SYSTEM_PROMPT_TEMPLATE } from '@/lib/prompts/toc-system'
+import { resolvePromptTemplate } from '@/lib/prompt-resolver'
 
 // ── System prompts ────────────────────────────────────────────────────────────
 
-function makeDocDrivesPrompt(hasVideo: boolean): string {
+async function makeDocDrivesPrompt(hasVideo: boolean): Promise<string> {
   const videoAnnotation = hasVideo
     ? `\n      "videoChapterIndex": number | null  — 0-based index of the most relevant video chapter for this lesson, or null if none`
     : ''
@@ -32,7 +33,8 @@ function makeDocDrivesPrompt(hasVideo: boolean): string {
     ? `\n- For each lesson, set videoChapterIndex to the 0-based index of the video chapter whose content best supplements this lesson. Set null if no chapter is relevant.`
     : ''
 
-  return TOC_SYSTEM_PROMPT_TEMPLATE
+  const template = await resolvePromptTemplate('toc', TOC_SYSTEM_PROMPT_TEMPLATE)
+  return template
     .replace('${videoAnnotation}', () => videoAnnotation)
     .replace('${videoRule}', () => videoRule)
 }
@@ -170,7 +172,7 @@ export async function POST(req: NextRequest) {
 
     // ── Build Claude prompt ───────────────────────────────────────────────────
     const systemPrompt = structureSource === 'document'
-      ? makeDocDrivesPrompt(hasVideo)
+      ? await makeDocDrivesPrompt(hasVideo)
       : makeVideoDrivesPrompt(hasDoc)
 
     const userParts: string[] = []

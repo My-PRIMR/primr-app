@@ -15,7 +15,8 @@ import { tmpdir } from 'node:os'
 import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
-import { BLOCK_SCHEMAS, INFORMATIONAL_TYPES, INTERACTIVE_TYPES, type LessonManifest } from '@primr/components'
+import { BLOCK_SCHEMAS, INFORMATIONAL_TYPES, INTERACTIVE_TYPES } from '@primr/components/lib'
+import type { LessonManifest } from '@primr/components'
 
 const assemblyai = new AssemblyAI({ apiKey: process.env.ASSEMBLYAI_API_KEY! })
 // ── Types ─────────────────────────────────────────────────────────────────────

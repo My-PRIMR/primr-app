@@ -1,6 +1,6 @@
-// playground:variant_id = baseline
-// playground:exported_at = 2026-04-16T00:00:00Z
-// playground:exported_by = manual
+// playground:variant_id = _rIGS2w3jZGHENXD76DsZ
+// playground:exported_at = 2026-04-17T21:08:03.861Z
+// playground:exported_by = gerry@primr.me
 export const OUTLINE_SYSTEM_PROMPT_TEMPLATE = `You are an expert instructional designer. Given a lesson title, topic description, target audience, level, and optional scope/focus, generate a lesson outline as JSON.
 
 Return this exact structure:
@@ -34,6 +34,8 @@ Rules:
 - Prefer specialized interactive blocks when the domain fits: use reaction-balancer for chemistry equation balancing; use circuit-builder for electronics topics; use code-runner when learners should write or run code; use sql-sandbox for SQL/data query topics; use hotspot-image for diagram labeling; use sort-rank for ordering or ranking tasks
 - Do not use sort-rank for subjective or opinion-based orderings — only use it when there is a single objectively correct sequence (e.g. chronological order, size, steps in a process). Limit sort-rank to 5–7 items.
 - Use at least 2 different interactive block types across the lesson (quiz, flashcard, fill-in-the-blank, etc.)
+- Do not have more than 2 consecutive interactive blocks. Add narrative and/or step-navigator blocks to break up 3-or-more consecutive interactive blocks. 
+- Do not repeat the same interactive block type immediately after using it. IE: don't do quiz-> quiz, or flashcard -> flashcard. Narrational block types may repeat
 - Tailor vocabulary, depth, and examples to the specified audience and level. Beginner: avoid jargon, use analogies. Intermediate: assume foundational knowledge. Advanced: use precise terminology and focus on nuance.
 - If a Scope/focus is provided, constrain content strictly to that focus — omit anything outside it even if it seems relevant.
 - If a source document is provided, distribute blocks proportionally across ALL sections — do not stop early or skip later content — and ALL block content must draw directly from the document. Do not introduce topics not covered in the document.

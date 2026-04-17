@@ -6,7 +6,7 @@ import { LessonRenderer } from '@primr/components'
 import type { LessonManifest, LessonCompletePayload, LessonMode } from '@primr/components'
 import { FeedbackOverlay } from './FeedbackOverlay'
 
-export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforced = true, isEmbed = false, dashboardUrl }: { lessonId: string; manifest: LessonManifest; adminMode?: boolean; examEnforced?: boolean; isEmbed?: boolean; dashboardUrl?: string }) {
+export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforced = true, isEmbed = false, dashboardUrl, isInternalUser = false }: { lessonId: string; manifest: LessonManifest; adminMode?: boolean; examEnforced?: boolean; isEmbed?: boolean; dashboardUrl?: string; isInternalUser?: boolean }) {
   const [attemptId, setAttemptId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [mode, setMode] = useState<LessonMode>('interactive')
@@ -30,6 +30,18 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
   const handleBlockFlag = useCallback((blockId: string, comment: string) => {
     setPendingFlags(prev => [...prev, { blockId, comment }])
   }, [])
+
+  const handleBugReport = useCallback(async (report: { blockId: string; blockIndex: number; blockType: string; description: string }) => {
+    try {
+      await fetch(`/api/lessons/${lessonId}/bug-report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(report),
+      })
+    } catch (err) {
+      console.error('[bug-report] failed:', err)
+    }
+  }, [lessonId])
 
   async function handleLessonComplete(payload: LessonCompletePayload) {
     if (!attemptId || submitted.current) return
@@ -109,6 +121,7 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
         examEnforced={examEnforced}
         onLessonComplete={mode === 'interactive' ? handleLessonComplete : undefined}
         onBlockFlag={mode === 'interactive' && !adminMode ? handleBlockFlag : undefined}
+        onBugReport={isInternalUser ? handleBugReport : undefined}
         dashboardUrl={dashboardUrl}
       />
       {phase === 'feedback' && (

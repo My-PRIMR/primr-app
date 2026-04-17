@@ -19,10 +19,13 @@ import { resolveModel, DEFAULT_MODEL, modelById } from '@/lib/models'
 import { extractJSON } from '@/lib/extract-json'
 import type { ParsedCourseTree, CourseTree } from '@/types/course'
 import { fetchYouTubeData } from '@/lib/video-ingest'
+import { extractTocSection, sliceTextByMarker } from '@primr/components/lib'
+import { TOC_SYSTEM_PROMPT_TEMPLATE } from '@/lib/prompts/toc-system'
+import { resolvePromptTemplate } from '@/lib/prompt-resolver'
 
 // ── System prompts ────────────────────────────────────────────────────────────
 
-function makeDocDrivesPrompt(hasVideo: boolean): string {
+async function makeDocDrivesPrompt(hasVideo: boolean): Promise<string> {
   const videoAnnotation = hasVideo
     ? `\n      "videoChapterIndex": number | null  — 0-based index of the most relevant video chapter for this lesson, or null if none`
     : ''
@@ -30,43 +33,10 @@ function makeDocDrivesPrompt(hasVideo: boolean): string {
     ? `\n- For each lesson, set videoChapterIndex to the 0-based index of the video chapter whose content best supplements this lesson. Set null if no chapter is relevant.`
     : ''
 
-  return `You are an expert curriculum designer. Analyze the provided document and return a JSON course tree derived from the document's structure.
-
-Return this exact structure:
-{
-  "title": "Course title",
-  "description": "1-2 sentence course description",
-  "sections": [
-    {
-      "title": "Section title",
-      "inferred": false,
-      "chapters": [
-        {
-          "title": "Chapter title",
-          "lessons": [
-            {
-              "title": "Lesson title",
-              "headingMarker": "Exact heading text from the document that starts this lesson's content"${videoAnnotation}
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
-
-Rules:
-- Base ALL structure on the document — do not invent topics not in the document.
-- FIRST: Look for a Table of Contents in the input. If found, use it as the definitive structure. The TOC is the source of truth.
-- If no TOC is found, look for section headings throughout the document and use them.
-- If no clear headings exist, analyze content to identify natural topic boundaries.
-- headingMarker must be an exact substring from the document text.
-- If the document only has 2-3 levels, synthesize the missing levels (set "inferred": true).
-- Each lesson covers a coherent sub-topic.
-- LESSON COUNT: Create at least one lesson per lowest-level TOC entry or heading. Do NOT truncate, summarize, or consolidate. Process the ENTIRE document from beginning to end.
-- Tailor to the specified audience and level.
-- If a Focus/Scope is provided, only include lessons relevant to that focus.${videoRule}
-- Return ONLY valid JSON. No markdown fences, no explanation. Start with { and end with }.`
+  const template = await resolvePromptTemplate('toc', TOC_SYSTEM_PROMPT_TEMPLATE)
+  return template
+    .replace('${videoAnnotation}', () => videoAnnotation)
+    .replace('${videoRule}', () => videoRule)
 }
 
 function makeVideoDrivesPrompt(hasDoc: boolean): string {
@@ -129,32 +99,6 @@ async function extractTextFromFile(file: File): Promise<string> {
     return buffer.toString('utf-8')
   }
   throw new Error(`Unsupported file type: ${file.name}. Use PDF, DOCX, TXT, or MD.`)
-}
-
-function sliceTextByMarker(fullText: string, marker: string, nextMarker: string | undefined): string {
-  const startIdx = fullText.indexOf(marker)
-  if (startIdx === -1) return ''
-  const endIdx = nextMarker ? fullText.indexOf(nextMarker, startIdx + 1) : -1
-  const chunk = endIdx === -1 ? fullText.slice(startIdx) : fullText.slice(startIdx, endIdx)
-  return chunk.slice(0, 8000).trim()
-}
-
-/**
- * Attempt to extract the Table of Contents from a document's text.
- * Returns the TOC text (up to 30K chars from the marker) or null if
- * no TOC marker is found. When a TOC is present, sending only that
- * section to the model (instead of the full 200K char document)
- * dramatically improves structural extraction accuracy.
- */
-function extractTocSection(text: string): string | null {
-  // Case-insensitive match for "Table of Contents" or a bare "Contents" line
-  const tocMatch = text.match(/(table of contents|^contents\s*$)/im)
-  if (!tocMatch || tocMatch.index == null) return null
-
-  const start = tocMatch.index
-  // Grab up to 30K chars after the TOC marker — enough for very long TOCs
-  // but small enough to be a focused input for the model.
-  return text.slice(start, start + 30000)
 }
 
 // ── Route ─────────────────────────────────────────────────────────────────────
@@ -228,7 +172,7 @@ export async function POST(req: NextRequest) {
 
     // ── Build Claude prompt ───────────────────────────────────────────────────
     const systemPrompt = structureSource === 'document'
-      ? makeDocDrivesPrompt(hasVideo)
+      ? await makeDocDrivesPrompt(hasVideo)
       : makeVideoDrivesPrompt(hasDoc)
 
     const userParts: string[] = []

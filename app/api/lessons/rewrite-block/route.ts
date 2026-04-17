@@ -4,7 +4,7 @@ import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
 import { extractJSON } from '@/lib/extract-json'
 import { getSession } from '@/session'
 import { canAiEdit, DEFAULT_MODEL } from '@/lib/models'
-import { BLOCK_SCHEMA_MAP, ALL_BLOCK_TYPES } from '@/lib/block-schemas'
+import { BLOCK_SCHEMA_MAP, ALL_BLOCK_TYPES } from '@primr/components/lib'
 import type { BlockConfig } from '@/types/outline'
 
 export async function POST(req: NextRequest) {

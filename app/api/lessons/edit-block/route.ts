@@ -3,7 +3,7 @@ import { generateText } from 'ai'
 import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
 import { extractJSON } from '@/lib/extract-json'
 import { DEFAULT_MODEL } from '@/lib/models'
-import { BLOCK_SCHEMA_MAP } from '@/lib/block-schemas'
+import { BLOCK_SCHEMA_MAP } from '@primr/components/lib'
 
 export async function POST(req: NextRequest) {
   const { block, instructions, lessonTitle, adjacentBlocks } = await req.json()

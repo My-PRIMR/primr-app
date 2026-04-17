@@ -460,7 +460,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
                   >
                     Or paste text instead →
                   </button>
-                  <p className={styles.fieldHint}>PDF, DOCX, TXT, or MD. Combined with video transcript as source material.</p>
+                  <p className={styles.fieldHint}>PDF, DOCX, TXT, or MD (up to 150 MB). Combined with video transcript as source material.</p>
                 </>
               ) : (
                 <>

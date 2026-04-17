@@ -110,6 +110,7 @@ export default async function DocsPage() {
         courseTitle={course.title}
         userRole={session.user.productRole}
         tree={tree}
+        isInternalUser={session.user.internalRole != null}
       />
     </>
   )

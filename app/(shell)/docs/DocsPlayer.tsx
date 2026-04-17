@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import '@primr/components/dist/style.css'
 import { LessonRenderer } from '@primr/components'
 import type { LessonManifest } from '@primr/components'
@@ -34,6 +34,7 @@ interface Props {
   courseTitle: string
   userRole: string
   tree: CourseSectionData[]
+  isInternalUser?: boolean
 }
 
 function defaultHomeHref(role: string): string {
@@ -41,7 +42,7 @@ function defaultHomeHref(role: string): string {
   return '/my-primr'
 }
 
-export default function DocsPlayer({ courseTitle, userRole, tree }: Props) {
+export default function DocsPlayer({ courseTitle, userRole, tree, isInternalUser = false }: Props) {
   const flatLessons = tree.flatMap(s =>
     s.chapters.flatMap(c =>
       c.lessons.map(l => ({ ...l, sectionTitle: s.title, chapterTitle: c.title }))
@@ -91,6 +92,19 @@ export default function DocsPlayer({ courseTitle, userRole, tree }: Props) {
     const next = flatLessons.slice(idx + 1).find(l => isReady(l))
     if (next) setCurrentLesson(next)
   }
+
+  const handleBugReport = useCallback(async (report: { blockId: string; blockIndex: number; blockType: string; description: string }) => {
+    if (!currentLesson?.lessonId) return
+    try {
+      await fetch(`/api/lessons/${currentLesson.lessonId}/bug-report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(report),
+      })
+    } catch (err) {
+      console.error('[bug-report] failed:', err)
+    }
+  }, [currentLesson?.lessonId])
 
   const exitHref = defaultHomeHref(userRole)
 
@@ -159,6 +173,7 @@ export default function DocsPlayer({ courseTitle, userRole, tree }: Props) {
               examEnforced={false}
               hideAutoAdvance
               onLessonComplete={handleLessonComplete}
+              onBugReport={isInternalUser ? handleBugReport : undefined}
             />
           </div>
         ) : currentLesson?.generationStatus === 'pending' || currentLesson?.generationStatus === 'generating' ? (

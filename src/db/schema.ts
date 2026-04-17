@@ -494,3 +494,16 @@ export const purchases = pgTable('purchases', {
 
 export type Purchase = typeof purchases.$inferSelect
 export type NewPurchase = typeof purchases.$inferInsert
+
+// ── Prompt Overrides ────────────────────────────────────────────────────────
+
+export const promptOverrides = pgTable('prompt_overrides', {
+  stage:      text('stage').primaryKey(),
+  template:   text('template').notNull(),
+  exportedBy: text('exported_by'),
+  exportedAt: timestamp('exported_at', { withTimezone: true }).notNull().defaultNow(),
+  variantId:  text('variant_id'),
+  notes:      text('notes'),
+})
+
+export type PromptOverride = typeof promptOverrides.$inferSelect

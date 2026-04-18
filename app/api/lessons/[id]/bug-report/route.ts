@@ -31,7 +31,7 @@ export async function POST(
   // Look up the lesson for context
   const lesson = await db.query.lessons.findFirst({ where: eq(lessons.id, lessonId) })
   const lessonTitle = lesson?.title ?? 'Unknown lesson'
-  const lessonUrl = `${process.env.PRIMR_APP_URL ?? 'https://primr.me'}/learn/${lessonId}`
+  const lessonUrl = `${process.env.PRIMR_APP_URL ?? req.nextUrl.origin}/learn/${lessonId}`
 
   const issueTitle = `[Bug] ${blockType} block (#${blockIndex + 1}) in "${lessonTitle}"`
   const issueBody = [

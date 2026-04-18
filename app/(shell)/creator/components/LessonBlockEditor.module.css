@@ -363,3 +363,63 @@
   cursor: pointer;
   max-width: 240px;
 }
+
+/* ── Bug report button & inline form ──────────────────────────────────────── */
+
+.flagBtn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  border: 0.5px solid transparent; border-radius: 6px;
+  background: transparent; color: var(--ink-muted);
+  cursor: pointer; flex-shrink: 0;
+  transition: color 150ms, border-color 150ms, background 150ms;
+}
+.flagBtn:hover { color: var(--amber); border-color: var(--amber); background: color-mix(in srgb, var(--amber) 8%, transparent); }
+
+.flagBtnDone {
+  color: var(--teal); border-color: transparent;
+  cursor: default;
+}
+.flagBtnDone:hover { color: var(--teal); border-color: transparent; background: transparent; }
+
+.flagForm {
+  padding: 0.75rem 1.5rem 1rem;
+  border-top: 1px solid var(--border-mid);
+  background: var(--surface-raised, #fafafa);
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+
+.flagFormTextarea {
+  width: 100%; resize: vertical;
+  border: 0.5px solid var(--border-mid); border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-family: var(--font-body); font-size: 13px;
+  background: var(--surface); color: var(--ink);
+  box-sizing: border-box;
+}
+.flagFormTextarea:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+
+.flagFormActions {
+  display: flex; gap: 0.5rem;
+}
+
+.flagSubmitBtn {
+  padding: 0.35rem 1rem; border-radius: 6px;
+  background: var(--teal); color: #fff;
+  border: none; font-size: 13px; cursor: pointer;
+}
+.flagSubmitBtn:hover { opacity: 0.9; }
+.flagSubmitBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.flagCancelBtn {
+  padding: 0.35rem 0.75rem; border-radius: 6px;
+  background: transparent; color: var(--ink-muted);
+  border: 0.5px solid var(--border-mid); font-size: 13px; cursor: pointer;
+}
+.flagCancelBtn:hover { border-color: var(--ink); color: var(--ink); }
+
+.bugFormHeader {
+  font-family: var(--font-mono); font-size: 12px;
+  color: var(--ink-muted);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}

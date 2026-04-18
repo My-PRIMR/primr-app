@@ -43,7 +43,7 @@ function statusIcon(status: string): StatusIcon {
   }
 }
 
-export default function CourseEditClient({ course, plan, internalRole }: { course: FullCourseTree; plan: string; internalRole: string | null }) {
+export default function CourseEditClient({ course, plan, internalRole, canReportBugs }: { course: FullCourseTree; plan: string; internalRole: string | null; canReportBugs: boolean }) {
   const canPexels = canUsePexels(plan, internalRole)
   const aiEditEnabled = canAiEditFn(plan, internalRole)
   const isInternal = internalRole != null
@@ -440,6 +440,7 @@ export default function CourseEditClient({ course, plan, internalRole }: { cours
             canAiEdit={aiEditEnabled}
             plan={plan}
             isInternal={isInternal}
+            canReportBugs={!!internalRole || canReportBugs}
           />
         )}
       </div>

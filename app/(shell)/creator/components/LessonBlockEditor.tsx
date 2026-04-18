@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import '@primr/components/dist/style.css'
 import {
   HeroCard, NarrativeBlock, StepNavigator, Quiz, FlipCardDeck, FillInTheBlank, MediaBlock,
-  HotspotImage, DecisionTree, SortRank, CodeRunner, EquationRenderer, GraphPlotter,
+  HotspotImage, DecisionTree, SortRank, CodeRunner, EquationRenderer, EquationFillInTheBlank, GraphPlotter,
   ReactionBalancer, AnatomyLabeler, CircuitBuilder, ChartBuilder, ClickableMap,
   SqlSandbox, AudioPronunciation, FinancialCalculator, StatuteAnnotator, PhysicsSimulator,
   Exam,
@@ -31,6 +31,7 @@ const BLOCK_COMPONENTS: Record<string, React.ComponentType<any>> = {
   'sort-rank':            SortRank,
   'code-runner':          CodeRunner,
   'equation-renderer':    EquationRenderer,
+  'equation-fill-in-the-blank': EquationFillInTheBlank,
   'graph-plotter':        GraphPlotter,
   // Phase 2
   'reaction-balancer':    ReactionBalancer,
@@ -63,6 +64,7 @@ export const EMPTY_PROPS: Record<string, Record<string, unknown>> = {
   'sort-rank':         { items: [{ id: '1', label: '', correctPosition: 0 }] },
   'code-runner':       { language: 'javascript', starterCode: '', instructions: '' },
   'equation-renderer': { equations: [{ latex: '' }] },
+  'equation-fill-in-the-blank': { equations: [{ latex: 'x = \\blank{}' }] },
   'graph-plotter':     { functions: [] },
   // Phase 2
   'reaction-balancer': { reactants: [{ id: '1', formula: '' }], products: [{ id: '2', formula: '' }] },

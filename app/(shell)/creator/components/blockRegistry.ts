@@ -38,6 +38,7 @@ export const BLOCK_REGISTRY: BlockRegistryEntry[] = [
   { type: 'sql-sandbox',       label: 'SQL Sandbox',           icon: '🗄', description: 'Query an in-browser SQLite database',                           category: 'coding' },
   // Math
   { type: 'equation-renderer', label: 'Equation Renderer',     icon: '∑',  description: 'Render and explore LaTeX mathematical expressions',              category: 'math' },
+  { type: 'equation-fill-in-the-blank', label: 'Equation Fill-in', icon: '✎',  description: 'LaTeX equations with blanks the learner fills in',              category: 'math' },
   { type: 'graph-plotter',     label: 'Graph Plotter',         icon: '📈', description: 'Plot and interact with mathematical functions',                  category: 'math' },
   { type: 'financial-calculator', label: 'Financial Calculator', icon: '$', description: 'Compound interest, loan, and investment calculations',          category: 'math' },
   { type: 'physics-simulator', label: 'Physics Simulator',     icon: '⚙',  description: 'Simulate forces, motion, and collisions interactively',          category: 'math' },

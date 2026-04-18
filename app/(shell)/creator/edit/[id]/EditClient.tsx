@@ -19,6 +19,7 @@ export default function EditClient({
   theme,
   plan,
   internalRole,
+  canReportBugs,
 }: {
   lessonId: string
   manifest: LessonManifest
@@ -28,6 +29,7 @@ export default function EditClient({
   theme: string
   plan: string
   internalRole: string | null
+  canReportBugs: boolean
 }) {
   const canPexels = canUsePexels(plan, internalRole)
   const aiEditEnabled = canAiEditFn(plan, internalRole)
@@ -186,6 +188,7 @@ export default function EditClient({
           canAiEdit={aiEditEnabled}
           plan={plan}
           isInternal={!!internalRole}
+          canReportBugs={!!internalRole || canReportBugs}
         />
       </div>
     </div>

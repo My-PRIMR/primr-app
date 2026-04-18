@@ -112,6 +112,8 @@ interface LessonBlockEditorProps {
   plan?: string
   /** Whether the current user is internal staff/admin — bypasses all gating. */
   isInternal?: boolean
+  /** Whether the user can file bug reports (internal OR external bug reporter). */
+  canReportBugs?: boolean
 }
 
 export default function LessonBlockEditor({
@@ -125,6 +127,7 @@ export default function LessonBlockEditor({
   canAiEdit = false,
   plan,
   isInternal = false,
+  canReportBugs = false,
 }: LessonBlockEditorProps) {
   const [manifest, setManifest] = useState(initialManifest)
   const [currentBlock, setCurrentBlock] = useState(0)
@@ -236,7 +239,7 @@ export default function LessonBlockEditor({
   const handleBugSubmit = async () => {
     if (!block || !bugDescription.trim()) return
     try {
-      await fetch(`/api/lessons/${lessonId}/bug-report`, {
+      const res = await fetch(`/api/lessons/${lessonId}/bug-report`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -246,9 +249,14 @@ export default function LessonBlockEditor({
           description: bugDescription,
         }),
       })
+      if (!res.ok) {
+        console.error('[bug-report] server error:', res.status)
+        return
+      }
       setBugSubmitted(prev => new Set(prev).add(block.id))
     } catch (err) {
       console.error('[bug-report] failed:', err)
+      return
     }
     setBugFormOpen(false)
     setBugDescription('')
@@ -431,6 +439,26 @@ export default function LessonBlockEditor({
                   Insert after →
                 </button>
                 <div className={styles.insertBarSpacer} />
+                {canReportBugs && (
+                  <button
+                    className={[styles.flagBtn, bugSubmitted.has(block.id) ? styles.flagBtnDone : ''].filter(Boolean).join(' ')}
+                    onClick={handleBugClick}
+                    disabled={bugSubmitted.has(block.id) || bugFormOpen}
+                    aria-label={bugSubmitted.has(block.id) ? 'Bug reported' : 'Report bug on this block'}
+                    title={bugSubmitted.has(block.id) ? 'Bug reported' : 'Report a bug on this block'}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round">
+                      <ellipse cx="8" cy="9" rx="3.5" ry="4" />
+                      <circle cx="8" cy="4.5" r="2" />
+                      <line x1="3" y1="3" x2="5.5" y2="5" />
+                      <line x1="13" y1="3" x2="10.5" y2="5" />
+                      <line x1="1.5" y1="8" x2="4.5" y2="8" />
+                      <line x1="11.5" y1="8" x2="14.5" y2="8" />
+                      <line x1="2" y1="11.5" x2="4.5" y2="10.5" />
+                      <line x1="14" y1="11.5" x2="11.5" y2="10.5" />
+                    </svg>
+                  </button>
+                )}
                 {block.type !== 'hero' && (
                   <button className={styles.disableBtn} onClick={() => toggleBlock(block.id)}>
                     {isDisabled ? 'Enable' : 'Disable'}
@@ -463,6 +491,37 @@ export default function LessonBlockEditor({
                   isInternal={isInternal}
                 />
               </div>
+              {/* Bug report inline form */}
+              {canReportBugs && bugFormOpen && block && (
+                <div className={styles.flagForm}>
+                  <div className={styles.bugFormHeader}>
+                    Report issue on block {currentBlock + 1} ({block.type})
+                  </div>
+                  <textarea
+                    className={styles.flagFormTextarea}
+                    aria-label="Describe the issue"
+                    placeholder="Describe the issue..."
+                    value={bugDescription}
+                    onChange={e => setBugDescription(e.target.value)}
+                    rows={4}
+                  />
+                  <div className={styles.flagFormActions}>
+                    <button
+                      className={styles.flagSubmitBtn}
+                      onClick={handleBugSubmit}
+                      disabled={!bugDescription.trim()}
+                    >
+                      Create Issue
+                    </button>
+                    <button
+                      className={styles.flagCancelBtn}
+                      onClick={() => { setBugFormOpen(false); setBugDescription('') }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

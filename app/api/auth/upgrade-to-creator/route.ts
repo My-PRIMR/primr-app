@@ -12,12 +12,13 @@ export async function POST() {
   await db.update(users).set({ productRole: 'creator' }).where(eq(users.id, session.user.id))
 
   await issueSession({
-    id:           session.user.id,
-    email:        session.user.email,
-    name:         session.user.name,
-    productRole:  'creator',
-    plan:         session.user.plan,
-    internalRole: session.user.internalRole,
+    id:            session.user.id,
+    email:         session.user.email,
+    name:          session.user.name,
+    productRole:   'creator',
+    plan:          session.user.plan,
+    internalRole:  session.user.internalRole,
+    canReportBugs: session.user.canReportBugs,
   })
 
   return NextResponse.json({ ok: true })

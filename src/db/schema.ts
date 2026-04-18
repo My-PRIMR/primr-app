@@ -36,6 +36,8 @@ export const users = pgTable('users', {
   productRole:  productRoleEnum('product_role').notNull().default('learner'),
   plan:         planEnum('plan').notNull().default('free'),
   internalRole: internalRoleEnum('internal_role'),
+  /** Capability flag — when true, the learner sees the in-lesson bug-report button. Granted manually by admins; decoupled from internalRole so external bug reporters don't get intranet access. */
+  canReportBugs: boolean('can_report_bugs').notNull().default(false),
   /** Set when an admin approves a teacher application. Source of truth for whether the user qualifies as a verified K-12 teacher. */
   teacherVerifiedAt: timestamp('teacher_verified_at'),
   /** Captured during teacher application; useful for support and analytics. Null for non-teachers. */

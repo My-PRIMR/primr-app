@@ -84,7 +84,7 @@ export default async function LearnPage({ params, searchParams }: { params: Prom
   return (
     <>
       {!isEmbed && <LearnHeader userName={session.user.name} userEmail={session.user.email} role={session.user.productRole} plan={session.user.plan} internalRole={session.user.internalRole} />}
-      <LessonPlayer lessonId={lesson.id} manifest={lesson.manifest} adminMode={adminMode} examEnforced={lesson.examEnforced} isEmbed={isEmbed} dashboardUrl={dashboardUrl} isInternalUser={session.user.internalRole != null} />
+      <LessonPlayer lessonId={lesson.id} manifest={lesson.manifest} adminMode={adminMode} examEnforced={lesson.examEnforced} isEmbed={isEmbed} dashboardUrl={dashboardUrl} isInternalUser={session.user.internalRole != null || session.user.canReportBugs} />
     </>
   )
 }

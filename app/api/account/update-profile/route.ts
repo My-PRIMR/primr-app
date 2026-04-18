@@ -40,12 +40,13 @@ export async function POST(req: NextRequest) {
   }
 
   await issueSession({
-    id:           session.user.id,
-    email:        session.user.email,
-    name:         trimmed,
-    productRole:  session.user.productRole,
-    plan:         session.user.plan,
-    internalRole: session.user.internalRole,
+    id:            session.user.id,
+    email:         session.user.email,
+    name:          trimmed,
+    productRole:   session.user.productRole,
+    plan:          session.user.plan,
+    internalRole:  session.user.internalRole,
+    canReportBugs: session.user.canReportBugs,
   })
 
   return NextResponse.json({ ok: true, name: trimmed })

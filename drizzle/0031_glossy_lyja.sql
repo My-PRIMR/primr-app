@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "can_report_bugs" boolean DEFAULT false NOT NULL;

@@ -12,8 +12,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession()
-  if (!session?.user?.internalRole) {
-    return NextResponse.json({ error: 'Internal users only' }, { status: 403 })
+  if (!session?.user || (!session.user.internalRole && !session.user.canReportBugs)) {
+    return NextResponse.json({ error: 'Not authorized to report bugs' }, { status: 403 })
   }
 
   const { id: lessonId } = await params

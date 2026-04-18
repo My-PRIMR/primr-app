@@ -13,29 +13,32 @@ function getSecret() {
 
 export interface PrimrSession {
   user: {
-    id:           string
-    email:        string
-    name:         string | null
-    productRole:  string
-    plan:         string
-    internalRole: string | null
+    id:            string
+    email:         string
+    name:          string | null
+    productRole:   string
+    plan:          string
+    internalRole:  string | null
+    canReportBugs: boolean
   }
 }
 
 export async function issueSession(payload: {
-  id:           string
-  email:        string
-  name:         string | null
-  productRole:  string
-  plan:         string
-  internalRole: string | null
+  id:            string
+  email:         string
+  name:          string | null
+  productRole:   string
+  plan:          string
+  internalRole:  string | null
+  canReportBugs: boolean
 }) {
   const token = await new SignJWT({
-    email:        payload.email,
-    name:         payload.name,
-    productRole:  payload.productRole,
-    plan:         payload.plan,
-    internalRole: payload.internalRole,
+    email:         payload.email,
+    name:          payload.name,
+    productRole:   payload.productRole,
+    plan:          payload.plan,
+    internalRole:  payload.internalRole,
+    canReportBugs: payload.canReportBugs,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(payload.id)
@@ -61,19 +64,20 @@ export async function getSession(): Promise<PrimrSession | null> {
   try {
     const { payload } = await jwtVerify(token, getSecret())
     const userId = payload.sub as string
-    // plan and internalRole can change in the DB after JWT issuance — always read fresh
+    // plan, internalRole, and canReportBugs can change in the DB after JWT issuance — always read fresh
     const freshUser = await db.query.users.findFirst({
       where: eq(users.id, userId),
-      columns: { plan: true, internalRole: true },
+      columns: { plan: true, internalRole: true, canReportBugs: true },
     })
     return {
       user: {
-        id:           userId,
-        email:        payload.email as string,
-        name:         (payload.name as string | null) ?? null,
-        productRole:  (payload.productRole as string) ?? 'learner',
-        plan:         freshUser?.plan ?? (payload.plan as string) ?? 'free',
-        internalRole: freshUser?.internalRole ?? (payload.internalRole as string | null) ?? null,
+        id:            userId,
+        email:         payload.email as string,
+        name:          (payload.name as string | null) ?? null,
+        productRole:   (payload.productRole as string) ?? 'learner',
+        plan:          freshUser?.plan ?? (payload.plan as string) ?? 'free',
+        internalRole:  freshUser?.internalRole ?? (payload.internalRole as string | null) ?? null,
+        canReportBugs: freshUser?.canReportBugs ?? (payload.canReportBugs as boolean | undefined) ?? false,
       },
     }
   } catch {

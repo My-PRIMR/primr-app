@@ -149,6 +149,9 @@ export default function LessonBlockEditor({
   const [publishing, setPublishing] = useState(false)
   const [publishError, setPublishError] = useState('')
   const [activePage, setActivePage] = useState(0)
+  const [bugFormOpen, setBugFormOpen] = useState(false)
+  const [bugDescription, setBugDescription] = useState('')
+  const [bugSubmitted, setBugSubmitted] = useState<Set<string>>(() => new Set())
   const dotsRef = useRef<HTMLDivElement>(null)
 
   const blocks = manifest.blocks
@@ -164,7 +167,12 @@ export default function LessonBlockEditor({
     dot?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [currentBlock, useDotPaginator])
 
-  useEffect(() => { setActivePage(0); setConfirmDelete(false) }, [block?.id])
+  useEffect(() => {
+    setActivePage(0)
+    setConfirmDelete(false)
+    setBugFormOpen(false)
+    setBugDescription('')
+  }, [block?.id])
 
   function goTo(idx: number) {
     setCurrentBlock(Math.max(0, Math.min(blocks.length - 1, idx)))
@@ -221,6 +229,29 @@ export default function LessonBlockEditor({
     setCurrentBlock(Math.max(0, currentBlock - 1))
     setPanelOpen(false)
     setSaved(false)
+  }
+
+  const handleBugClick = () => setBugFormOpen(true)
+
+  const handleBugSubmit = async () => {
+    if (!block || !bugDescription.trim()) return
+    try {
+      await fetch(`/api/lessons/${lessonId}/bug-report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          blockId: block.id,
+          blockIndex: currentBlock,
+          blockType: block.type,
+          description: bugDescription,
+        }),
+      })
+      setBugSubmitted(prev => new Set(prev).add(block.id))
+    } catch (err) {
+      console.error('[bug-report] failed:', err)
+    }
+    setBugFormOpen(false)
+    setBugDescription('')
   }
 
   async function saveLesson() {

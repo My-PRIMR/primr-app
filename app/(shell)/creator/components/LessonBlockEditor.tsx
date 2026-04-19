@@ -5,6 +5,7 @@ import '@primr/components/dist/style.css'
 import {
   HeroCard, HeroNew, NarrativeBlock, StepNavigator, Quiz, FlipCardDeck, FillInTheBlank, MediaBlock,
   HotspotImage, DecisionTree, SortRank, CodeRunner, EquationRenderer, EquationFillInTheBlank, GraphPlotter,
+  MathProblem,
   ReactionBalancer, AnatomyLabeler, CircuitBuilder, ChartBuilder, ClickableMap,
   SqlSandbox, AudioPronunciation, FinancialCalculator, StatuteAnnotator, PhysicsSimulator,
   Exam,
@@ -34,6 +35,7 @@ const BLOCK_COMPONENTS: Record<string, React.ComponentType<any>> = {
   'equation-renderer':    EquationRenderer,
   'equation-fill-in-the-blank': EquationFillInTheBlank,
   'graph-plotter':        GraphPlotter,
+  'math-problem':         MathProblem,
   // Phase 2
   'reaction-balancer':    ReactionBalancer,
   'anatomy-labeler':      AnatomyLabeler,
@@ -68,6 +70,7 @@ export const EMPTY_PROPS: Record<string, Record<string, unknown>> = {
   'equation-renderer': { equations: [{ latex: '' }] },
   'equation-fill-in-the-blank': { equations: [{ latex: 'x = \\blank{}' }] },
   'graph-plotter':     { functions: [] },
+  'math-problem':      { steps: [{ prompt: '', inputType: 'numeric', correctValue: 0 }], badge: '', title: '' },
   // Phase 2
   'reaction-balancer': { reactants: [{ id: '1', formula: '' }], products: [{ id: '2', formula: '' }] },
   'anatomy-labeler':   { imageUrl: '', regions: [{ id: '1', label: '', x: 0, y: 0 }] },

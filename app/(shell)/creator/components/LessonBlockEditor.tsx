@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import '@primr/components/dist/style.css'
 import {
-  HeroCard, NarrativeBlock, StepNavigator, Quiz, FlipCardDeck, FillInTheBlank, MediaBlock,
+  HeroCard, HeroNew, NarrativeBlock, StepNavigator, Quiz, FlipCardDeck, FillInTheBlank, MediaBlock,
   HotspotImage, DecisionTree, SortRank, CodeRunner, EquationRenderer, GraphPlotter,
   ReactionBalancer, AnatomyLabeler, CircuitBuilder, ChartBuilder, ClickableMap,
   SqlSandbox, AudioPronunciation, FinancialCalculator, StatuteAnnotator, PhysicsSimulator,
@@ -19,6 +19,7 @@ import styles from './LessonBlockEditor.module.css'
 const BLOCK_COMPONENTS: Record<string, React.ComponentType<any>> = {
   // Core
   'hero':                 HeroCard,
+  'hero-new':             HeroNew,
   'narrative':            NarrativeBlock,
   'step-navigator':       StepNavigator,
   'quiz':                 Quiz,
@@ -50,6 +51,7 @@ const BLOCK_COMPONENTS: Record<string, React.ComponentType<any>> = {
 export const EMPTY_PROPS: Record<string, Record<string, unknown>> = {
   // Core
   hero:                { title: '', tagline: '' },
+  'hero-new':          { title: '', subtitle: '' },
   narrative:           { body: '', title: '', eyebrow: '' },
   'step-navigator':    { steps: [{ title: '', body: '' }], badge: '', title: '' },
   quiz:                { questions: [{ prompt: '', options: ['', '', '', ''], correctIndex: 0 }], badge: '', title: '' },

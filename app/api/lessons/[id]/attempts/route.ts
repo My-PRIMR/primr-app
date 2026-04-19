@@ -19,6 +19,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  const body = await req.json().catch(() => ({})) as { forceNew?: boolean }
+  const forceNew = body.forceNew === true
+
   const lesson = await db.query.lessons.findFirst({
     where: eq(lessons.id, lessonId),
   })
@@ -28,7 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const hasExamBlock = lesson.manifest.blocks.some(b => b.type === 'exam')
 
-  if (!hasExamBlock) {
+  if (!hasExamBlock && !forceNew) {
     const existing = await db.query.lessonAttempts.findFirst({
       where: and(
         eq(lessonAttempts.userId, session.user.id),

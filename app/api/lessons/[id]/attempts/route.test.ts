@@ -73,4 +73,19 @@ describe('POST /api/lessons/:id/attempts', () => {
     expect(data.attempt.id).toBe('att_new')
     expect(db.insert).toHaveBeenCalled()
   })
+
+  it('creates a new row when body is { forceNew: true }, even with an in-progress attempt', async () => {
+    db.query.lessonAttempts.findFirst.mockResolvedValue({
+      id: 'att_existing',
+      status: 'in_progress',
+    })
+    const returning = jest.fn().mockResolvedValue([{ id: 'att_new', blockResults: null }])
+    db.insert = jest.fn(() => ({ values: jest.fn(() => ({ returning })) }))
+
+    const res = await POST(req({ forceNew: true }) as any, ctx as any)
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.attempt.id).toBe('att_new')
+    expect(db.insert).toHaveBeenCalled()
+  })
 })

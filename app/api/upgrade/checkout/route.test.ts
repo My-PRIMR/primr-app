@@ -86,6 +86,44 @@ describe('POST /api/upgrade/checkout', () => {
     expect(body.url).toBe('https://checkout.stripe.com/abc')
   })
 
+  it('applies a 14-day trial on Pro Monthly checkout', async () => {
+    getSession.mockResolvedValue({ user: { id: 'u1', email: 'a@b.c', name: 'A' } })
+    ensureStripeCustomer.mockResolvedValue('cus_1')
+    getPriceId.mockReturnValue('price_pm')
+    const create = jest
+      .fn()
+      .mockResolvedValue({ url: 'https://checkout.stripe.com/trial' })
+    getStripe.mockReturnValue({ checkout: { sessions: { create } } })
+
+    await POST(req({ tier: 'pro', period: 'monthly' }))
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subscription_data: expect.objectContaining({
+          trial_period_days: 14,
+        }),
+      }),
+    )
+  })
+
+  it('applies a 14-day trial on Pro Annual checkout', async () => {
+    getSession.mockResolvedValue({ user: { id: 'u1', email: 'a@b.c', name: 'A' } })
+    ensureStripeCustomer.mockResolvedValue('cus_1')
+    getPriceId.mockReturnValue('price_pa')
+    const create = jest
+      .fn()
+      .mockResolvedValue({ url: 'https://checkout.stripe.com/trial2' })
+    getStripe.mockReturnValue({ checkout: { sessions: { create } } })
+
+    await POST(req({ tier: 'pro', period: 'annual' }))
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subscription_data: expect.objectContaining({
+          trial_period_days: 14,
+        }),
+      }),
+    )
+  })
+
   describe('Teams tier', () => {
     beforeEach(() => {
       jest.clearAllMocks()
@@ -168,6 +206,34 @@ describe('POST /api/upgrade/checkout', () => {
       expect(res.status).toBe(400)
       const body = await res.json()
       expect(body.error).toMatch(/already.*active/i)
+    })
+
+    it('does NOT apply a trial to Teams checkout', async () => {
+      getSession.mockResolvedValue({
+        user: { id: 'u1', email: 'a@b.c', name: 'A' },
+      })
+      db.query.users.findFirst.mockResolvedValue({
+        id: 'u1',
+        email: 'a@b.c',
+        name: 'A',
+        organizationId: 'org_existing',
+      })
+      db.query.organizations.findFirst.mockResolvedValue({
+        id: 'org_existing',
+        name: 'Existing',
+        planSubscriptionId: null,
+      })
+      ensureStripeCustomer.mockResolvedValue('cus_1')
+      getPriceId.mockReturnValue('price_tm')
+
+      const create = jest
+        .fn()
+        .mockResolvedValue({ url: 'https://checkout.stripe.com/teams-notrial' })
+      getStripe.mockReturnValue({ checkout: { sessions: { create } } })
+
+      await POST(req({ tier: 'teams', period: 'monthly' }))
+      const arg = create.mock.calls[0][0]
+      expect(arg.subscription_data?.trial_period_days).toBeUndefined()
     })
 
     it('reuses existing org without subscription', async () => {

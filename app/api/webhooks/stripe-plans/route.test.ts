@@ -91,6 +91,54 @@ describe('POST /api/webhooks/stripe-plans', () => {
     expect(db.update).toHaveBeenCalled()
   })
 
+  it('records trialEndsAt on checkout.session.completed when subscription is trialing', async () => {
+    const { db } = require('@/db') as any
+    const values = jest.fn().mockResolvedValue(undefined)
+    db.insert = jest.fn(() => ({ values }))
+    db.update = jest.fn(() => ({
+      set: jest.fn(() => ({ where: jest.fn().mockResolvedValue(undefined) })),
+    }))
+
+    const trialEndUnix = Math.floor(Date.now() / 1000) + 14 * 86400
+    const retrieveSubscription = jest.fn().mockResolvedValue({
+      id: 'sub_trial',
+      status: 'trialing',
+      current_period_end: trialEndUnix,
+      trial_end: trialEndUnix,
+      cancel_at_period_end: false,
+      items: { data: [{ price: { id: 'price_pm' } }] },
+    })
+    getStripe.mockReturnValue({
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue({
+          type: 'checkout.session.completed',
+          data: {
+            object: {
+              mode: 'subscription',
+              customer: 'cus_1',
+              subscription: 'sub_trial',
+              metadata: {
+                primrKind: 'plan_subscription',
+                primrUserId: 'u1',
+                primrTier: 'pro',
+                primrPeriod: 'monthly',
+              },
+            },
+          },
+        }),
+      },
+      subscriptions: { retrieve: retrieveSubscription },
+    })
+
+    const res = await POST(makeRequest('{}'))
+    expect(res.status).toBe(200)
+    expect(values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        trialEndsAt: new Date(trialEndUnix * 1000),
+      }),
+    )
+  })
+
   it('ignores events that are not plan_subscription kind', async () => {
     const { db } = require('@/db') as any
     getStripe.mockReturnValue({
@@ -145,7 +193,45 @@ describe('subscription lifecycle', () => {
     const res = await POST(makeRequest('{}'))
     expect(res.status).toBe(200)
     expect(set).toHaveBeenCalledWith(
-      expect.objectContaining({ cancelAtPeriodEnd: true }),
+      expect.objectContaining({ cancelAtPeriodEnd: true, trialEndsAt: null }),
+    )
+  })
+
+  it('preserves trialEndsAt on customer.subscription.updated while still trialing', async () => {
+    const { db } = require('@/db') as any
+    const where = jest.fn().mockResolvedValue(undefined)
+    const set = jest.fn(() => ({ where }))
+    db.update = jest.fn(() => ({ set }))
+    db.query.planSubscriptions.findFirst = jest.fn().mockResolvedValue({
+      id: 'row_1',
+      subscriberUserId: 'u1',
+    })
+
+    const trialEndUnix = Math.floor(Date.now() / 1000) + 10 * 86400
+    getStripe.mockReturnValue({
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue({
+          type: 'customer.subscription.updated',
+          data: {
+            object: {
+              id: 'sub_trial',
+              status: 'trialing',
+              current_period_end: trialEndUnix,
+              trial_end: trialEndUnix,
+              cancel_at_period_end: false,
+              metadata: { primrKind: 'plan_subscription' },
+              items: { data: [{ price: { id: 'price_pm' } }] },
+            },
+          },
+        }),
+      },
+    })
+    const res = await POST(makeRequest('{}'))
+    expect(res.status).toBe(200)
+    expect(set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        trialEndsAt: new Date(trialEndUnix * 1000),
+      }),
     )
   })
 

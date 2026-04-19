@@ -28,6 +28,7 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
       theme={lesson.theme}
       plan={session?.user.plan ?? 'free'}
       internalRole={session?.user.internalRole ?? null}
+      canReportBugs={session?.user.canReportBugs ?? false}
     />
   )
 }

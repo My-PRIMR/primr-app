@@ -89,6 +89,7 @@ export default async function CourseEditPage({ params }: { params: Promise<{ id:
       course={tree}
       plan={session.user.plan}
       internalRole={session.user.internalRole}
+      canReportBugs={session.user.canReportBugs ?? false}
     />
   )
 }

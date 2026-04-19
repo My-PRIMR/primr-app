@@ -1,34 +1,38 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import styles from './InvitePanel.module.css'
+import { useState, useEffect } from 'react'
+import styles from './InviteModal.module.css'
 
 interface Invitee {
   id: string
   email: string
 }
 
-interface InvitePanelProps {
+interface Props {
   type: 'lesson' | 'course'
   id: string
+  title: string
+  isPaid: boolean
+  onClose: () => void
 }
 
-export function InvitePanel({ type, id }: InvitePanelProps) {
-  const [open, setOpen] = useState(false)
+export default function InviteModal({ type, id, title, isPaid, onClose }: Props) {
   const [emailInput, setEmailInput] = useState('')
   const [invitees, setInvitees] = useState<Invitee[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [inviting, setInviting] = useState(false)
   const [inviteError, setInviteError] = useState('')
   const [copied, setCopied] = useState(false)
-  const wrapperRef = useRef<HTMLDivElement>(null)
 
   const apiBase = type === 'lesson' ? `/api/lessons/${id}/invite` : `/api/courses/${id}/enroll`
   const linkApi = type === 'lesson' ? `/api/lessons/${id}/invite-link` : `/api/courses/${id}/invite-link`
   const inviteRoute = type === 'lesson' ? 'api/invite' : 'api/course-invite'
 
   useEffect(() => {
-    if (!open) return
+    if (isPaid) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     fetch(apiBase)
       .then(r => r.json())
@@ -39,19 +43,15 @@ export function InvitePanel({ type, id }: InvitePanelProps) {
         setInvitees(list)
       })
       .finally(() => setLoading(false))
-  }, [open, apiBase, type])
+  }, [apiBase, type, isPaid])
 
-  // Close on outside click
   useEffect(() => {
-    if (!open) return
-    function handleClick(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
     }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [open])
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
 
   async function handleInvite() {
     const emails = emailInput.split(/[,\n\s]+/).map(e => e.trim()).filter(Boolean)
@@ -106,44 +106,56 @@ export function InvitePanel({ type, id }: InvitePanelProps) {
   }
 
   return (
-    <div className={styles.wrapper} ref={wrapperRef}>
-      <button
-        className={styles.trigger}
-        onClick={() => setOpen(o => !o)}
-        aria-expanded={open}
-      >
-        Invite
-      </button>
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} onClick={e => e.stopPropagation()}>
+        <div className={styles.header}>
+          <h2 className={styles.title}>Invite learners: {title}</h2>
+          <button className={styles.closeBtn} onClick={onClose} aria-label="Close">&times;</button>
+        </div>
 
-      {open && (
-        <div className={styles.panel}>
-          <div className={styles.inputRow}>
-            <input
-              className={styles.input}
-              type="text"
-              placeholder="email@example.com, another@..."
-              value={emailInput}
-              onChange={e => setEmailInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleInvite() } }}
-              autoFocus
-            />
-            <button
-              className={styles.inviteBtn}
-              onClick={handleInvite}
-              disabled={inviting || !emailInput.trim()}
-            >
-              {inviting ? 'Adding…' : 'Add'}
-            </button>
-          </div>
+        {!isPaid && (
+          <>
+            <div className={styles.inputRow}>
+              <input
+                className={styles.input}
+                type="text"
+                placeholder="email@example.com, another@..."
+                value={emailInput}
+                onChange={e => setEmailInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleInvite()
+                  }
+                }}
+                autoFocus
+              />
+              <button
+                className={styles.inviteBtn}
+                onClick={handleInvite}
+                disabled={inviting || !emailInput.trim()}
+              >
+                {inviting ? 'Adding…' : 'Add'}
+              </button>
+            </div>
+            {inviteError && <p className={styles.error}>{inviteError}</p>}
+          </>
+        )}
 
-          <button className={styles.linkBtn} onClick={handleCopyLink}>
-            <LinkIcon />
-            {copied ? 'Copied!' : 'Copy invite link'}
-          </button>
+        <button className={styles.linkBtn} onClick={handleCopyLink}>
+          <LinkIcon />
+          {copied ? 'Copied!' : 'Copy invite link'}
+        </button>
 
-          {inviteError && <p className={styles.error}>{inviteError}</p>}
+        {isPaid && (
+          <p className={styles.hint}>
+            This {type} is paid. Share the invite link directly — email
+            invitations are disabled for paid content.
+          </p>
+        )}
 
-          {loading ? (
+        {!isPaid && (
+          loading ? (
             <p className={styles.empty}>Loading…</p>
           ) : invitees.length > 0 ? (
             <ul className={styles.list}>
@@ -158,16 +170,25 @@ export function InvitePanel({ type, id }: InvitePanelProps) {
             </ul>
           ) : (
             <p className={styles.empty}>No one invited yet.</p>
-          )}
-        </div>
-      )}
+          )
+        )}
+      </div>
     </div>
   )
 }
 
 function LinkIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
       <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
     </svg>

@@ -8,6 +8,8 @@ import { FeedbackOverlay } from './FeedbackOverlay'
 
 export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforced = true, isEmbed = false, dashboardUrl, isInternalUser = false }: { lessonId: string; manifest: LessonManifest; adminMode?: boolean; examEnforced?: boolean; isEmbed?: boolean; dashboardUrl?: string; isInternalUser?: boolean }) {
   const [attemptId, setAttemptId] = useState<string | null>(null)
+  const [attemptStatus, setAttemptStatus] = useState<'in_progress' | 'completed' | null>(null)
+  const [initialBlockStates, setInitialBlockStates] = useState<Record<string, { status: 'complete'; score?: number; questions?: Array<{ index: number; chosenIndex: number; correct: boolean }> }> | null>(null)
   const [error, setError] = useState('')
   const [mode, setMode] = useState<LessonMode>('interactive')
   const [phase, setPhase] = useState<'learning' | 'feedback' | 'complete'>('learning')
@@ -21,8 +23,13 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
     fetch(`/api/lessons/${lessonId}/attempts`, { method: 'POST' })
       .then(r => r.json())
       .then(data => {
-        if (data.attempt?.id) setAttemptId(data.attempt.id)
-        else setError('Could not start lesson. Are you signed in?')
+        if (data.attempt?.id) {
+          setAttemptId(data.attempt.id)
+          setAttemptStatus(data.attempt.status ?? 'in_progress')
+          setInitialBlockStates(data.attempt.blockResults ?? null)
+        } else {
+          setError('Could not start lesson. Are you signed in?')
+        }
       })
       .catch(() => setError('Could not start lesson.'))
   }, [lessonId])
@@ -30,6 +37,22 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
   const handleBlockFlag = useCallback((blockId: string, comment: string) => {
     setPendingFlags(prev => [...prev, { blockId, comment }])
   }, [])
+
+  const handleBlockComplete = useCallback(
+    async (blockId: string, result: { status: string; score?: number; questions?: Array<{ index: number; chosenIndex: number; correct: boolean }> }) => {
+      if (!attemptId) return
+      try {
+        await fetch(`/api/attempts/${attemptId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ blockResult: { blockId, ...result } }),
+        })
+      } catch (err) {
+        console.error('[block-complete] failed:', err)
+      }
+    },
+    [attemptId],
+  )
 
   const handleBugReport = useCallback(async (report: { blockId: string; blockIndex: number; blockType: string; description: string }) => {
     try {
@@ -114,11 +137,38 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
           </button>
         </div>
       )}
+      {attemptStatus === 'completed' && !isEmbed && (
+        <div style={{ padding: '0.5rem 1.5rem', background: 'var(--surface-alt, #F7F6F3)', borderBottom: '1px solid var(--border, rgba(15,17,23,0.1))', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+          <span>You&rsquo;ve completed this lesson.</span>
+          <button
+            type="button"
+            onClick={async () => {
+              const res = await fetch(`/api/lessons/${lessonId}/attempts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ forceNew: true }),
+              })
+              const data = await res.json()
+              if (data.attempt?.id) {
+                setAttemptId(data.attempt.id)
+                setAttemptStatus('in_progress')
+                setInitialBlockStates(null)
+                submitted.current = false
+              }
+            }}
+            style={{ padding: '0.25rem 0.65rem', border: '1px solid rgba(15,17,23,0.2)', borderRadius: '5px', background: 'transparent', cursor: 'pointer', fontFamily: 'DM Sans, system-ui, sans-serif' }}
+          >
+            Start over
+          </button>
+        </div>
+      )}
       <LessonRenderer
         manifest={manifest}
         adminMode={adminMode}
         mode={mode}
         examEnforced={examEnforced}
+        initialBlockStates={initialBlockStates ?? undefined}
+        onBlockComplete={mode === 'interactive' && !adminMode ? handleBlockComplete : undefined}
         onLessonComplete={mode === 'interactive' ? handleLessonComplete : undefined}
         onBlockFlag={mode === 'interactive' && !adminMode ? handleBlockFlag : undefined}
         onBugReport={isInternalUser ? handleBugReport : undefined}

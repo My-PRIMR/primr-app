@@ -1,4 +1,4 @@
-import 'dotenv/config'
+import './_load-env'
 import { db } from '../src/db'
 import { lessons } from '../src/db/schema'
 import { eq } from 'drizzle-orm'

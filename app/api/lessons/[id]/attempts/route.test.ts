@@ -54,4 +54,23 @@ describe('POST /api/lessons/:id/attempts', () => {
     expect(data.attempt.blockResults).toEqual({ b1: { status: 'complete' } })
     expect(db.insert).not.toHaveBeenCalled()
   })
+
+  it('creates a new row when lesson manifest contains an exam block', async () => {
+    db.query.lessons.findFirst.mockResolvedValue({
+      id: 'l1',
+      manifest: { blocks: [{ id: 'b1', type: 'narrative' }, { id: 'b2', type: 'exam' }] },
+    })
+    db.query.lessonAttempts.findFirst.mockResolvedValue({
+      id: 'att_existing',
+      status: 'in_progress',
+    })
+    const returning = jest.fn().mockResolvedValue([{ id: 'att_new', blockResults: null }])
+    db.insert = jest.fn(() => ({ values: jest.fn(() => ({ returning })) }))
+
+    const res = await POST(req() as any, ctx as any)
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.attempt.id).toBe('att_new')
+    expect(db.insert).toHaveBeenCalled()
+  })
 })

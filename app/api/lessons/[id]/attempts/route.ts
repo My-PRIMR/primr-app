@@ -26,18 +26,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
   }
 
-  // Find latest in-progress attempt to resume
-  const existing = await db.query.lessonAttempts.findFirst({
-    where: and(
-      eq(lessonAttempts.userId, session.user.id),
-      eq(lessonAttempts.lessonId, lessonId),
-      eq(lessonAttempts.status, 'in_progress'),
-    ),
-    orderBy: desc(lessonAttempts.startedAt),
-  })
+  const hasExamBlock = lesson.manifest.blocks.some(b => b.type === 'exam')
 
-  if (existing) {
-    return NextResponse.json({ attempt: existing })
+  if (!hasExamBlock) {
+    const existing = await db.query.lessonAttempts.findFirst({
+      where: and(
+        eq(lessonAttempts.userId, session.user.id),
+        eq(lessonAttempts.lessonId, lessonId),
+        eq(lessonAttempts.status, 'in_progress'),
+      ),
+      orderBy: desc(lessonAttempts.startedAt),
+    })
+    if (existing) {
+      return NextResponse.json({ attempt: existing })
+    }
   }
 
   const [attempt] = await db.insert(lessonAttempts).values({

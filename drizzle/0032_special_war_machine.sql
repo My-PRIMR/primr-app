@@ -1,0 +1,1 @@
+ALTER TABLE "plan_subscriptions" ADD COLUMN "trial_ends_at" timestamp;

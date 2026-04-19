@@ -394,6 +394,7 @@ export const planSubscriptions = pgTable(
     status: planSubscriptionStatusEnum('status').notNull(),
     currentPeriodEnd: timestamp('current_period_end').notNull(),
     cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
+    trialEndsAt: timestamp('trial_ends_at'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },

@@ -42,8 +42,9 @@ export default async function UpgradePage({
           name="Pro"
           priceLabel="$29/mo"
           annualPriceLabel="$290/yr"
-          description="For individual creators."
+          description="For individual creators. 14-day free trial, cancel anytime."
           features={[
+            '14-day free trial',
             'Unlimited lesson generation',
             'Course creation',
             'Sonnet model access',
@@ -51,6 +52,7 @@ export default async function UpgradePage({
           ]}
           featured
           current={currentPlan === 'pro'}
+          trialDays={14}
         />
         <PlanCard
           tier="teams"

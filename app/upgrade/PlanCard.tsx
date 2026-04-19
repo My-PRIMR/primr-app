@@ -13,6 +13,7 @@ interface Props {
   featured?: boolean
   enterprise?: boolean
   current?: boolean
+  trialDays?: number
 }
 
 export function PlanCard(props: Props) {
@@ -61,6 +62,7 @@ export function PlanCard(props: Props) {
   if (props.current) cta = 'Current plan'
   else if (props.tier === 'free') cta = '—'
   else if (props.tier === 'enterprise') cta = 'Contact sales'
+  else if (props.trialDays) cta = `Start ${props.trialDays}-day free trial`
   else cta = `Subscribe to ${props.name}`
 
   return (

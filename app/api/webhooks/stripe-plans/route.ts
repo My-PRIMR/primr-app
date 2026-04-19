@@ -17,6 +17,14 @@ function parseTimestamp(value: unknown): Date {
   return new Date()
 }
 
+function parseOptionalTimestamp(value: unknown): Date | null {
+  if (typeof value === 'number' && value > 0) {
+    return value > 1e12 ? new Date(value) : new Date(value * 1000)
+  }
+  if (typeof value === 'string' && value) return new Date(value)
+  return null
+}
+
 export async function POST(req: Request) {
   const signature = req.headers.get('stripe-signature')
   if (!signature) {
@@ -79,6 +87,7 @@ export async function POST(req: Request) {
                   : 'canceled',
           currentPeriodEnd: parseTimestamp(subscription.current_period_end),
           cancelAtPeriodEnd: subscription.cancel_at_period_end ?? false,
+          trialEndsAt: parseOptionalTimestamp(subscription.trial_end),
         })
       } catch (err: unknown) {
         if ((err as { code?: string })?.code !== '23505') throw err
@@ -128,6 +137,7 @@ export async function POST(req: Request) {
           status,
           currentPeriodEnd: parseTimestamp(sub.current_period_end),
           cancelAtPeriodEnd: sub.cancel_at_period_end ?? false,
+          trialEndsAt: parseOptionalTimestamp(sub.trial_end),
           updatedAt: new Date(),
           ...(planFromPrice
             ? { tier: planFromPrice.tier, billingPeriod: planFromPrice.period }

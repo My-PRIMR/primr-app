@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
+import type Stripe from 'stripe'
 import { getSession } from '@/session'
 import { getStripe } from '@/stripe'
 import { getPriceId } from '@/plans'
@@ -103,12 +104,18 @@ export async function POST(req: Request) {
   }
 
   const stripe = getStripe()
+  const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
+    metadata,
+  }
+  if (tier === 'pro') {
+    subscriptionData.trial_period_days = 14
+  }
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: 'subscription',
     customer: customerId,
     line_items: [{ price: priceId, quantity: 1 }],
     metadata,
-    subscription_data: { metadata },
+    subscription_data: subscriptionData,
     success_url: `${baseUrl}/upgrade/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${baseUrl}/upgrade/cancel`,
   })

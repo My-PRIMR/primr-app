@@ -24,6 +24,11 @@ export default async function BillingPage() {
   const isFree = tierLabel === 'Free'
   const isAdminGranted = !sub && !isFree
   const periodLabel = sub ? (sub.billingPeriod === 'monthly' ? 'Monthly' : 'Annual') : null
+  const isTrialing =
+    sub?.trialEndsAt != null && new Date(sub.trialEndsAt).getTime() > Date.now()
+  const trialEndDate = isTrialing
+    ? new Date(sub!.trialEndsAt!).toLocaleDateString()
+    : null
   const renewalDate = sub?.currentPeriodEnd
     ? new Date(sub.currentPeriodEnd).toLocaleDateString()
     : null
@@ -35,10 +40,22 @@ export default async function BillingPage() {
         <h1 className={styles.title}>Billing</h1>
       <section className={styles.card}>
         <h2 className={styles.cardHeading}>Current plan</h2>
-        <p className={styles.plan}>{tierLabel}</p>
-        {periodLabel && <p className={styles.muted}>Billed {periodLabel.toLowerCase()}</p>}
+        <p className={styles.plan}>
+          {tierLabel}
+          {isTrialing && ' (Free trial)'}
+        </p>
+        {periodLabel && (
+          <p className={styles.muted}>
+            {isTrialing
+              ? `Billed ${periodLabel.toLowerCase()} after trial`
+              : `Billed ${periodLabel.toLowerCase()}`}
+          </p>
+        )}
         {isAdminGranted && <p className={styles.muted}>Granted by admin</p>}
-        {renewalDate && (
+        {isTrialing && trialEndDate && (
+          <p className={styles.muted}>Trial ends on {trialEndDate}</p>
+        )}
+        {!isTrialing && renewalDate && (
           <p className={styles.muted}>
             {endingSoon ? 'Ends on ' : 'Renews on '}
             {renewalDate}

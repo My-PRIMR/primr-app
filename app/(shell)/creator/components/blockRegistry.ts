@@ -27,6 +27,7 @@ export const BLOCK_REGISTRY: BlockRegistryEntry[] = [
   { type: 'media',             label: 'Video',                 icon: '▶',  description: 'Embed a YouTube video with optional caption',                    category: 'core' },
   { type: 'exam',              label: 'Exam',                  icon: '✎',  description: 'Scored assessment with configurable pass threshold',             category: 'core' },
   { type: 'hero',              label: 'Hero',                  icon: '◈',  description: 'Full-width title card to open a lesson',                         category: 'core' },
+  { type: 'hero-new',          label: 'Hero (TOC)',            icon: '✨', description: 'Lesson hero with an auto-generated table of contents',          category: 'core' },
   // Interactive
   { type: 'hotspot-image',     label: 'Hotspot Image',         icon: '🖼', description: 'Click regions on an image to reveal labels or info',            category: 'interactive' },
   { type: 'decision-tree',     label: 'Decision Tree',         icon: '⑂',  description: 'Branching scenario with learner choices',                        category: 'interactive' },

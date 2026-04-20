@@ -25,6 +25,7 @@ type NavItemJson = {
   icon: string
   href?: string
   hrefWhenFree?: string
+  labelWhenFree?: string
   visibleTo?: Condition
   badgeWhen?: Condition
   badgeLabel?: string
@@ -68,13 +69,16 @@ export function resolveNavItems(user: ShellUser): NavItemConfig[] {
     let href = entry.href
     if (entry.hrefWhenFree && plan === 'free') href = entry.hrefWhenFree
 
+    let label = entry.label
+    if (entry.labelWhenFree && plan === 'free') label = entry.labelWhenFree
+
     const badge = entry.badgeWhen && matchesCondition(entry.badgeWhen, user)
       ? (entry.badgeLabel ?? 'Pro')
       : undefined
 
     items.push({
       id: entry.id,
-      label: entry.label,
+      label,
       icon: entry.icon,
       href,
       badge,

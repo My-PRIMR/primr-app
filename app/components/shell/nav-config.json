@@ -22,7 +22,8 @@
     "label": "Billing",
     "icon": "⊡",
     "href": "/settings/billing",
-    "hrefWhenFree": "/upgrade"
+    "hrefWhenFree": "/upgrade",
+    "labelWhenFree": "Upgrade"
   },
   {
     "id": "monetization",

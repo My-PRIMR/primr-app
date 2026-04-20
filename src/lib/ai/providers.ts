@@ -2,7 +2,7 @@ import { anthropic } from '@ai-sdk/anthropic'
 import { google } from '@ai-sdk/google'
 import type { LanguageModel } from 'ai'
 
-export type ProviderKey = 'anthropic' | 'google'
+export type ProviderKey = 'anthropic' | 'google' | 'openai'
 
 // AI SDK model reference lookup by raw model ID.
 // Each entry maps a model ID string (as stored in MODELS) to
@@ -29,6 +29,7 @@ export function resolveModelRef(modelId: string): LanguageModel {
  * Determine the provider key for a given model ID.
  */
 export function providerForModel(modelId: string): ProviderKey {
+  if (modelId.startsWith('gpt-')) return 'openai'
   if (modelId.startsWith('gemini')) return 'google'
   return 'anthropic'
 }

@@ -12,6 +12,7 @@ import { PriceBadge } from '../../components/PriceBadge'
 import EmbedCodeModal from './EmbedCodeModal'
 import EmbedAnalytics from './EmbedAnalytics'
 import InviteModal from './InviteModal'
+import { formatCents } from './lib/revenue'
 
 export type CourseItem = {
   id: string
@@ -23,6 +24,7 @@ export type CourseItem = {
   priceCents: number | null
   isPaid: boolean
   embeddable: boolean
+  revenueCents: number | undefined
 }
 
 export type LessonItem = {
@@ -37,6 +39,7 @@ export type LessonItem = {
   isStandalone: boolean
   priceCents: number | null
   isPaid: boolean
+  revenueCents: number | undefined
 }
 
 type Tab = 'courses' | 'lessons' | 'results'
@@ -55,6 +58,7 @@ export default function CreatorDashboard({
   plan,
   onboardingLessons = [],
   initialTab,
+  isMonetized = false,
 }: {
   courses: CourseItem[]
   lessons: LessonItem[]
@@ -62,6 +66,7 @@ export default function CreatorDashboard({
   plan?: string
   onboardingLessons?: OnboardingLesson[]
   initialTab?: Tab
+  isMonetized?: boolean
 }) {
   const router = useRouter()
   const [tab, setTabState] = useState<Tab>(initialTab ?? 'lessons')
@@ -198,6 +203,7 @@ export default function CreatorDashboard({
                 <th className={styles.thTitle}>Title</th>
                 <th className={styles.thMeta}>Status</th>
                 <th className={styles.thMeta}>Created</th>
+                {isMonetized && <th className={styles.thMoney}>Revenue</th>}
                 <th className={styles.thActions}>Actions</th>
               </tr>
             </thead>
@@ -220,6 +226,11 @@ export default function CreatorDashboard({
                   </td>
                   <td className={styles.tdMeta}>{courseLabel(course.status, course.doneCount, course.lessonCount)}</td>
                   <td className={styles.tdMeta}>{new Date(course.createdAt).toLocaleDateString()}</td>
+                  {isMonetized && (
+                    <td className={styles.tdMoney}>
+                      {formatCents(course.revenueCents ?? 0)}
+                    </td>
+                  )}
                   <td className={styles.tdActions}>
                     <ActionsDropdown
                       items={
@@ -263,6 +274,7 @@ export default function CreatorDashboard({
                 </th>
                 <th className={styles.thTitle}>Title</th>
                 <th className={styles.thMeta}>Updated</th>
+                {isMonetized && <th className={styles.thMoney}>Revenue</th>}
                 <th className={styles.thActions}>Actions</th>
               </tr>
             </thead>
@@ -285,6 +297,11 @@ export default function CreatorDashboard({
                     <PriceBadge priceCents={lesson.priceCents} isPaid={lesson.isPaid} />
                   </td>
                   <td className={styles.tdMeta}>{new Date(lesson.updatedAt).toLocaleDateString()}</td>
+                  {isMonetized && (
+                    <td className={styles.tdMoney}>
+                      {formatCents(lesson.revenueCents ?? 0)}
+                    </td>
+                  )}
                   <td className={styles.tdActions}>
                     <ActionsDropdown
                       items={[

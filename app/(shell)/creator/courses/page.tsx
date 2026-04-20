@@ -28,6 +28,7 @@ export default async function CoursesPage() {
           initialTab="courses"
           courses={data.createdCourses}
           lessons={data.createdLessons}
+          isMonetized={data.isMonetized}
         />
       </div>
     </main>

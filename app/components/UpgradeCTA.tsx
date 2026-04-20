@@ -12,7 +12,7 @@ export function UpgradeCTA() {
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setHidden(typeof window !== 'undefined' && window.localStorage.getItem(STORAGE_KEY) === '1')
+    setHidden(window.localStorage.getItem(STORAGE_KEY) === '1')
   }, [])
 
   function dismiss() {
@@ -36,7 +36,6 @@ export function UpgradeCTA() {
           type="button"
           className={styles.creatorCtaDismiss}
           onClick={dismiss}
-          aria-label="Don't show this again"
         >
           Don&apos;t show again
         </button>

@@ -8,7 +8,7 @@ import { extractJSON } from './extract-json'
 import { db } from '@/db'
 import { courses, chapterLessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { DEFAULT_MODEL } from '@/lib/models'
+import { getDefaultModel } from '@/lib/default-model'
 import { sendEmail } from '@/lib/email'
 import { courseCompleteEmail } from '@/lib/email-templates'
 import { PASSIVE_LESSON_OVERRIDE } from '@primr/components/lib'
@@ -77,7 +77,7 @@ async function generateOutline(params: {
     ? `Title: ${params.title}\nAudience: ${params.audience}\nLevel: ${params.level}\n${focusLine}${videoLine}\nSource document:\n"""\n${params.documentText}\n"""\n\nRespond with JSON only.`
     : `Title: ${params.title}\nTopic: ${params.title}\nAudience: ${params.audience}\nLevel: ${params.level}\n${focusLine}${videoLine}\nRespond with JSON only.`
 
-  const modelId = params.model ?? DEFAULT_MODEL
+  const modelId = params.model ?? (await getDefaultModel())
   const { text: raw } = await generateText({
     model: resolveModelRef(modelId),
     maxOutputTokens: 2048,

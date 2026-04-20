@@ -8,7 +8,8 @@ import { db } from '@/db'
 import { courses, courseSections, courseChapters, chapterLessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getSession } from '@/session'
-import { resolveModel, DEFAULT_MODEL, modelById, canSelectModels } from '@/lib/models'
+import { resolveModel, modelById, canSelectModels } from '@/lib/models'
+import { getDefaultModel } from '@/lib/default-model'
 import { checkCap, logUsage } from '@/lib/usage-cap'
 import { runCourseGeneration, type LessonGenInput } from '@/lib/course-gen'
 import { assertMutableCourse } from '@/lib/system-content'
@@ -39,7 +40,7 @@ export async function POST(
 
   const internalRole = session.user.internalRole ?? null
   const productRole = session.user.productRole ?? null
-  let resolvedModel = modelById(DEFAULT_MODEL)!
+  let resolvedModel = modelById(await getDefaultModel())!
   if (model) {
     const m = resolveModel(model, internalRole, productRole)
     if (!m) return NextResponse.json({ error: 'Unauthorized model selection' }, { status: 403 })

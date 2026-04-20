@@ -510,3 +510,16 @@ export const promptOverrides = pgTable('prompt_overrides', {
 })
 
 export type PromptOverride = typeof promptOverrides.$inferSelect
+
+// ── App Settings ────────────────────────────────────────────────────────────
+// Generic key/value store for runtime-configurable globals (e.g. default model).
+// Written from primr-internal by admins; read from primr-app on generation paths.
+
+export const appSettings = pgTable('app_settings', {
+  key:       text('key').primaryKey(),
+  value:     text('value').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedBy: text('updated_by'),
+})
+
+export type AppSetting = typeof appSettings.$inferSelect

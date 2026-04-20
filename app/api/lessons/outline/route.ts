@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { getSession } from '@/session'
-import { resolveModel, DEFAULT_MODEL, modelById } from '@/lib/models'
+import { resolveModel, modelById } from '@/lib/models'
+import { getDefaultModel } from '@/lib/default-model'
 import { OUTLINE_SYSTEM_PROMPT_TEMPLATE } from '@/lib/prompts/outline-system'
 
 const client = new Anthropic()
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
   const session = await getSession()
   const internalRole = session?.user?.internalRole ?? null
   const productRole = session?.user?.productRole ?? null
-  let resolvedModel = modelById(DEFAULT_MODEL)!
+  let resolvedModel = modelById(await getDefaultModel())!
   if (model) {
     const m = resolveModel(model, internalRole, productRole)
     if (!m) return NextResponse.json({ error: 'Unauthorized model selection' }, { status: 403 })

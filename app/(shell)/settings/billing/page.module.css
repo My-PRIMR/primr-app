@@ -128,3 +128,31 @@
     font-size: 26px;
   }
 }
+
+.primaryBtn {
+  display: inline-block;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 11px 16px;
+  cursor: pointer;
+  transition: opacity 150ms;
+}
+.primaryBtn:hover { opacity: 0.88; }
+
+.ctaRow {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+.ctaRow .primaryBtn,
+.ctaRow .upgradeLink {
+  margin-top: 0;
+}

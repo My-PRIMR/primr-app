@@ -10,7 +10,7 @@ import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
 import { extractJSON } from '@/lib/extract-json'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
-import { DEFAULT_MODEL } from '@/lib/models'
+import { getDefaultModel } from '@/lib/models'
 import { BLOCK_SCHEMAS, PASSIVE_LESSON_OVERRIDE, shuffleQuizOptions } from '@primr/components/lib'
 import { enrichWithPexelsImages, IMAGE_PROMPT_SNIPPET } from '@/lib/pexels'
 import type { LessonManifest } from '@primr/components'
@@ -94,7 +94,7 @@ export async function generateLessonFromOutline(params: {
   ].join('')
 
   // Call Claude
-  const modelId = params.model ?? DEFAULT_MODEL
+  const modelId = params.model ?? (await getDefaultModel())
   const { text: raw } = await generateText({
     model: resolveModelRef(modelId),
     maxOutputTokens: 16384,

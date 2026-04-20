@@ -3,7 +3,7 @@ import { generateText } from 'ai'
 import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
 import { extractJSON } from '@/lib/extract-json'
 import { getSession } from '@/session'
-import { canAiEdit, DEFAULT_MODEL } from '@/lib/models'
+import { canAiEdit, getDefaultModel } from '@/lib/models'
 import { BLOCK_SCHEMA_MAP, ALL_BLOCK_TYPES } from '@primr/components/lib'
 import type { BlockConfig } from '@/types/outline'
 
@@ -47,10 +47,11 @@ export async function POST(req: NextRequest) {
   ].join('')
 
   try {
+    const modelId = await getDefaultModel()
     const { text: raw } = await generateText({
-      model: resolveModelRef(DEFAULT_MODEL),
+      model: resolveModelRef(modelId),
       maxOutputTokens: 4096,
-      system: buildSystemPrompt(systemPrompt, DEFAULT_MODEL, { learnlm: false }),
+      system: buildSystemPrompt(systemPrompt, modelId, { learnlm: false }),
       prompt: userMessage,
     })
     const parsed = JSON.parse(extractJSON(raw))

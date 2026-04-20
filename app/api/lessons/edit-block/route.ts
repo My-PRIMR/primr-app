@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
 import { extractJSON } from '@/lib/extract-json'
-import { DEFAULT_MODEL } from '@/lib/models'
+import { getDefaultModel } from '@/lib/models'
 import { BLOCK_SCHEMA_MAP } from '@primr/components/lib'
 
 export async function POST(req: NextRequest) {
@@ -32,7 +32,7 @@ Rules:
 
   console.log(`[edit-block] block: ${block.id} (${block.type}), instructions: "${instructions.slice(0, 100)}"`)
   const t0 = Date.now()
-  const modelId = DEFAULT_MODEL
+  const modelId = await getDefaultModel()
 
   try {
     const { text: raw } = await generateText({

@@ -5,7 +5,7 @@ import { extractJSON } from '@/lib/extract-json'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { getSession } from '@/session'
-import { resolveModel, DEFAULT_MODEL, modelById, canSelectModels, canUseRichIngest, canUsePexels } from '@/lib/models'
+import { resolveModel, getDefaultModel, modelById, canSelectModels, canUseRichIngest, canUsePexels } from '@/lib/models'
 import { checkCap, logUsage } from '@/lib/usage-cap'
 import { BLOCK_SCHEMAS } from '@primr/components/lib'
 import { enrichWithPexelsImages, IMAGE_PROMPT_SNIPPET } from '@/lib/pexels'
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Document asset ingestion requires Creator Pro or higher.' }, { status: 403 })
   }
 
-  let resolvedModel = modelById(DEFAULT_MODEL)!
+  let resolvedModel = modelById(await getDefaultModel())!
   if (model) {
     const m = resolveModel(model, internalRole, productRole)
     if (!m) return NextResponse.json({ error: 'Unauthorized model selection' }, { status: 403 })

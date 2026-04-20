@@ -232,6 +232,13 @@
       "when": 1776620512780,
       "tag": "0032_special_war_machine",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1776711784508,
+      "tag": "0033_blue_kat_farrell",
+      "breakpoints": true
     }
   ]
 }

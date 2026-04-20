@@ -15,7 +15,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { resolveModelRef } from '@/lib/ai/providers'
 import { getSession } from '@/session'
-import { resolveModel, DEFAULT_MODEL, modelById } from '@/lib/models'
+import { resolveModel, getDefaultModel, modelById } from '@/lib/models'
 import { extractJSON } from '@/lib/extract-json'
 import type { ParsedCourseTree, CourseTree } from '@/types/course'
 import { fetchYouTubeData } from '@/lib/video-ingest'
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
 
   const internalRole = session.user.internalRole ?? null
   const productRole = session.user.productRole ?? null
-  let resolvedModel = modelById(DEFAULT_MODEL)!
+  let resolvedModel = modelById(await getDefaultModel())!
 
   try {
     const formData = await req.formData()

@@ -177,18 +177,25 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
           </button>
         </div>
       )}
-      <LessonRenderer
-        manifest={manifest}
-        adminMode={adminMode}
-        mode={mode}
-        examEnforced={examEnforced}
-        initialBlockStates={initialBlockStates ?? undefined}
-        onBlockComplete={mode === 'interactive' && !adminMode ? handleBlockComplete : undefined}
-        onLessonComplete={mode === 'interactive' ? handleLessonComplete : undefined}
-        onBlockFlag={mode === 'interactive' && !adminMode ? handleBlockFlag : undefined}
-        onBugReport={isInternalUser ? handleBugReport : undefined}
-        dashboardUrl={dashboardUrl}
-      />
+      {/* Wait for the POST to resolve before mounting LessonRenderer. Its
+          useReducer lazy-initializes with initialBlockStates on first render,
+          so rendering earlier seeds the session as empty and ignores any
+          block_results that arrive after. */}
+      {attemptId ? (
+        <LessonRenderer
+          key={attemptId}
+          manifest={manifest}
+          adminMode={adminMode}
+          mode={mode}
+          examEnforced={examEnforced}
+          initialBlockStates={initialBlockStates ?? undefined}
+          onBlockComplete={mode === 'interactive' && !adminMode ? handleBlockComplete : undefined}
+          onLessonComplete={mode === 'interactive' ? handleLessonComplete : undefined}
+          onBlockFlag={mode === 'interactive' && !adminMode ? handleBlockFlag : undefined}
+          onBugReport={isInternalUser ? handleBugReport : undefined}
+          dashboardUrl={dashboardUrl}
+        />
+      ) : null}
       {phase === 'feedback' && (
         <FeedbackOverlay onDone={handleFeedbackDone} />
       )}

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { resolveModelRef, buildSystemPrompt } from '@/lib/ai/providers'
 import { extractJSON } from '@/lib/extract-json'
-import { getDefaultModel } from '@/lib/models'
+import { getDefaultModel } from '@/lib/default-model'
 import { BLOCK_SCHEMA_MAP } from '@primr/components/lib'
 
 export async function POST(req: NextRequest) {

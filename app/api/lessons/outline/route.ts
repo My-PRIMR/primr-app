@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { getSession } from '@/session'
-import { resolveModel, getDefaultModel, modelById } from '@/lib/models'
+import { resolveModel, modelById } from '@/lib/models'
+import { getDefaultModel } from '@/lib/default-model'
 import { OUTLINE_SYSTEM_PROMPT_TEMPLATE } from '@/lib/prompts/outline-system'
 
 const client = new Anthropic()

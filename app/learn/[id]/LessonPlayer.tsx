@@ -26,12 +26,27 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
         if (data.attempt?.id) {
           setAttemptId(data.attempt.id)
           setAttemptStatus(data.attempt.status ?? 'in_progress')
-          setInitialBlockStates(data.attempt.blockResults ?? null)
+          // Exam blocks always restart on resume (graded content isn't half-takeable).
+          // Filter any exam-block entries out of the hydrated state so the learner
+          // re-encounters them; everything else resumes from where they left off.
+          const examBlockIds = new Set(
+            manifest.blocks.filter(b => b.type === 'exam').map(b => b.id),
+          )
+          const raw = data.attempt.blockResults ?? null
+          if (raw && examBlockIds.size > 0) {
+            const filtered = Object.fromEntries(
+              Object.entries(raw).filter(([blockId]) => !examBlockIds.has(blockId)),
+            )
+            setInitialBlockStates(filtered as typeof raw)
+          } else {
+            setInitialBlockStates(raw)
+          }
         } else {
           setError('Could not start lesson. Are you signed in?')
         }
       })
       .catch(() => setError('Could not start lesson.'))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonId])
 
   const handleBlockFlag = useCallback((blockId: string, comment: string) => {

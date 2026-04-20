@@ -29,9 +29,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
   }
 
-  const hasExamBlock = lesson.manifest.blocks.some(b => b.type === 'exam')
-
-  if (!hasExamBlock && !forceNew) {
+  // Resume the latest in-progress attempt if one exists. Exam blocks are
+  // filtered from hydration client-side (see LessonPlayer) so graded content
+  // is always retaken — the attempt row itself still resumes for the rest.
+  if (!forceNew) {
     const existing = await db.query.lessonAttempts.findFirst({
       where: and(
         eq(lessonAttempts.userId, session.user.id),

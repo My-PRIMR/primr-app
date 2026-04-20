@@ -1,11 +1,14 @@
 export const MODELS = {
   // Anthropic
-  haiku:  { id: 'claude-haiku-4-5-20251001', provider: 'anthropic' as const, costCategory: 'LOW',    label: 'Haiku',  minRole: 'staff' as const },
-  sonnet: { id: 'claude-sonnet-4-6',         provider: 'anthropic' as const, costCategory: 'MEDIUM', label: 'Sonnet', minRole: 'staff' as const },
-  opus:   { id: 'claude-opus-4-6',           provider: 'anthropic' as const, costCategory: 'HIGH',   label: 'Opus',   minRole: 'admin' as const },
+  haiku:    { id: 'claude-haiku-4-5-20251001', provider: 'anthropic' as const, costCategory: 'LOW',    label: 'Haiku',      minRole: 'staff' as const },
+  sonnet:   { id: 'claude-sonnet-4-6',         provider: 'anthropic' as const, costCategory: 'MEDIUM', label: 'Sonnet',     minRole: 'staff' as const },
+  opus:     { id: 'claude-opus-4-6',           provider: 'anthropic' as const, costCategory: 'HIGH',   label: 'Opus',       minRole: 'admin' as const },
   // Google
-  flash:  { id: 'gemini-2.5-flash',          provider: 'google' as const,    costCategory: 'LOW',    label: 'Flash',  minRole: 'staff' as const },
-  pro:    { id: 'gemini-2.5-pro',            provider: 'google' as const,    costCategory: 'MEDIUM', label: 'Pro',    minRole: 'staff' as const },
+  flash:    { id: 'gemini-2.5-flash',          provider: 'google' as const,    costCategory: 'LOW',    label: 'Flash',      minRole: 'staff' as const },
+  pro:      { id: 'gemini-2.5-pro',            provider: 'google' as const,    costCategory: 'MEDIUM', label: 'Pro',        minRole: 'staff' as const },
+  // OpenAI
+  gpt5mini: { id: 'gpt-5-mini',                provider: 'openai' as const,    costCategory: 'LOW',    label: 'GPT-5 mini', minRole: 'staff' as const },
+  gpt5:     { id: 'gpt-5',                     provider: 'openai' as const,    costCategory: 'MEDIUM', label: 'GPT-5',      minRole: 'staff' as const },
 } as const
 
 export type ModelKey = keyof typeof MODELS

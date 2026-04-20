@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import type { CourseTree, CourseSection, CourseChapter, CourseLesson, FlatLesson } from '@/types/course'
 import styles from './CourseWizard.module.css'
-import { DEFAULT_MODEL, MODELS, canSelectModels, canSelectOpus } from '@/lib/models'
+import { DEFAULT_MODEL, canSelectModels } from '@/lib/models'
+import { modelSelectorGroups } from '@/lib/model-select'
 
 // ── Wizard State ──────────────────────────────────────────────────────────────
 
@@ -621,17 +622,13 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
                     value={selectedModel}
                     onChange={e => setSelectedModel(e.target.value)}
                   >
-                    <optgroup label="Anthropic">
-                      <option value={MODELS.haiku.id}>Haiku (fast)</option>
-                      <option value={MODELS.sonnet.id}>Sonnet (better)</option>
-                      {canSelectOpus(internalRole, productRole) && (
-                        <option value={MODELS.opus.id}>Opus (best)</option>
-                      )}
-                    </optgroup>
-                    <optgroup label="Google">
-                      <option value={MODELS.flash.id}>Flash (fast)</option>
-                      <option value={MODELS.pro.id}>Pro (better)</option>
-                    </optgroup>
+                    {modelSelectorGroups(internalRole, productRole).map(group => (
+                      <optgroup key={group.provider} label={group.providerLabel}>
+                        {group.options.map(opt => (
+                          <option key={opt.id} value={opt.id}>{opt.label}</option>
+                        ))}
+                      </optgroup>
+                    ))}
                   </select>
                 </div>
                 <label className={styles.checkboxLabel}>

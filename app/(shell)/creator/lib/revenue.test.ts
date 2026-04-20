@@ -56,7 +56,7 @@ describe('formatCents', () => {
     expect(formatCents(5)).toBe('$0.05')
   })
 
-  it('does not add a thousands separator below 10,000 dollars', () => {
+  it('formats amounts above $999 with a thousands separator', () => {
     expect(formatCents(100000)).toBe('$1,000.00')
   })
 })

@@ -1,11 +1,26 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { UpgradeModal } from './UpgradeModal'
 import styles from '../(shell)/creator/page.module.css'
 
+const STORAGE_KEY = 'primr.hideCreatorCta'
+
 export function UpgradeCTA() {
   const [showModal, setShowModal] = useState(false)
+  const [hidden, setHidden] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHidden(typeof window !== 'undefined' && window.localStorage.getItem(STORAGE_KEY) === '1')
+  }, [])
+
+  function dismiss() {
+    window.localStorage.setItem(STORAGE_KEY, '1')
+    setHidden(true)
+  }
+
+  if (hidden === null || hidden) return null
 
   return (
     <>
@@ -16,6 +31,14 @@ export function UpgradeCTA() {
         </p>
         <button className={styles.creatorCtaLink} onClick={() => setShowModal(true)}>
           Become a Primr Creator — it&apos;s free!
+        </button>
+        <button
+          type="button"
+          className={styles.creatorCtaDismiss}
+          onClick={dismiss}
+          aria-label="Don't show this again"
+        >
+          Don&apos;t show again
         </button>
       </div>
     </>

@@ -243,7 +243,7 @@
   padding: 12px 28px;
   background: var(--accent);
   color: #fff;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
@@ -265,7 +265,7 @@
   padding: 12px 28px;
   background: var(--accent);
   color: #fff;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 15px;
   font-weight: 600;
   transition: opacity 150ms;

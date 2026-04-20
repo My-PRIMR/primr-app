@@ -5,7 +5,7 @@ import { lessonAttempts, lessons } from '@/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
 import { canAccessLesson } from '@/lib/lesson-access'
 
-// POST — start a new attempt
+// POST — find or create an attempt (resumes latest in-progress attempt for non-exam lessons)
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession()
   if (!session?.user?.id || !session.user.email) {
@@ -19,11 +19,31 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  const body = await req.json().catch(() => ({})) as { forceNew?: boolean }
+  const forceNew = body.forceNew === true
+
   const lesson = await db.query.lessons.findFirst({
     where: eq(lessons.id, lessonId),
   })
   if (!lesson) {
     return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
+  }
+
+  // Resume the latest in-progress attempt if one exists. Exam blocks are
+  // filtered from hydration client-side (see LessonPlayer) so graded content
+  // is always retaken — the attempt row itself still resumes for the rest.
+  if (!forceNew) {
+    const existing = await db.query.lessonAttempts.findFirst({
+      where: and(
+        eq(lessonAttempts.userId, session.user.id),
+        eq(lessonAttempts.lessonId, lessonId),
+        eq(lessonAttempts.status, 'in_progress'),
+      ),
+      orderBy: desc(lessonAttempts.startedAt),
+    })
+    if (existing) {
+      return NextResponse.json({ attempt: existing })
+    }
   }
 
   const [attempt] = await db.insert(lessonAttempts).values({

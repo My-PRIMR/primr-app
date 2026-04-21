@@ -68,7 +68,11 @@ export default async function BillingPage() {
             {renewalDate}
           </p>
         )}
-        {sub && <ManageSubscriptionButton />}
+        {sub && (
+          <div className={styles.manageWrap}>
+            <ManageSubscriptionButton />
+          </div>
+        )}
         {isFree && (
           <div className={styles.ctaRow}>
             {isLearner && <BecomeCreatorButton />}

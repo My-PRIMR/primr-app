@@ -56,6 +56,10 @@
   line-height: 1.5;
 }
 
+.manageWrap {
+  margin-top: 1.5rem;
+}
+
 /* ── Upgrade Link ────────────────────────────────────────────────────────── */
 .upgradeLink {
   display: inline-block;

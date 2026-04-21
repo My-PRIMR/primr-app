@@ -4,6 +4,7 @@ import { db } from '@/db'
 import { planSubscriptions } from '@/db/schema'
 import { and, eq } from 'drizzle-orm'
 import { ManageSubscriptionButton } from './ManageSubscriptionButton'
+import { BecomeCreatorButton } from './BecomeCreatorButton'
 import styles from './page.module.css'
 
 export default async function BillingPage() {
@@ -18,10 +19,16 @@ export default async function BillingPage() {
   })
 
   const userPlan = session.user.plan ?? 'free'
+  const productRole = session.user.productRole ?? 'learner'
+  const isLearner = productRole === 'learner'
+  const isFree = !sub && userPlan === 'free'
   const tierLabel = sub
     ? (sub.tier === 'pro' ? 'Pro' : 'Teams')
-    : (userPlan === 'pro' ? 'Pro' : userPlan === 'enterprise' ? 'Enterprise' : userPlan === 'teacher' ? 'Teacher' : 'Free')
-  const isFree = tierLabel === 'Free'
+    : (userPlan === 'pro' ? 'Pro'
+      : userPlan === 'enterprise' ? 'Enterprise'
+      : userPlan === 'teacher' ? 'Teacher'
+      : isLearner ? 'Learner'
+      : 'Creator — Free')
   const isAdminGranted = !sub && !isFree
   const periodLabel = sub ? (sub.billingPeriod === 'monthly' ? 'Monthly' : 'Annual') : null
   const isTrialing =
@@ -63,9 +70,12 @@ export default async function BillingPage() {
         )}
         {sub && <ManageSubscriptionButton />}
         {isFree && (
-          <a href="/upgrade" className={styles.upgradeLink}>
-            Upgrade to Pro
-          </a>
+          <div className={styles.ctaRow}>
+            {isLearner && <BecomeCreatorButton />}
+            <a href="/upgrade" className={styles.upgradeLink}>
+              Upgrade to Pro
+            </a>
+          </div>
         )}
       </section>
       </main>

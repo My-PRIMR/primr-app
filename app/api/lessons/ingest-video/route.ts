@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
   const userId = session.user.id
   const internalRole = session.user.internalRole ?? null
   const productRole = session.user.productRole ?? null
+  const plan = session.user.plan ?? null
 
   // ── Detect content type: JSON (URL) vs multipart (file upload) ────────────
   const contentType = req.headers.get('content-type') ?? ''
@@ -80,9 +81,9 @@ export async function POST(req: NextRequest) {
     file = fileRaw
   }
 
-  let resolvedModel = resolveModel(undefined, internalRole, productRole)!
+  let resolvedModel = resolveModel(undefined, internalRole, productRole, plan)!
   if (modelId) {
-    const m = resolveModel(modelId, internalRole, productRole)
+    const m = resolveModel(modelId, internalRole, productRole, plan)
     if (!m) return NextResponse.json({ error: 'Unauthorized model selection' }, { status: 403 })
     resolvedModel = m
   }

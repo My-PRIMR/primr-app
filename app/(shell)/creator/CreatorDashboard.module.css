@@ -245,6 +245,22 @@
   vertical-align: middle;
 }
 
+.thMoney {
+  white-space: nowrap;
+  text-align: right !important;
+  min-width: 90px;
+}
+
+.tdMoney {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  padding: 12px;
+  text-align: right;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
 .tdActions {
   padding: 12px 0 12px 12px;
   vertical-align: middle;

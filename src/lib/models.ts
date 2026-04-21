@@ -1,3 +1,5 @@
+import type { PlanValue } from '@/plans'
+
 export const MODELS = {
   // Anthropic
   haiku:    { id: 'claude-haiku-4-5-20251001', provider: 'anthropic' as const, costCategory: 'LOW',    label: 'Haiku',      minRole: 'staff' as const },
@@ -14,10 +16,22 @@ export const MODELS = {
 export type ModelKey = keyof typeof MODELS
 export type CostCategory = 'LOW' | 'MEDIUM' | 'HIGH'
 
-export const DAILY_CAPS: Record<CostCategory, number | null> = {
-  LOW:    null,  // Haiku: never blocked
-  MEDIUM: 25,    // Sonnet: 25 per day
-  HIGH:   2,     // Opus: 2 per day (admin only)
+/**
+ * Per-tier monthly AI generation quotas, keyed by cost category.
+ * - `number` = hard cap; once reached, generation is rejected with 429 until next UTC month.
+ * - `null`   = unlimited.
+ * - missing  = no allowance for that cost category (denied at resolveModel before the cap is reached).
+ *
+ * Opus (HIGH) is intentionally absent from every plan; it remains admin-only and is gated by role,
+ * not plan, in resolveModel.
+ */
+export type MonthlyQuota = Partial<Record<CostCategory, number | null>>
+
+export const MONTHLY_QUOTAS_BY_PLAN: Record<PlanValue, MonthlyQuota> = {
+  free:       { LOW: 10 },
+  teacher:    { LOW: 100 },                  // K-12 Application Program
+  pro:        { LOW: 200, MEDIUM: 25 },
+  enterprise: { LOW: null, MEDIUM: null },   // Unlimited
 }
 
 export const DEFAULT_MODEL = process.env.AI_DEFAULT_MODEL ?? MODELS.haiku.id
@@ -35,18 +49,20 @@ export function modelById(id: string) {
   return Object.values(MODELS).find(m => m.id === id) ?? null
 }
 
-/** Validate model ID and check role permission. Returns the model entry or null if unauthorized. */
+/** Validate model ID and check role/plan permission. Returns the model entry or null if unauthorized. */
 export function resolveModel(
   modelId: string | undefined,
   internalRole: string | null | undefined,
-  productRole?: string | null | undefined
+  productRole?: string | null | undefined,
+  plan?: string | null | undefined,
 ) {
   if (!modelId) return MODELS.haiku  // default
   const model = modelById(modelId)
   if (!model) return null  // unknown model
-  // The default model (haiku) is always permitted — non-staff users receive it
-  // without a model selector, but the request may still carry the default ID.
   if (model === MODELS.haiku) return model
+  // Pro and Enterprise can opt into MEDIUM-cost models (Sonnet, Gemini Pro 2.5).
+  // Their per-month allowance is enforced separately by checkMonthlyCap.
+  if (model.costCategory === 'MEDIUM' && (plan === 'pro' || plan === 'enterprise')) return model
   if (model.minRole === 'admin' && !hasAdminModelAccess(internalRole, productRole)) return null
   if (model.minRole === 'staff' && !hasStaffModelAccess(internalRole, productRole)) return null
   return model

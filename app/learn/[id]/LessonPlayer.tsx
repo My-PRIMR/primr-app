@@ -189,7 +189,7 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
           mode={mode}
           examEnforced={examEnforced}
           initialBlockStates={initialBlockStates ?? undefined}
-          onBlockComplete={mode === 'interactive' && !adminMode ? handleBlockComplete : undefined}
+          onBlockComplete={mode === 'interactive' ? handleBlockComplete : undefined}
           onLessonComplete={mode === 'interactive' ? handleLessonComplete : undefined}
           onBlockFlag={mode === 'interactive' && !adminMode ? handleBlockFlag : undefined}
           onBugReport={isInternalUser ? handleBugReport : undefined}

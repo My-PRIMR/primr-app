@@ -1,18 +1,59 @@
 import { db } from '@/db'
 import { internalUsageLog } from '@/db/schema'
-import { modelById, DAILY_CAPS } from './models'
+import { modelById, MONTHLY_QUOTAS_BY_PLAN } from './models'
+import type { PlanValue } from '@/plans'
 import { eq, and, gte, sql } from 'drizzle-orm'
 
-export async function checkCap(userId: string, modelId: string): Promise<{ allowed: boolean; remaining: number | null }> {
+export type CapCheck = {
+  allowed: boolean
+  /** `null` = unlimited; `number` = per-month limit. */
+  cap: number | null
+  used: number
+  /** First instant (UTC) of the next calendar month. */
+  resetsAt: Date
+}
+
+function currentMonthStartUtc(): Date {
+  const d = new Date()
+  d.setUTCDate(1)
+  d.setUTCHours(0, 0, 0, 0)
+  return d
+}
+
+function nextMonthStartUtc(): Date {
+  const d = currentMonthStartUtc()
+  d.setUTCMonth(d.getUTCMonth() + 1)
+  return d
+}
+
+/**
+ * Per-user monthly AI generation quota check, scoped by plan tier and model cost category.
+ *
+ * Internal staff/admin bypass quotas. Plans without an allowance for the model's cost
+ * category are denied (defense in depth — the route should also gate at resolveModel).
+ */
+export async function checkMonthlyCap(
+  userId: string,
+  modelId: string,
+  plan: PlanValue,
+  internalRole: string | null | undefined,
+): Promise<CapCheck> {
+  const resetsAt = nextMonthStartUtc()
+
+  if (internalRole === 'staff' || internalRole === 'admin') {
+    return { allowed: true, cap: null, used: 0, resetsAt }
+  }
+
   const model = modelById(modelId)
-  if (!model) return { allowed: false, remaining: null }
+  if (!model) return { allowed: false, cap: 0, used: 0, resetsAt }
 
-  const cap = DAILY_CAPS[model.costCategory]
-  if (cap === null) return { allowed: true, remaining: null }  // LOW: never blocked
+  const quota = MONTHLY_QUOTAS_BY_PLAN[plan] ?? {}
+  const cap = quota[model.costCategory]
 
-  const midnightUtc = new Date()
-  midnightUtc.setUTCHours(0, 0, 0, 0)
+  if (cap === undefined) return { allowed: false, cap: 0, used: 0, resetsAt }
+  if (cap === null) return { allowed: true, cap: null, used: 0, resetsAt }
 
+  const monthStart = currentMonthStartUtc()
   const rows = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(internalUsageLog)
@@ -20,13 +61,11 @@ export async function checkCap(userId: string, modelId: string): Promise<{ allow
       and(
         eq(internalUsageLog.userId, userId),
         eq(internalUsageLog.costCategory, model.costCategory),
-        gte(internalUsageLog.createdAt, midnightUtc),
+        gte(internalUsageLog.createdAt, monthStart),
       )
     )
-
   const used = rows[0]?.count ?? 0
-  const remaining = cap - used
-  return { allowed: remaining > 0, remaining }
+  return { allowed: used < cap, cap, used, resetsAt }
 }
 
 export async function logUsage(

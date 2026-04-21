@@ -7,7 +7,8 @@ import { lessons } from '@/db/schema'
 import { getSession } from '@/session'
 import { resolveModel, modelById, canSelectModels, canUseRichIngest, canUsePexels } from '@/lib/models'
 import { getDefaultModel } from '@/lib/default-model'
-import { checkCap, logUsage } from '@/lib/usage-cap'
+import { checkMonthlyCap, logUsage } from '@/lib/usage-cap'
+import type { PlanValue } from '@/plans'
 import { BLOCK_SCHEMAS } from '@primr/components/lib'
 import { enrichWithPexelsImages, IMAGE_PROMPT_SNIPPET } from '@/lib/pexels'
 import type { LessonManifest } from '@primr/components'
@@ -86,17 +87,26 @@ export async function POST(req: NextRequest) {
 
   let resolvedModel = modelById(await getDefaultModel())!
   if (model) {
-    const m = resolveModel(model, internalRole, productRole)
+    const m = resolveModel(model, internalRole, productRole, plan)
     if (!m) return NextResponse.json({ error: 'Unauthorized model selection' }, { status: 403 })
     resolvedModel = m
   }
 
   if (userId) {
-    const { allowed } = await checkCap(userId, resolvedModel.id)
+    const { allowed, cap, used, resetsAt } = await checkMonthlyCap(
+      userId,
+      resolvedModel.id,
+      (plan as PlanValue) ?? 'free',
+      internalRole,
+    )
     if (!allowed) {
-      const resetAt = new Date()
-      resetAt.setUTCHours(24, 0, 0, 0)
-      return NextResponse.json({ error: 'Daily generation limit reached', resetAt: resetAt.toISOString() }, { status: 429 })
+      return NextResponse.json({
+        error: 'Monthly generation limit reached',
+        cap,
+        used,
+        resetsAt: resetsAt.toISOString(),
+        upgradeUrl: '/upgrade',
+      }, { status: 429 })
     }
   }
 

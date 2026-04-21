@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
 
   const internalRole = session.user.internalRole ?? null
   const productRole = session.user.productRole ?? null
+  const plan = session.user.plan ?? null
   let resolvedModel = modelById(await getDefaultModel())!
 
   try {
@@ -124,7 +125,7 @@ export async function POST(req: NextRequest) {
     const rawText = (formData.get('text') as string | null)?.trim() || ''
 
     if (model) {
-      const m = resolveModel(model, internalRole, productRole)
+      const m = resolveModel(model, internalRole, productRole, plan)
       if (!m) return NextResponse.json({ error: 'Unauthorized model selection' }, { status: 403 })
       resolvedModel = m
     }

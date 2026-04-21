@@ -47,6 +47,7 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
       setLoading(false)
       return
     }
+    onClose()
     router.push('/creator')
   }
 

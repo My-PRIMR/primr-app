@@ -5,9 +5,9 @@ import { createPortal } from 'react-dom'
 import type { ShellUser } from './shellTypes'
 import styles from './ShellUserMenu.module.css'
 
-function roleLabel(role: string) {
+function roleLabel(role: string, plan?: string | null) {
   switch (role) {
-    case 'creator':     return 'Creator'
+    case 'creator':     return plan === 'pro' || plan === 'enterprise' ? 'Creator Pro' : 'Creator'
     case 'lnd_manager': return 'L&D Manager'
     case 'org_admin':   return 'Org Admin'
     case 'learner':     return 'Learner'
@@ -57,7 +57,7 @@ export function ShellUserMenu({ user }: { user: ShellUser }) {
       {/* Identity */}
       <div className={styles.identity}>
         <span className={styles.name}>{displayName}</span>
-        <span className={styles.roleBadge}>{roleLabel(user.productRole)}</span>
+        <span className={styles.roleBadge}>{roleLabel(user.productRole, user.plan)}</span>
       </div>
 
       <div className={styles.divider} />

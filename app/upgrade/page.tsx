@@ -2,6 +2,7 @@ import { getSession } from '@/session'
 import { PlanCard } from './PlanCard'
 import { MonthlyAnnualToggle } from './MonthlyAnnualToggle'
 import { ContactSalesModal } from './ContactSalesModal'
+import { BackButton } from './BackButton'
 import styles from './page.module.css'
 
 export default async function UpgradePage({
@@ -16,6 +17,7 @@ export default async function UpgradePage({
 
   return (
     <main className={styles.main}>
+      <BackButton />
       <header className={styles.header}>
         <h1 className={styles.title}>Choose your plan</h1>
         <p className={styles.subtitle}>

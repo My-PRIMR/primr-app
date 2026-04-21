@@ -6,6 +6,27 @@
 }
 
 
+/* ── Back button ─────────────────────────────────────────────────────────── */
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 2rem;
+  transition: color 150ms;
+}
+
+.backButton:hover {
+  color: var(--ink);
+}
+
 /* ── Header ──────────────────────────────────────────────────────────────── */
 .header {
   text-align: center;

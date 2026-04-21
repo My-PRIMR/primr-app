@@ -241,7 +241,10 @@ export default function CreatorDashboard({
                           : [
                               { type: 'link', label: 'Edit', href: `/creator/courses/${course.id}/edit` },
                               { type: 'link', label: 'Preview', href: `/learn/course/${course.id}` },
-                              { type: 'button', label: 'Invite learners…', onClick: () => setInviteModal({ type: 'course', id: course.id, title: course.title, isPaid: course.isPaid }) },
+                              ...(course.status === 'published'
+                                ? [{ type: 'button' as const, label: 'Invite learners…', onClick: () => setInviteModal({ type: 'course', id: course.id, title: course.title, isPaid: course.isPaid }) }]
+                                : []
+                              ),
                               { type: 'button', label: course.embeddable ? 'Embeddable: on' : 'Embeddable: off', onClick: () => toggleEmbeddable(course.id, !course.embeddable) },
                               ...(course.embeddable ? [{ type: 'button' as const, label: 'Get embed code', onClick: () => setEmbedModal({ type: 'course', id: course.id, title: course.title }) }] : []),
                               { type: 'divider' },
@@ -307,9 +310,11 @@ export default function CreatorDashboard({
                       items={[
                         { type: 'link', label: 'Edit', href: `/creator/edit/${lesson.id}` },
                         { type: 'link', label: 'Preview', href: `/creator/preview/${lesson.id}` },
-                        { type: 'button', label: 'Invite learners…', onClick: () => setInviteModal({ type: 'lesson', id: lesson.id, title: lesson.title, isPaid: lesson.isPaid }) },
                         ...(lesson.publishedAt
-                          ? [{ type: 'link' as const, label: 'Take', href: `/learn/${lesson.id}` }]
+                          ? [
+                              { type: 'button' as const, label: 'Invite learners…', onClick: () => setInviteModal({ type: 'lesson', id: lesson.id, title: lesson.title, isPaid: lesson.isPaid }) },
+                              { type: 'link' as const, label: 'Take', href: `/learn/${lesson.id}` },
+                            ]
                           : [{ type: 'button' as const, label: publishingId === lesson.id ? 'Publishing…' : 'Publish', onClick: () => publishLesson(lesson.id), disabled: publishingId === lesson.id }]
                         ),
                         ...(lesson.publishedAt

@@ -12,20 +12,15 @@ function user(overrides: Partial<ShellUser> = {}): ShellUser {
   } as ShellUser
 }
 
-describe('resolveNavItems — billing entry label', () => {
-  test('uses "Upgrade" for free-plan users', () => {
-    const items = resolveNavItems(user({ plan: 'free' }))
-    const billing = items.find(i => i.id === 'billing')
-    expect(billing).toBeDefined()
-    expect(billing!.label).toBe('Upgrade')
-    expect(billing!.href).toBe('/upgrade')
-  })
-
-  test('uses "Billing" for paid-plan users', () => {
-    const items = resolveNavItems(user({ plan: 'pro' }))
-    const billing = items.find(i => i.id === 'billing')
-    expect(billing).toBeDefined()
-    expect(billing!.label).toBe('Billing')
-    expect(billing!.href).toBe('/settings/billing')
+describe('resolveNavItems — upgrade entry', () => {
+  test('always renders "Upgrade" label and /upgrade href', () => {
+    for (const plan of ['free', 'pro', 'enterprise', 'teacher']) {
+      const items = resolveNavItems(user({ plan }))
+      const upgrade = items.find(i => i.id === 'upgrade')
+      expect(upgrade).toBeDefined()
+      expect(upgrade!.label).toBe('Upgrade')
+      expect(upgrade!.href).toBe('/upgrade')
+      expect(upgrade!.kind).toBe('upgrade')
+    }
   })
 })

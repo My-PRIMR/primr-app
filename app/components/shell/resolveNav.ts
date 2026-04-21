@@ -24,8 +24,7 @@ type NavItemJson = {
   label: string
   icon: string
   href?: string
-  hrefWhenFree?: string
-  labelWhenFree?: string
+  kind?: string
   visibleTo?: Condition
   badgeWhen?: Condition
   badgeLabel?: string
@@ -52,7 +51,6 @@ function matchesCondition(cond: Condition, user: ShellUser): boolean {
 }
 
 export function resolveNavItems(user: ShellUser): NavItemConfig[] {
-  const plan = user.plan ?? 'free'
   const items: NavItemConfig[] = []
 
   for (const entry of navConfig as NavItemJson[]) {
@@ -66,11 +64,8 @@ export function resolveNavItems(user: ShellUser): NavItemConfig[] {
         badge: c.badgeWhen && matchesCondition(c.badgeWhen, user) ? (c.badgeLabel ?? 'Pro') : undefined,
       }))
 
-    let href = entry.href
-    if (entry.hrefWhenFree && plan === 'free') href = entry.hrefWhenFree
-
-    let label = entry.label
-    if (entry.labelWhenFree && plan === 'free') label = entry.labelWhenFree
+    const href = entry.href
+    const label = entry.label
 
     const badge = entry.badgeWhen && matchesCondition(entry.badgeWhen, user)
       ? (entry.badgeLabel ?? 'Pro')
@@ -81,6 +76,7 @@ export function resolveNavItems(user: ShellUser): NavItemConfig[] {
       label,
       icon: entry.icon,
       href,
+      kind: entry.kind,
       badge,
       children: children && children.length > 0 ? children : undefined,
     })

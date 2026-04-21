@@ -16,6 +16,7 @@ export interface NavItemConfig {
   label: string
   icon: string
   href?: string
+  kind?: string
   children?: NavChild[]
   badge?: string
   /** Custom widget rendered below children (e.g. theme toggle) */

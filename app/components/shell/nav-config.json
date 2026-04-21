@@ -18,12 +18,11 @@
     "href": "/learning"
   },
   {
-    "id": "billing",
-    "label": "Billing",
+    "id": "upgrade",
+    "label": "Upgrade",
     "icon": "⊡",
-    "href": "/settings/billing",
-    "hrefWhenFree": "/upgrade",
-    "labelWhenFree": "Upgrade"
+    "href": "/upgrade",
+    "kind": "upgrade"
   },
   {
     "id": "monetization",

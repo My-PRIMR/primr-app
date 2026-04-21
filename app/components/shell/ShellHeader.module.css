@@ -6,9 +6,9 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.875rem 1.25rem;
-  background: rgba(255, 255, 255, 0.92);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(8px);
-  border-bottom: 0.5px solid var(--border, rgba(15,17,23,0.10));
+  border-bottom: 0.5px solid var(--border);
 }
 
 
@@ -46,12 +46,15 @@
 
 /* ── Wordmark ────────────────────────────────────────────────── */
 .wordmark {
-  font-family: var(--font-heading);
-  font-size: 22px;
-  font-weight: 400;
-  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
   text-decoration: none;
   flex-shrink: 0;
+}
+.wordmark img {
+  display: block;
+  height: 24px;
+  width: auto;
 }
 .wordmark:hover { opacity: 0.85; }
 

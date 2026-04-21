@@ -33,7 +33,9 @@ export function ShellHeader({ user, collapsed, onToggleSidebar }: ShellHeaderPro
         <span className={styles.hamburgerBar} />
       </button>
 
-      <Link href={homeHref(user.productRole)} className={styles.wordmark}>Primr</Link>
+      <Link href={homeHref(user.productRole)} className={styles.wordmark}>
+        <img src="/brand/logo-wordmark.svg" alt="Primr" />
+      </Link>
 
       {leftSlot && <div className={styles.leftSlot}>{leftSlot}</div>}
       <div className={styles.spacer} />

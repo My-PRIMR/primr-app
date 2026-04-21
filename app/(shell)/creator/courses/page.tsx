@@ -24,7 +24,6 @@ export default async function CoursesPage() {
       <div className={styles.content}>
         <CreatorDashboard
           plan={data.plan}
-          onboardingLessons={data.onboardingLessons}
           initialTab="courses"
           courses={data.createdCourses}
           lessons={data.createdLessons}

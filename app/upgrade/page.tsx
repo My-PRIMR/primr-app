@@ -1,7 +1,11 @@
 import { getSession } from '@/session'
+import { db } from '@/db'
+import { planSubscriptions } from '@/db/schema'
+import { and, eq } from 'drizzle-orm'
 import { PlanCard } from './PlanCard'
 import { MonthlyAnnualToggle } from './MonthlyAnnualToggle'
 import { ContactSalesModal } from './ContactSalesModal'
+import { ManageSubscriptionButton } from '../components/ManageSubscriptionButton'
 import styles from './page.module.css'
 
 export default async function UpgradePage({
@@ -14,6 +18,15 @@ export default async function UpgradePage({
   const initialPeriod: 'monthly' | 'annual' = period === 'annual' ? 'annual' : 'monthly'
   const currentPlan = session?.user?.plan ?? 'free'
 
+  const sub = session?.user?.id
+    ? await db.query.planSubscriptions.findFirst({
+        where: and(
+          eq(planSubscriptions.subscriberUserId, session.user.id),
+          eq(planSubscriptions.status, 'active'),
+        ),
+      })
+    : null
+
   return (
     <main className={styles.main}>
       <header className={styles.header}>
@@ -23,6 +36,16 @@ export default async function UpgradePage({
         </p>
         <MonthlyAnnualToggle initialPeriod={initialPeriod} />
       </header>
+
+      {sub && (
+        <section className={styles.manageSection}>
+          <h2 className={styles.manageHeading}>Your subscription</h2>
+          <p className={styles.manageMeta}>
+            Manage payment method, billing history, and cancellation.
+          </p>
+          <ManageSubscriptionButton />
+        </section>
+      )}
 
       <div className={styles.grid}>
         <PlanCard

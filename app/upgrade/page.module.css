@@ -72,6 +72,32 @@
   margin-left: 4px;
 }
 
+/* ── Manage Subscription section ────────────────────────────────────────── */
+.manageSection {
+  max-width: 720px;
+  margin: 0 auto 2.5rem;
+  padding: 1.5rem 2rem;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  text-align: left;
+}
+
+.manageHeading {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0 0 0.5rem;
+}
+
+.manageMeta {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--ink-muted);
+  margin: 0 0 1rem;
+}
+
 /* ── Plan grid ───────────────────────────────────────────────────────────── */
 .grid {
   display: grid;

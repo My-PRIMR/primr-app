@@ -10,7 +10,8 @@ import { eq } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { resolveModel, modelById, canSelectModels } from '@/lib/models'
 import { getDefaultModel } from '@/lib/default-model'
-import { checkCap, logUsage } from '@/lib/usage-cap'
+import { checkMonthlyCap, logUsage } from '@/lib/usage-cap'
+import type { PlanValue } from '@/plans'
 import { runCourseGeneration, type LessonGenInput } from '@/lib/course-gen'
 import { assertMutableCourse } from '@/lib/system-content'
 import { users } from '@/db/schema'
@@ -40,18 +41,28 @@ export async function POST(
 
   const internalRole = session.user.internalRole ?? null
   const productRole = session.user.productRole ?? null
+  const plan = session.user.plan ?? null
   let resolvedModel = modelById(await getDefaultModel())!
   if (model) {
-    const m = resolveModel(model, internalRole, productRole)
+    const m = resolveModel(model, internalRole, productRole, plan)
     if (!m) return NextResponse.json({ error: 'Unauthorized model selection' }, { status: 403 })
     resolvedModel = m
   }
 
-  const { allowed } = await checkCap(session.user.id, resolvedModel.id)
+  const { allowed, cap, used, resetsAt } = await checkMonthlyCap(
+    session.user.id,
+    resolvedModel.id,
+    (plan as PlanValue) ?? 'free',
+    internalRole,
+  )
   if (!allowed) {
-    const resetAt = new Date()
-    resetAt.setUTCHours(24, 0, 0, 0)
-    return NextResponse.json({ error: 'Daily generation limit reached', resetAt: resetAt.toISOString() }, { status: 429 })
+    return NextResponse.json({
+      error: 'Monthly generation limit reached',
+      cap,
+      used,
+      resetsAt: resetsAt.toISOString(),
+      upgradeUrl: '/upgrade',
+    }, { status: 429 })
   }
 
   // Create the full structure in DB

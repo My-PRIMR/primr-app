@@ -56,31 +56,6 @@
   line-height: 1.5;
 }
 
-/* ── Manage Subscription Button ──────────────────────────────────────────── */
-.manageBtn {
-  display: inline-block;
-  font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  color: #fff;
-  background: var(--accent);
-  border: none;
-  border-radius: 8px;
-  padding: 11px 16px;
-  cursor: pointer;
-  transition: opacity 150ms;
-  margin-top: 1.5rem;
-}
-
-.manageBtn:hover:not(:disabled) {
-  opacity: 0.88;
-}
-
-.manageBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* ── Upgrade Link ────────────────────────────────────────────────────────── */
 .upgradeLink {
   display: inline-block;
@@ -98,15 +73,6 @@
 
 .upgradeLink:hover {
   background: var(--accent-soft);
-}
-
-/* ── Error message ───────────────────────────────────────────────────────── */
-.error {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 13px;
-  color: var(--coral, #E8453C);
-  margin-top: 12px;
-  margin-bottom: 0;
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */

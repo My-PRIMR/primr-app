@@ -3,7 +3,7 @@ import { getSession } from '@/session'
 import { db } from '@/db'
 import { planSubscriptions } from '@/db/schema'
 import { and, eq } from 'drizzle-orm'
-import { ManageSubscriptionButton } from './ManageSubscriptionButton'
+import { ManageSubscriptionButton } from '../../../components/ManageSubscriptionButton'
 import { BecomeCreatorButton } from './BecomeCreatorButton'
 import styles from './page.module.css'
 

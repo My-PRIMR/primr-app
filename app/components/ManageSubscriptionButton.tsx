@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import styles from './page.module.css'
+import styles from './ManageSubscriptionButton.module.css'
 
 export function ManageSubscriptionButton() {
   const [loading, setLoading] = useState(false)

@@ -27,6 +27,7 @@ export default async function ResultsPage() {
           initialTab="results"
           courses={data.createdCourses}
           lessons={data.createdLessons}
+          isMonetized={data.isMonetized}
         />
       </div>
     </main>

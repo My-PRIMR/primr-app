@@ -2,25 +2,29 @@ import { db } from '@/db'
 import {
   users, lessons, lessonInvitations, lessonAttempts,
   courses, courseSections, courseChapters, chapterLessons, courseEnrollments, lessonFeedback,
-  onboardingPlaylists,
+  onboardingPlaylists, creatorProfiles, purchases,
 } from '@/db/schema'
 import { desc, eq, and, sql, inArray, max, gte } from 'drizzle-orm'
 import { resolveSegment } from '@/lib/onboarding'
 import { fillDailyActivity } from '@/lib/results'
 import type { ResultsData, CourseResultRow, CourseLearnerRow } from '../ResultsTab'
 import type { OnboardingLesson } from '../OnboardingStrip'
+import { mergeRevenueByItem } from './revenue'
 
 export type CreatorContentData = {
   plan: string
   isCreator: boolean
+  isMonetized: boolean
   createdCourses: {
     id: string; title: string; status: string; createdAt: string
     lessonCount: number; doneCount: number; priceCents: number | null; isPaid: boolean; embeddable: boolean
+    revenueCents: number | undefined
   }[]
   createdLessons: {
     id: string; title: string; slug: string; createdAt: string; updatedAt: string
     publishedAt: string | null; examEnforced: boolean; showcase: boolean
     isStandalone: boolean; priceCents: number | null; isPaid: boolean
+    revenueCents: number | undefined
   }[]
   resultsData?: ResultsData
   onboardingLessons: OnboardingLesson[]
@@ -30,7 +34,7 @@ export async function fetchCreatorContent(userId: string, email: string, role: s
   const isCreator = role === 'creator' || role === 'lnd_manager' || role === 'org_admin'
 
   if (!isCreator) {
-    return { plan, isCreator, createdCourses: [], createdLessons: [], onboardingLessons: [] }
+    return { plan, isCreator, isMonetized: false, createdCourses: [], createdLessons: [], onboardingLessons: [] }
   }
 
   // ── Courses ────────────────────────────────────────────────────────────────
@@ -90,6 +94,48 @@ export async function fetchCreatorContent(userId: string, email: string, role: s
     ...l,
     chapterLessonCount: inChapterIds.has(l.id) ? 1 : 0,
   }))
+
+  // ── Revenue (per-item, monetized creators only) ───────────────────────────
+  const monetProfile = await db
+    .select({ complete: creatorProfiles.stripeOnboardingComplete })
+    .from(creatorProfiles)
+    .where(eq(creatorProfiles.userId, userId))
+    .limit(1)
+    .then(rows => rows[0])
+  const isMonetized = !!monetProfile?.complete
+
+  const lessonIdsForRevenue = createdLessons.map(l => l.id)
+  const courseIdsForRevenue = createdCoursesRaw.map(c => c.id)
+
+  let lessonRevenueMap = new Map<string, number>()
+  let courseRevenueMap = new Map<string, number>()
+
+  if (isMonetized && (lessonIdsForRevenue.length > 0 || courseIdsForRevenue.length > 0)) {
+    const [lessonRevRows, courseRevRows] = await Promise.all([
+      lessonIdsForRevenue.length > 0
+        ? db
+            .select({
+              itemId: purchases.lessonId,
+              revenueCents: sql<number>`coalesce(sum(${purchases.creatorRevenueCents}), 0)::int`,
+            })
+            .from(purchases)
+            .where(inArray(purchases.lessonId, lessonIdsForRevenue))
+            .groupBy(purchases.lessonId)
+        : Promise.resolve([]),
+      courseIdsForRevenue.length > 0
+        ? db
+            .select({
+              itemId: purchases.courseId,
+              revenueCents: sql<number>`coalesce(sum(${purchases.creatorRevenueCents}), 0)::int`,
+            })
+            .from(purchases)
+            .where(inArray(purchases.courseId, courseIdsForRevenue))
+            .groupBy(purchases.courseId)
+        : Promise.resolve([]),
+    ])
+    lessonRevenueMap = mergeRevenueByItem(lessonIdsForRevenue, lessonRevRows)
+    courseRevenueMap = mergeRevenueByItem(courseIdsForRevenue, courseRevRows)
+  }
 
   // ── Results ────────────────────────────────────────────────────────────────
   let resultsData: ResultsData | undefined
@@ -288,15 +334,17 @@ export async function fetchCreatorContent(userId: string, email: string, role: s
   }
 
   return {
-    plan, isCreator,
+    plan, isCreator, isMonetized,
     createdCourses: createdCoursesRaw.map(c => ({
       id: c.id, title: c.title, status: c.status, createdAt: c.createdAt.toISOString(),
       lessonCount: c.lessonCount, doneCount: c.doneCount, priceCents: c.priceCents, isPaid: c.isPaid, embeddable: c.embeddable,
+      revenueCents: isMonetized ? (courseRevenueMap.get(c.id) ?? 0) : undefined,
     })),
     createdLessons: createdLessons.map(l => ({
       id: l.id, title: l.title, slug: l.slug, createdAt: l.createdAt.toISOString(), updatedAt: l.updatedAt.toISOString(),
       publishedAt: l.publishedAt?.toISOString() ?? null, examEnforced: l.examEnforced, showcase: l.showcase,
       isStandalone: l.chapterLessonCount === 0, priceCents: l.priceCents, isPaid: l.isPaid,
+      revenueCents: isMonetized ? (lessonRevenueMap.get(l.id) ?? 0) : undefined,
     })),
     resultsData,
     onboardingLessons,

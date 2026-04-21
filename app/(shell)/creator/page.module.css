@@ -144,3 +144,18 @@
   text-decoration: none;
 }
 .creatorCtaLink:hover { opacity: 0.8; }
+
+.creatorCtaDismiss {
+  display: inline-block;
+  margin-left: 1rem;
+  font-size: 13px;
+  color: var(--ink-muted);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.creatorCtaDismiss:hover { color: var(--ink); }

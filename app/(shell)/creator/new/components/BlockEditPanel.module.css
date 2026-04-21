@@ -4,7 +4,7 @@
   right: 0;
   width: 420px;
   height: calc(100vh - 57px);
-  background: var(--surface, #fff);
+  background: var(--surface);
   border-left: 1px solid var(--border-mid, rgba(15,17,23,0.18));
   display: flex;
   flex-direction: column;
@@ -22,7 +22,7 @@
 }
 
 .title {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 15px;
   font-weight: 600;
   color: var(--ink);
@@ -30,11 +30,11 @@
 }
 
 .blockType {
-  font-family: 'DM Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 400;
   color: var(--accent);
-  background: var(--accent-soft, #EAE7FB);
+  background: var(--accent-soft);
   padding: 2px 8px;
   border-radius: 4px;
 }
@@ -83,7 +83,7 @@
   height: 14px;
   border-radius: 50%;
   background: var(--border-mid, rgba(15,17,23,0.18));
-  color: var(--surface, #fff);
+  color: var(--surface);
   font-size: 9px;
   font-weight: 700;
   font-style: italic;
@@ -109,7 +109,7 @@
   line-height: 1.45;
   color: #EDEEF5;
   background: #1A1C28;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   z-index: 10;
   pointer-events: none;
 }
@@ -134,12 +134,12 @@
 }
 
 .fieldInput, .fieldTextarea {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 13.5px;
   color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--border-mid);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 8px 10px;
   outline: none;
   transition: border-color 120ms;
@@ -179,7 +179,7 @@
 }
 
 .arrayAddBtn {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 11px;
   font-weight: 500;
   color: var(--accent);
@@ -190,14 +190,14 @@
   cursor: pointer;
   transition: background 120ms;
 }
-.arrayAddBtn:hover { background: var(--accent-soft, #EAE7FB); }
+.arrayAddBtn:hover { background: var(--accent-soft); }
 
 .arrayItem {
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 10px;
-  background: var(--surface-alt, #F7F6F3);
+  background: var(--surface-alt);
   border: 1px solid var(--border);
   border-radius: 8px;
 }
@@ -214,7 +214,7 @@
 }
 
 .arrayIndex {
-  font-family: 'DM Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 500;
   color: var(--ink-muted);
@@ -271,9 +271,9 @@
   padding: 4px 8px;
   font-size: 11px;
   font-weight: 400;
-  font-family: 'DM Sans', system-ui, sans-serif;
-  color: var(--surface, #fff);
-  background: var(--ink, #0F1117);
+  font-family: var(--font-body);
+  color: var(--surface);
+  background: var(--ink);
   border-radius: 4px;
   z-index: 10;
   pointer-events: none;
@@ -320,9 +320,9 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--accent);
-  background: var(--accent-soft, #EAE7FB);
+  background: var(--accent-soft);
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 
 /* ── JSON disclosure ─────────────────────────────────────────────────────── */
@@ -342,12 +342,12 @@
 .jsonSummary:hover { color: var(--ink-soft); }
 
 .json {
-  font-family: 'DM Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   color: var(--ink-soft);
-  background: var(--surface-alt, #F7F6F3);
+  background: var(--surface-alt);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 10px;
   overflow-x: auto;
   max-height: 250px;
@@ -422,7 +422,7 @@
   font-size: 13px;
   padding: 5px 8px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--ink);
   cursor: pointer;
@@ -433,7 +433,7 @@
   font-size: 13px;
   padding: 6px 8px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--ink);
   resize: vertical;
@@ -454,7 +454,7 @@
   flex: 1;
   padding: 7px 12px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--accent);
   color: #fff;
   font-size: 13px;
@@ -471,7 +471,7 @@
 .aiRevertBtn {
   padding: 7px 10px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: none;
   color: var(--ink-muted);
   font-size: 12px;

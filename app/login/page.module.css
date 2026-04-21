@@ -11,13 +11,13 @@
   max-width: 400px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 2.5rem 2rem;
   box-shadow: 0 4px 24px rgba(0,0,0,0.06);
 }
 
 .wordmark {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 28px;
   font-weight: 400;
   color: var(--ink);
@@ -50,7 +50,7 @@
 }
 
 .input {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   color: var(--ink);
   background: var(--surface);
@@ -76,7 +76,7 @@
 }
 
 .submitBtn {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 600;
   padding: 11px 24px;
@@ -100,7 +100,7 @@
 }
 
 .toggleBtn {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 600;
   color: var(--accent);

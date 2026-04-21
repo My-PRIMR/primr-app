@@ -65,7 +65,7 @@
   color: var(--ink);
   background: var(--surface-alt);
   border: 1.5px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 8px 10px;
   outline: none;
   min-width: 0;
@@ -85,7 +85,7 @@
   color: #fff;
   background: var(--accent);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 8px 16px;
   cursor: pointer;
   transition: opacity 150ms;
@@ -110,7 +110,7 @@
   color: var(--ink-soft);
   background: var(--surface-alt);
   border: 1.5px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 8px 10px;
   cursor: pointer;
   transition: border-color 120ms, color 120ms;

@@ -11,7 +11,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   color: var(--ink-muted);
@@ -34,7 +34,7 @@
 }
 
 .title {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 40px;
   font-weight: 400;
   color: var(--ink);
@@ -43,7 +43,7 @@
 }
 
 .subtitle {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 16px;
   color: var(--ink-muted);
   margin: 0 0 2rem;
@@ -63,7 +63,7 @@
 
 .toggle,
 .toggleActive {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 13.5px;
   font-weight: 500;
   padding: 8px 20px;
@@ -127,7 +127,7 @@
 }
 
 .cardName {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 22px;
   font-weight: 400;
   color: var(--ink);
@@ -135,7 +135,7 @@
 }
 
 .cardPrice {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 26px;
   font-weight: 600;
   color: var(--ink);
@@ -179,7 +179,7 @@
 }
 
 .cardCta {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   color: #fff;
@@ -248,7 +248,7 @@
 }
 
 .modalTitle {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 28px;
   font-weight: 400;
   color: var(--ink);
@@ -258,7 +258,7 @@
 
 .modalLabel {
   display: block;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   color: var(--ink);
@@ -277,7 +277,7 @@
   padding: 10px 12px;
   background: var(--surface-alt);
   color: var(--ink);
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   margin-top: 6px;
   transition: border-color 150ms, box-shadow 150ms;
@@ -291,7 +291,7 @@
 }
 
 .modalSubmit {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   color: #fff;
@@ -315,7 +315,7 @@
 }
 
 .modalError {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   color: var(--coral, #E8453C);
   margin-top: 12px;
@@ -323,7 +323,7 @@
 }
 
 .modalSent {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 15px;
   color: var(--ink-soft);
   line-height: 1.6;

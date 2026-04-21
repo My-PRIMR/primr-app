@@ -16,7 +16,7 @@
 
 /* ── Page Title ──────────────────────────────────────────────────────────── */
 .title {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 40px;
   font-weight: 400;
   color: var(--ink);
@@ -33,7 +33,7 @@
 }
 
 .cardHeading {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 20px;
   font-weight: 400;
   color: var(--ink);
@@ -41,7 +41,7 @@
 }
 
 .plan {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 32px;
   font-weight: 400;
   color: var(--ink);
@@ -49,7 +49,7 @@
 }
 
 .muted {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   color: var(--ink-muted);
   margin: 0 0 0.75rem;
@@ -59,7 +59,7 @@
 /* ── Manage Subscription Button ──────────────────────────────────────────── */
 .manageBtn {
   display: inline-block;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   color: #fff;
@@ -84,7 +84,7 @@
 /* ── Upgrade Link ────────────────────────────────────────────────────────── */
 .upgradeLink {
   display: inline-block;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   color: var(--accent);
@@ -102,7 +102,7 @@
 
 /* ── Error message ───────────────────────────────────────────────────────── */
 .error {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   color: var(--coral, #E8453C);
   margin-top: 12px;
@@ -131,7 +131,7 @@
 
 .primaryBtn {
   display: inline-block;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   color: #fff;

@@ -6,7 +6,7 @@
 }
 
 .heading {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 20px;
   font-weight: 400;
   color: var(--ink);
@@ -51,7 +51,7 @@
 }
 
 .priceInput {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   color: var(--ink);
   background: var(--surface-alt, var(--surface));
@@ -68,7 +68,7 @@
 }
 
 .saveBtn {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   color: #fff;

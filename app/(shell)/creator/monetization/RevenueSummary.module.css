@@ -7,7 +7,7 @@
 }
 
 .heading {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 20px;
   font-weight: 400;
   margin: 0 0 0.5rem;
@@ -21,7 +21,7 @@
 }
 
 .lifetimeValue {
-  font-family: 'DM Mono', monospace;
+  font-family: var(--font-mono);
   color: var(--ink);
   font-weight: 500;
 }

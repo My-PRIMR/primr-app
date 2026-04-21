@@ -19,7 +19,7 @@
 }
 
 .title {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 32px;
   font-weight: 400;
   color: var(--ink);
@@ -28,7 +28,7 @@
 }
 
 .body {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 15px;
   color: var(--ink-soft);
   line-height: 1.6;
@@ -36,7 +36,7 @@
 }
 
 .acceptBtn {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   color: #fff;
@@ -58,7 +58,7 @@
 }
 
 .error {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   color: var(--coral, #E8453C);
   margin: 12px 0 0;

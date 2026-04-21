@@ -23,7 +23,7 @@
   padding: 6px;
   background: none;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   flex-shrink: 0;
   transition: background 120ms;
@@ -46,10 +46,10 @@
 
 /* ── Wordmark ────────────────────────────────────────────────── */
 .wordmark {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 22px;
   font-weight: 400;
-  color: var(--ink, #0F1117);
+  color: var(--ink);
   text-decoration: none;
   flex-shrink: 0;
 }

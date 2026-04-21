@@ -40,21 +40,21 @@
 
 /* States */
 .done .dot {
-  background: var(--accent, #6B5CE7);
+  background: var(--accent);
   color: #fff;
   font-size: 10px;
 }
-.done .label { color: var(--ink-soft, #4A4D5E); }
+.done .label { color: var(--ink-soft); }
 
 .active .dot {
-  background: var(--accent, #6B5CE7);
+  background: var(--accent);
   color: #fff;
 }
-.active .label { color: var(--ink, #0F1117); font-weight: 600; }
+.active .label { color: var(--ink); font-weight: 600; }
 
 .upcoming .dot {
-  background: var(--surface-alt, #F7F6F3);
-  color: var(--ink-muted, #8A8FA8);
+  background: var(--surface-alt);
+  color: var(--ink-muted);
   border: 1px solid var(--border, rgba(15,17,23,0.10));
 }
-.upcoming .label { color: var(--ink-muted, #8A8FA8); }
+.upcoming .label { color: var(--ink-muted); }

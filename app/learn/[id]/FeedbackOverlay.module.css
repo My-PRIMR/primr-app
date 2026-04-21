@@ -16,7 +16,7 @@
 }
 
 .card {
-  background: var(--surface, #fff);
+  background: var(--surface);
   border-radius: 12px;
   padding: 2rem;
   max-width: 420px;
@@ -28,10 +28,10 @@
 }
 
 .heading {
-  font-family: 'DM Serif Display', serif;
+  font-family: var(--font-heading);
   font-size: 20px;
   font-weight: 400;
-  color: var(--color-ink, #0f1117);
+  color: var(--color-ink, var(--ink));
   margin: 0;
   line-height: 1.3;
 }
@@ -63,13 +63,13 @@
 .comment {
   width: 100%;
   border: 0.5px solid var(--border-mid, #ddd);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 0.5rem 0.75rem;
-  font-family: DM Sans, system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   resize: vertical;
-  background: var(--surface, #fff);
-  color: var(--color-ink, #0f1117);
+  background: var(--surface);
+  color: var(--color-ink, var(--ink));
   box-sizing: border-box;
 }
 
@@ -86,12 +86,12 @@
 
 .submitBtn {
   padding: 0.5rem 1.25rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--color-teal, #2bbfa0);
   color: #fff;
   border: none;
   font-size: 14px;
-  font-family: DM Sans, system-ui, sans-serif;
+  font-family: var(--font-body);
   cursor: pointer;
 }
 
@@ -101,10 +101,10 @@
   background: none;
   border: none;
   font-size: 13px;
-  color: var(--ink-muted, #888);
+  color: var(--ink-muted);
   cursor: pointer;
   padding: 0.5rem 0;
-  font-family: DM Sans, system-ui, sans-serif;
+  font-family: var(--font-body);
 }
 
-.skipBtn:hover { color: var(--color-ink, #0f1117); }
+.skipBtn:hover { color: var(--color-ink, var(--ink)); }

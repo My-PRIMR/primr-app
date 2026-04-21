@@ -2,11 +2,11 @@
   max-width: 560px;
   margin: 0 auto;
   padding: 2.5rem 2rem;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
 }
 
 .pageTitle {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 26px;
   font-weight: 400;
   color: var(--ink);
@@ -42,7 +42,7 @@
   border: 1.5px solid var(--border-mid);
   background: transparent;
   color: var(--ink-soft);
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
@@ -81,7 +81,7 @@
 
 .input {
   padding: 0.5rem 0.75rem;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   border: 1.5px solid var(--border-mid);
   border-radius: 7px;
@@ -107,7 +107,7 @@
 }
 
 .submitBtn {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 13.5px;
   font-weight: 600;
   padding: 0.6rem 1.5rem;

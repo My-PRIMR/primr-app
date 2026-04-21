@@ -6,13 +6,13 @@
 }
 
 .trigger {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 500;
   color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--border-mid);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 5px 10px;
   cursor: pointer;
   white-space: nowrap;
@@ -43,7 +43,7 @@
   display: block;
   width: 100%;
   text-align: left;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 400;
   color: var(--ink);

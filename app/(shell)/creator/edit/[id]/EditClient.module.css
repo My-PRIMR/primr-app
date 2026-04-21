@@ -2,7 +2,7 @@
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   color: var(--ink);
   background: var(--surface);
 }
@@ -27,7 +27,7 @@
   color: var(--accent);
   background: none;
   border: 1px solid var(--border-mid, var(--border));
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 4px 10px;
   cursor: pointer;
   white-space: nowrap;
@@ -89,11 +89,11 @@
 }
 
 .editToggleBtn {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 12.5px;
   font-weight: 500;
   padding: 4px 14px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-mid);
   background: var(--surface-alt);
   color: var(--ink-soft);
@@ -108,11 +108,11 @@
 }
 
 .disableBtn {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 12px;
   font-weight: 500;
   padding: 4px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--ink-muted);
@@ -142,11 +142,11 @@
 }
 
 .panelDockBtn {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 12px;
   font-weight: 500;
   padding: 4px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-mid);
   background: transparent;
   color: var(--ink-soft);
@@ -220,7 +220,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-mid);
   background: transparent;
   color: var(--ink-soft);
@@ -273,13 +273,13 @@
 
 /* Dropdown — used when blocks > 10 */
 .pageSelect {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 500;
   color: var(--ink-soft);
   background: var(--surface-alt);
   border: 1px solid var(--border-mid);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 5px 8px;
   cursor: pointer;
   max-width: 260px;
@@ -303,7 +303,7 @@
 }
 
 .insertChip {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 12px;
   color: var(--ink-soft);
   background: var(--surface-alt);
@@ -343,10 +343,10 @@
   font-size: 13px;
   padding: 7px 12px;
   border: 1px solid var(--border-mid);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--surface-alt);
   color: var(--ink);
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
 }
 .shareInput:focus { outline: none; border-color: var(--accent); }
 
@@ -355,7 +355,7 @@
   font-weight: 500;
   padding: 7px 14px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--accent);
   color: #fff;
   cursor: pointer;
@@ -395,7 +395,7 @@
   color: var(--accent);
   background: none;
   border: 1px solid var(--accent);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 6px 14px;
   cursor: pointer;
   text-align: center;

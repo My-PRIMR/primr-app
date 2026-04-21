@@ -10,7 +10,7 @@
   color: #fff;
   font-size: 14px;
   font-weight: 600;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   border: none;
   cursor: pointer;
   display: flex;

@@ -6,7 +6,7 @@
 }
 
 .tab {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   color: var(--ink-muted);
@@ -79,7 +79,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   color: var(--ink-soft);
   cursor: pointer;
@@ -87,13 +87,13 @@
 }
 
 .deleteBulkBtn {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 500;
   color: #fff;
   background: #c0392b;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 6px 14px;
   cursor: pointer;
   transition: opacity 150ms;
@@ -114,7 +114,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid var(--border-mid);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--ink-muted);
   cursor: pointer;
@@ -140,7 +140,7 @@
   gap: 12px;
   padding: 16px 20px;
   border: 1.5px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   transition: border-color 120ms, background 120ms;
 }
 .card:hover { border-color: var(--border-mid); }
@@ -169,7 +169,7 @@
 }
 
 .cardTitle {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 15px;
   font-weight: 600;
   color: var(--ink);
@@ -199,7 +199,7 @@
 }
 
 .table thead th {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -299,7 +299,7 @@
 .previewLink:hover { color: var(--ink-soft); }
 
 .deleteBtn {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 500;
   color: #c0392b;
@@ -311,7 +311,7 @@
 .deleteBtn:hover { color: #a93226; }
 
 .publishBtn {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 500;
   color: #fff;
@@ -327,7 +327,7 @@
 .publishBtn:disabled { opacity: 0.5; cursor: default; }
 
 .examOnBtn, .examOffBtn {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 12px;
   font-weight: 500;
   border-radius: 5px;
@@ -397,7 +397,7 @@
   flex: 1;
   background: var(--surface);
   border: 1.5px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 14px 18px;
 }
 
@@ -426,7 +426,7 @@
 .activityChart {
   background: var(--surface);
   border: 1.5px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 16px 20px;
   margin-bottom: 1.5rem;
 }
@@ -550,7 +550,7 @@
 .courseItem {
   background: var(--surface);
   border: 1.5px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 

@@ -139,11 +139,11 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
             onClick={() => setMode(m => m === 'interactive' ? 'showcase' : 'interactive')}
             style={{
               fontSize: '11px',
-              fontFamily: 'DM Sans, system-ui, sans-serif',
+              fontFamily: 'var(--font-body)',
               padding: '0.25rem 0.65rem',
               border: '1px solid rgba(15,17,23,0.2)',
               borderRadius: '5px',
-              background: mode === 'showcase' ? 'var(--accent, #7C8EF7)' : 'transparent',
+              background: mode === 'showcase' ? 'var(--accent)' : 'transparent',
               color: mode === 'showcase' ? '#fff' : 'inherit',
               cursor: 'pointer',
             }}
@@ -153,7 +153,7 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
         </div>
       )}
       {attemptStatus === 'completed' && !isEmbed && (
-        <div style={{ padding: '0.5rem 1.5rem', background: 'var(--surface-alt, #F7F6F3)', borderBottom: '1px solid var(--border, rgba(15,17,23,0.1))', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+        <div style={{ padding: '0.5rem 1.5rem', background: 'var(--surface-alt, #F7F6F3)', borderBottom: '1px solid var(--border, rgba(15,17,23,0.1))', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'var(--font-body)' }}>
           <span>You&rsquo;ve completed this lesson.</span>
           <button
             type="button"
@@ -171,7 +171,7 @@ export default function LessonPlayer({ lessonId, manifest, adminMode, examEnforc
                 submitted.current = false
               }
             }}
-            style={{ padding: '0.25rem 0.65rem', border: '1px solid rgba(15,17,23,0.2)', borderRadius: '5px', background: 'transparent', cursor: 'pointer', fontFamily: 'DM Sans, system-ui, sans-serif' }}
+            style={{ padding: '0.25rem 0.65rem', border: '1px solid rgba(15,17,23,0.2)', borderRadius: '5px', background: 'transparent', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
           >
             Start over
           </button>

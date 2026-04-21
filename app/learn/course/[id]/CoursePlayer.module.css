@@ -19,7 +19,7 @@
 }
 
 .topWordmark {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 20px;
   font-weight: 400;
   color: var(--ink);
@@ -226,7 +226,7 @@
 }
 
 .completionTitle {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 32px;
   font-weight: 400;
   color: var(--ink);

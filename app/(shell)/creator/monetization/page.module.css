@@ -17,7 +17,7 @@
 .exitLink:hover { color: var(--ink); }
 
 .heading {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 28px;
   font-weight: 400;
   color: var(--ink);
@@ -38,7 +38,7 @@
 }
 
 .cardHeading {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 20px;
   font-weight: 400;
   color: var(--ink);

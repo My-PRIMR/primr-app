@@ -4,7 +4,7 @@
 
 body {
   margin: 0;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   background: var(--surface);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;

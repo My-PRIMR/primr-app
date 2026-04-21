@@ -13,7 +13,7 @@
 }
 
 .wordmark {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 22px;
   font-weight: 400;
   color: var(--ink);
@@ -51,7 +51,7 @@
 }
 
 .heroTitle {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: clamp(38px, 6vw, 64px);
   font-weight: 400;
   color: var(--ink);
@@ -125,7 +125,7 @@
 }
 
 .featureTitle {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 20px;
   font-weight: 400;
   color: var(--ink);

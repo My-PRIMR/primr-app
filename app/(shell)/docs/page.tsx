@@ -16,7 +16,7 @@ export default async function DocsPage() {
 
   if (!courseId) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 60px)', color: 'var(--ink-muted)', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 60px)', color: 'var(--ink-muted)', fontFamily: 'var(--font-body)' }}>
         Documentation is not available.
       </div>
     )
@@ -26,7 +26,7 @@ export default async function DocsPage() {
 
   if (!course) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 60px)', color: 'var(--ink-muted)', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 60px)', color: 'var(--ink-muted)', fontFamily: 'var(--font-body)' }}>
         Documentation is not available.
       </div>
     )

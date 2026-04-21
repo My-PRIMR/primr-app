@@ -6,7 +6,7 @@
 
 .container {
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 1.25rem;
   margin-top: 1.5rem;
 }
@@ -28,7 +28,7 @@
 .rangeSelect {
   padding: 4px 8px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   background: var(--surface);
   color: var(--ink);

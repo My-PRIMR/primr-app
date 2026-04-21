@@ -13,7 +13,7 @@ export default function StudentsTable({ roster }: Props) {
   const overCap = usedSeats >= STUDENT_CAP
 
   return (
-    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", color: 'var(--ink)' }}>
+    <div style={{ fontFamily: 'var(--font-body)', color: 'var(--ink)' }}>
       <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: 'var(--ink)' }}>Your Students</h2>
         <span style={{ color: overCap ? 'var(--color-coral, #c00)' : 'var(--ink-muted)', fontSize: 14 }}>

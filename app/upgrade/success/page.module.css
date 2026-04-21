@@ -20,7 +20,7 @@
 }
 
 .title {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 32px;
   font-weight: 400;
   color: var(--ink);
@@ -29,7 +29,7 @@
 }
 
 .body {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 16px;
   color: var(--ink-soft);
   margin: 0 0 1.5rem;
@@ -37,7 +37,7 @@
 }
 
 .receipt {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   color: var(--ink-muted);
   margin: 0 0 2rem;
@@ -45,7 +45,7 @@
 }
 
 .mono {
-  font-family: 'DM Mono', 'Courier New', monospace;
+  font-family: var(--font-mono);
   color: var(--ink-soft);
   word-break: break-all;
 }
@@ -60,7 +60,7 @@
 
 .primary,
 .secondary {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   padding: 12px 20px;

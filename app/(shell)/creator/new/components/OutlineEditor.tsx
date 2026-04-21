@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { OutlineBlock, BlockType, LessonOutline } from '@/types/outline'
 import styles from './OutlineEditor.module.css'
 
-const BLOCK_ICONS: Record<BlockType, string> = {
+const BLOCK_ICONS: Partial<Record<BlockType, string>> = {
   hero: '◆',
   narrative: '¶',
   'step-navigator': '→',
@@ -23,7 +23,7 @@ const BLOCK_ICONS: Record<BlockType, string> = {
   'fill-in-the-blank': '⎵',
 }
 
-const BLOCK_LABELS: Record<BlockType, string> = {
+const BLOCK_LABELS: Partial<Record<BlockType, string>> = {
   hero: 'Hero',
   narrative: 'Narrative',
   'step-navigator': 'Step Walkthrough',
@@ -101,8 +101,8 @@ export default function OutlineEditor({ outline, onUpdateBlocks, onGenerate, sta
             <div className={styles.cardContent}>
               <div className={styles.cardHeader}>
                 <span className={styles.cardType}>
-                  <span className={styles.cardIcon}>{BLOCK_ICONS[block.type]}</span>
-                  {BLOCK_LABELS[block.type]}
+                  <span className={styles.cardIcon}>{BLOCK_ICONS[block.type] ?? '□'}</span>
+                  {BLOCK_LABELS[block.type] ?? block.type}
                 </span>
                 {block.type !== 'hero' && (
                   <button className={styles.removeBtn} onClick={() => removeBlock(idx)}>×</button>
@@ -141,7 +141,7 @@ export default function OutlineEditor({ outline, onUpdateBlocks, onGenerate, sta
             .filter(t => t !== 'hero')
             .map(type => (
               <button key={type} className={styles.addTypeBtn} onClick={() => addBlock(type)}>
-                {BLOCK_ICONS[type]} {BLOCK_LABELS[type]}
+                {BLOCK_ICONS[type] ?? '□'} {BLOCK_LABELS[type] ?? type}
               </button>
             ))}
           <button className={styles.cancelBtn} onClick={() => setAddingBlock(false)}>Cancel</button>

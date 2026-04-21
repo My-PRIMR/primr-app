@@ -191,7 +191,9 @@ export default function CreatorDashboard({
         courses.length === 0 ? (
           <p className={styles.empty}>
             No courses yet.{' '}
-            <Link href="/creator/courses/new" className={styles.link}>Create your first course →</Link>
+            <Link href={plan === 'free' ? '/upgrade' : '/creator/courses/new'} className={styles.link}>
+              {plan === 'free' ? 'Upgrade to create courses →' : 'Create your first course →'}
+            </Link>
           </p>
         ) : (
           <table className={styles.table}>

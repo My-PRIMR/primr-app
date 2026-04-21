@@ -8,6 +8,7 @@ export default async function NewCoursePage() {
 
   const role = session.user.productRole ?? 'learner'
   if (role !== 'creator' && role !== 'lnd_manager' && role !== 'org_admin') redirect('/creator')
+  if (session.user.plan === 'free') redirect('/upgrade')
 
   return (
     <CourseWizard

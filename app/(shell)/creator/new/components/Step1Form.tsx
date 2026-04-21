@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
 import type { WizardState } from '@/types/outline'
 import styles from './Step1Form.module.css'
-import { MODELS, canSelectModels, canSelectOpus } from '@/lib/models'
+import { canSelectModels } from '@/lib/models'
+import { modelSelectorGroups } from '@/lib/model-select'
 
 function isYouTubeUrl(val: string) {
   return /youtu\.be\/|youtube\.com\/(watch|embed|shorts)/.test(val)
@@ -304,17 +305,13 @@ export default function Step1Form({
               value={selectedModel}
               onChange={e => onModelChange?.(e.target.value)}
             >
-              <optgroup label="Anthropic">
-                <option value={MODELS.haiku.id}>Haiku (fast)</option>
-                <option value={MODELS.sonnet.id}>Sonnet (better)</option>
-                {canSelectOpus(internalRole, productRole) && (
-                  <option value={MODELS.opus.id}>Opus (best)</option>
-                )}
-              </optgroup>
-              <optgroup label="Google">
-                <option value={MODELS.flash.id}>Flash (fast)</option>
-                <option value={MODELS.pro.id}>Pro (better)</option>
-              </optgroup>
+              {modelSelectorGroups(internalRole, productRole).map(group => (
+                <optgroup key={group.provider} label={group.providerLabel}>
+                  {group.options.map(opt => (
+                    <option key={opt.id} value={opt.id}>{opt.label}</option>
+                  ))}
+                </optgroup>
+              ))}
             </select>
           </label>
 

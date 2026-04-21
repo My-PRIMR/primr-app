@@ -15,6 +15,7 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.68",
     "@ai-sdk/google": "^3.0.61",
+    "@ai-sdk/openai": "^3.0.53",
     "@anthropic-ai/sdk": "^0.78.0",
     "@llamaindex/liteparse": "^1.4.1",
     "@primr/components": "file:../primr-components",

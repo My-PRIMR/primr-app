@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './Step1Form.module.css'
 import videoStyles from './VideoIngestForm.module.css'
-import { MODELS, canSelectModels, canSelectOpus } from '@/lib/models'
+import { canSelectModels } from '@/lib/models'
+import { modelSelectorGroups } from '@/lib/model-select'
 
 interface Props {
   internalRole?: string | null
@@ -237,17 +238,13 @@ export default function VideoIngestForm({ internalRole, productRole, selectedMod
               value={selectedModel}
               onChange={e => onModelChange?.(e.target.value)}
             >
-              <optgroup label="Anthropic">
-                <option value={MODELS.haiku.id}>Haiku (fast)</option>
-                <option value={MODELS.sonnet.id}>Sonnet (better)</option>
-                {canSelectOpus(internalRole, productRole) && (
-                  <option value={MODELS.opus.id}>Opus (best)</option>
-                )}
-              </optgroup>
-              <optgroup label="Google">
-                <option value={MODELS.flash.id}>Flash (fast)</option>
-                <option value={MODELS.pro.id}>Pro (better)</option>
-              </optgroup>
+              {modelSelectorGroups(internalRole, productRole).map(group => (
+                <optgroup key={group.provider} label={group.providerLabel}>
+                  {group.options.map(opt => (
+                    <option key={opt.id} value={opt.id}>{opt.label}</option>
+                  ))}
+                </optgroup>
+              ))}
             </select>
           </label>
         </div>

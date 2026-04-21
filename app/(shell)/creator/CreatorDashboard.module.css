@@ -231,10 +231,18 @@
   color: var(--ink);
   padding: 12px;
   max-width: 320px;
+  vertical-align: middle;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.titleText {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  vertical-align: middle;
+  min-width: 0;
 }
 
 .tdMeta {

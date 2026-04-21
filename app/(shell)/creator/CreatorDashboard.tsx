@@ -223,7 +223,7 @@ export default function CreatorDashboard({
                     />
                   </td>
                   <td className={styles.tdTitle}>
-                    {course.title}
+                    <span className={styles.titleText}>{course.title}</span>
                     <PriceBadge priceCents={course.priceCents} isPaid={course.isPaid} />
                   </td>
                   <td className={styles.tdMeta}>{courseLabel(course.status, course.doneCount, course.lessonCount)}</td>
@@ -297,7 +297,7 @@ export default function CreatorDashboard({
                     />
                   </td>
                   <td className={styles.tdTitle}>
-                    {lesson.title}
+                    <span className={styles.titleText}>{lesson.title}</span>
                     {!lesson.publishedAt && <span className={styles.draftBadge}>Draft</span>}
                     <PriceBadge priceCents={lesson.priceCents} isPaid={lesson.isPaid} />
                   </td>

@@ -3,9 +3,10 @@ import { readFile } from 'fs/promises'
 import { join, resolve, normalize } from 'path'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { and, eq, isNotNull, sql } from 'drizzle-orm'
 import { getSession } from '@/session'
 import { uploadBufferToLesson } from '@/lib/cloudinary'
+import { canPublishAnotherLesson, FREE_PUBLISHED_LESSON_LIMIT } from '@/lib/models'
 import type { LessonManifest } from '@primr/components'
 
 const LOCAL_ASSET_PREFIX = '/api/assets/'
@@ -48,6 +49,25 @@ export async function POST(
 
   // Note: publish/unpublish are intentionally allowed on system content. Visibility is
   // operational metadata, not educational content — admins must be able to flip it.
+
+  // Enforce Free-tier published-lesson cap. Skip for re-publishing an already-published
+  // lesson (same row, so it's already counted).
+  if (!lesson.publishedAt) {
+    const [row] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(lessons)
+      .where(and(eq(lessons.createdBy, userId), isNotNull(lessons.publishedAt)))
+    const publishedCount = row?.count ?? 0
+    if (!canPublishAnotherLesson(session.user.plan, session.user.internalRole, publishedCount)) {
+      return NextResponse.json(
+        {
+          error: `Free plan is limited to ${FREE_PUBLISHED_LESSON_LIMIT} published lessons. Upgrade to Pro to publish more.`,
+          code: 'PUBLISH_LIMIT_REACHED',
+        },
+        { status: 402 },
+      )
+    }
+  }
 
   let manifest = lesson.manifest as LessonManifest
 

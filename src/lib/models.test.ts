@@ -1,6 +1,8 @@
 import {
   MODELS,
   canUseRichIngest,
+  canPublishAnotherLesson,
+  FREE_PUBLISHED_LESSON_LIMIT,
   modelById,
   resolveModel,
   MONTHLY_QUOTAS_BY_PLAN,
@@ -136,5 +138,26 @@ describe('MODELS registry — OpenAI entries', () => {
   it('resolveModel grants GPT-5 (MEDIUM) to Pro users via plan opt-in', () => {
     expect(resolveModel('gpt-5', null, null, 'pro')).toBe(MODELS.gpt5)
     expect(resolveModel('gpt-5', null, null, 'enterprise')).toBe(MODELS.gpt5)
+  })
+})
+
+describe('canPublishAnotherLesson', () => {
+  it('caps Free at FREE_PUBLISHED_LESSON_LIMIT', () => {
+    expect(FREE_PUBLISHED_LESSON_LIMIT).toBe(5)
+    expect(canPublishAnotherLesson('free', null, 0)).toBe(true)
+    expect(canPublishAnotherLesson('free', null, 4)).toBe(true)
+    expect(canPublishAnotherLesson('free', null, 5)).toBe(false)
+    expect(canPublishAnotherLesson('free', null, 99)).toBe(false)
+  })
+
+  it('allows paid tiers to publish without limit', () => {
+    expect(canPublishAnotherLesson('teacher', null, 500)).toBe(true)
+    expect(canPublishAnotherLesson('pro', null, 500)).toBe(true)
+    expect(canPublishAnotherLesson('enterprise', null, 500)).toBe(true)
+  })
+
+  it('bypasses the cap for internal staff and admin regardless of plan', () => {
+    expect(canPublishAnotherLesson('free', 'staff', 999)).toBe(true)
+    expect(canPublishAnotherLesson('free', 'admin', 999)).toBe(true)
   })
 })

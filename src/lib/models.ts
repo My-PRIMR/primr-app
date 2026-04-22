@@ -128,3 +128,21 @@ export function canMonetize(plan: string | null | undefined): boolean {
 export function canHaveMultipleAdmins(plan: string | null | undefined): boolean {
   return plan === 'enterprise'
 }
+
+/** Free-tier cap on published lessons. Paid tiers and internal staff are unlimited. */
+export const FREE_PUBLISHED_LESSON_LIMIT = 5
+
+/**
+ * Returns true if the user is allowed to publish one more lesson.
+ * `currentPublishedCount` must exclude the lesson currently being (re)published;
+ * callers should skip this check entirely when re-publishing an already-published lesson.
+ */
+export function canPublishAnotherLesson(
+  plan: string | null | undefined,
+  internalRole: string | null | undefined,
+  currentPublishedCount: number,
+): boolean {
+  if (internalRole != null) return true
+  if (plan === 'teacher' || plan === 'pro' || plan === 'enterprise') return true
+  return currentPublishedCount < FREE_PUBLISHED_LESSON_LIMIT
+}

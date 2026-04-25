@@ -17,6 +17,8 @@ import type { LessonManifest } from '@primr/components'
 import type { LessonOutline, DocumentAsset } from '@/types/outline'
 import { LESSON_GEN_SYSTEM_PROMPT_TEMPLATE } from '@/lib/prompts/lesson-gen-system'
 import { resolvePromptTemplate } from '@/lib/prompt-resolver'
+import type { ContentType } from '@/lib/content-type'
+import { isAcademicContentType, STEM_LESSON_GEN_OVERRIDE } from '@/lib/content-type'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -54,6 +56,7 @@ export async function generateLessonFromOutline(params: {
   passiveLesson?: boolean
   skipHero?: boolean
   includeImages?: boolean
+  contentType?: ContentType
   videoUrl?: string
   videoStartTime?: number
   videoEndTime?: number
@@ -67,6 +70,9 @@ export async function generateLessonFromOutline(params: {
   let systemPrompt = resolvedSystem
   if (params.passiveLesson) {
     systemPrompt += PASSIVE_LESSON_OVERRIDE
+  }
+  if (params.contentType && isAcademicContentType(params.contentType)) {
+    systemPrompt += STEM_LESSON_GEN_OVERRIDE
   }
   if (params.skipHero) {
     systemPrompt += '\n\nIMPORTANT: Do NOT generate a hero block. The outline may list one — skip it. Start directly with the second block.'

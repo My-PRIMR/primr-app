@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import type { WizardState } from '@/types/outline'
+import type { ContentType } from '@/lib/content-type'
 import styles from './Step1Form.module.css'
 import { canSelectModels } from '@/lib/models'
 import { modelSelectorGroups } from '@/lib/model-select'
@@ -22,6 +23,12 @@ interface Props {
   onIncludeImagesChange?: (v: boolean) => void
   /** Whether the current user may use enriched PDF ingestion (pro+). */
   canRichIngest?: boolean
+  /** Current content category selection. */
+  contentType?: ContentType
+  /** Callback when content category changes. */
+  onContentTypeChange?: (ct: ContentType) => void
+  /** Whether the current user may select academic/STEM categories (teacher+). */
+  canStemGen?: boolean
   /** 'lesson' (default) shows lesson-specific copy; 'course' for future use. */
   mode?: 'lesson' | 'course'
 }
@@ -38,6 +45,9 @@ export default function Step1Form({
   passiveLesson, onPassiveLessonChange,
   includeImages, onIncludeImagesChange,
   canRichIngest = false,
+  contentType = 'general',
+  onContentTypeChange,
+  canStemGen = false,
   mode = 'lesson',
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -283,6 +293,33 @@ export default function Step1Form({
           </select>
         </label>
       </div>
+
+      {/* ── Content category ── */}
+      <label className={styles.label}>
+        Content category
+        <select
+          className={styles.select}
+          value={contentType}
+          onChange={e => onContentTypeChange?.(e.target.value as ContentType)}
+        >
+          <option value="general">General / Professional</option>
+          <option value="stem_math" disabled={!canStemGen}>
+            STEM — Mathematics{!canStemGen ? ' (Teacher+)' : ''}
+          </option>
+          <option value="stem_science" disabled={!canStemGen}>
+            STEM — Science{!canStemGen ? ' (Teacher+)' : ''}
+          </option>
+          <option value="language_arts" disabled={!canStemGen}>
+            Language Arts / Academic{!canStemGen ? ' (Teacher+)' : ''}
+          </option>
+        </select>
+      </label>
+      {!canStemGen && (
+        <p className={styles.proNote}>
+          <span className={styles.proBadge}>Pro</span>
+          {' '}Available on Creator Pro and above, or with an approved Teacher account.
+        </p>
+      )}
 
       {/* ── Scope ── */}
       <label className={styles.label}>

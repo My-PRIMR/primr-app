@@ -8,7 +8,9 @@ import { db } from '@/db'
 import { courses, courseSections, courseChapters, chapterLessons } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getSession } from '@/session'
-import { resolveModel, modelById, canSelectModels } from '@/lib/models'
+import { resolveModel, modelById, canSelectModels, canUseStemGeneration } from '@/lib/models'
+import type { ContentType } from '@/lib/content-type'
+import { CONTENT_TYPES, isAcademicContentType } from '@/lib/content-type'
 import { getDefaultModel } from '@/lib/default-model'
 import { checkMonthlyCap, logUsage } from '@/lib/usage-cap'
 import type { PlanValue } from '@/plans'
@@ -32,8 +34,11 @@ export async function POST(
   const blocked = assertMutableCourse(course)
   if (blocked) return blocked
 
-  const body = await req.json() as { tree: CourseTree, model?: string, passiveLesson?: boolean, skipHero?: boolean, notifyEmail?: boolean, includeImages?: boolean }
-  const { tree, model, passiveLesson, skipHero, notifyEmail, includeImages } = body
+  const body = await req.json() as { tree: CourseTree, model?: string, passiveLesson?: boolean, skipHero?: boolean, notifyEmail?: boolean, includeImages?: boolean, contentType?: string }
+  const { tree, model, passiveLesson, skipHero, notifyEmail, includeImages, contentType: contentTypeRaw } = body
+  const contentType: ContentType = (contentTypeRaw && CONTENT_TYPES.includes(contentTypeRaw as ContentType))
+    ? (contentTypeRaw as ContentType)
+    : 'general'
 
   if (!tree?.sections?.length) {
     return NextResponse.json({ error: 'tree with sections is required' }, { status: 400 })
@@ -42,6 +47,11 @@ export async function POST(
   const internalRole = session.user.internalRole ?? null
   const productRole = session.user.productRole ?? null
   const plan = session.user.plan ?? null
+
+  if (isAcademicContentType(contentType) && !canUseStemGeneration(plan, internalRole)) {
+    return NextResponse.json({ error: 'Academic content types require Creator Teacher plan or higher.' }, { status: 403 })
+  }
+
   let resolvedModel = modelById(await getDefaultModel())!
   if (model) {
     const m = resolveModel(model, internalRole, productRole, plan)
@@ -128,7 +138,17 @@ export async function POST(
 
   // Fire and forget — background generation
   const userId = session.user.id
-  runCourseGeneration(courseId, lessonInputs, userId, resolvedModel.id, passiveLesson && canSelectModels(internalRole, productRole), creatorEmail, !!skipHero, includeImages && canSelectModels(internalRole, productRole)).catch(err => {
+  runCourseGeneration(
+    courseId,
+    lessonInputs,
+    userId,
+    resolvedModel.id,
+    passiveLesson && canSelectModels(internalRole, productRole),
+    creatorEmail,
+    !!skipHero,
+    includeImages && canSelectModels(internalRole, productRole),
+    contentType,
+  ).catch(err => {
     console.error(`[generate] Unhandled error in course generation for ${courseId}:`, err)
   })
 

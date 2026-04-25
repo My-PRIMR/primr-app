@@ -702,3 +702,20 @@
 .pasteTextarea {
   min-height: 120px;
 }
+
+.proNote {
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin-top: 6px;
+}
+
+.proBadge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 4px;
+  padding: 1px 6px;
+  vertical-align: middle;
+}

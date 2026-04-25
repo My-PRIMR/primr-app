@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { WizardState, WizardAction } from '@/types/outline'
 import { DEFAULT_MODEL } from '@/lib/models'
-import { canUseRichIngest, canUsePexels, canAiEdit as canAiEditFn } from '@/lib/models'
+import { canUseRichIngest, canUsePexels, canAiEdit as canAiEditFn, canUseStemGeneration } from '@/lib/models'
+import type { ContentType } from '@/lib/content-type'
 import StepIndicator from './components/StepIndicator'
 import Step1Form from './components/Step1Form'
 import LessonBlockEditor from '../components/LessonBlockEditor'
@@ -63,8 +64,10 @@ export default function NewLessonWizard({ internalRole, productRole, plan }: New
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL)
   const [passiveLesson, setPassiveLesson] = useState(false)
   const [includeImages, setIncludeImages] = useState(false)
+  const [contentType, setContentType] = useState<ContentType>('general')
 
   const canRichIngest = canUseRichIngest(plan, internalRole)
+  const canStemGen = canUseStemGeneration(plan, internalRole)
   const canPexels = canUsePexels(plan, internalRole)
   const aiEditEnabled = canAiEditFn(plan, internalRole)
   const isInternal = internalRole != null
@@ -116,6 +119,7 @@ export default function NewLessonWizard({ internalRole, productRole, plan }: New
         model: selectedModel,
         passiveLesson,
         includeImages,
+        contentType,
       }),
     })
 
@@ -156,6 +160,9 @@ export default function NewLessonWizard({ internalRole, productRole, plan }: New
             includeImages={includeImages}
             onIncludeImagesChange={setIncludeImages}
             canRichIngest={canRichIngest}
+            contentType={contentType}
+            onContentTypeChange={setContentType}
+            canStemGen={canStemGen}
             mode="lesson"
           />
         )}

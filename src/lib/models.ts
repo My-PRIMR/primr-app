@@ -96,6 +96,13 @@ export function canUseRichIngest(
   return plan === 'teacher' || plan === 'pro' || plan === 'enterprise' || internalRole != null
 }
 
+export function canUseStemGeneration(
+  plan: string | null | undefined,
+  internalRole: string | null | undefined
+): boolean {
+  return plan === 'teacher' || plan === 'pro' || plan === 'enterprise' || internalRole != null
+}
+
 export function canAiEdit(
   plan: string | null | undefined,
   internalRole: string | null | undefined

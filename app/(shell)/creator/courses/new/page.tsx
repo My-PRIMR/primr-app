@@ -14,6 +14,7 @@ export default async function NewCoursePage() {
     <CourseWizard
       internalRole={session.user.internalRole ?? null}
       productRole={session.user.productRole ?? null}
+      plan={session.user.plan ?? null}
     />
   )
 }

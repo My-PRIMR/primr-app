@@ -4,8 +4,9 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import type { CourseTree, CourseSection, CourseChapter, CourseLesson, FlatLesson } from '@/types/course'
 import styles from './CourseWizard.module.css'
-import { DEFAULT_MODEL, canSelectModels } from '@/lib/models'
+import { DEFAULT_MODEL, canSelectModels, canUseStemGeneration } from '@/lib/models'
 import { modelSelectorGroups } from '@/lib/model-select'
+import type { ContentType } from '@/lib/content-type'
 
 // ── Wizard State ──────────────────────────────────────────────────────────────
 
@@ -63,15 +64,18 @@ function genId() {
 interface CourseWizardProps {
   internalRole: string | null
   productRole: string | null
+  plan: string | null
 }
 
-export default function CourseWizard({ internalRole, productRole }: CourseWizardProps) {
+export default function CourseWizard({ internalRole, productRole, plan }: CourseWizardProps) {
   const [state, setState] = useState<WizardState>(initialState)
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL)
   const [passiveLesson, setPassiveLesson] = useState(false)
   const [skipHero, setSkipHero] = useState(false)
   const [includeImages, setIncludeImages] = useState(false)
   const [notifyEmail, setNotifyEmail] = useState(true)
+  const [contentType, setContentType] = useState<ContentType>('general')
+  const canStemGen = canUseStemGeneration(plan, internalRole)
   const [isPasting, setIsPasting] = useState(false)
   const [pastedText, setPastedText] = useState('')
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -245,7 +249,7 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
       const genRes = await fetch(`/api/courses/${courseId}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tree: filteredTree, model: selectedModel, passiveLesson, skipHero, notifyEmail, includeImages }),
+        body: JSON.stringify({ tree: filteredTree, model: selectedModel, passiveLesson, skipHero, notifyEmail, includeImages, contentType }),
       })
       const genData = await genRes.json()
       if (!genRes.ok) {
@@ -575,6 +579,33 @@ export default function CourseWizard({ internalRole, productRole }: CourseWizard
                   <option value="advanced">Advanced</option>
                 </select>
               </div>
+            </div>
+
+            {/* ── Content category ── */}
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Content category</label>
+              <select
+                className={styles.select}
+                value={contentType}
+                onChange={e => setContentType(e.target.value as ContentType)}
+              >
+                <option value="general">General / Professional</option>
+                <option value="stem_math" disabled={!canStemGen}>
+                  STEM — Mathematics{!canStemGen ? ' (Teacher+)' : ''}
+                </option>
+                <option value="stem_science" disabled={!canStemGen}>
+                  STEM — Science{!canStemGen ? ' (Teacher+)' : ''}
+                </option>
+                <option value="language_arts" disabled={!canStemGen}>
+                  Language Arts / Academic{!canStemGen ? ' (Teacher+)' : ''}
+                </option>
+              </select>
+              {!canStemGen && (
+                <p className={styles.proNote}>
+                  <span className={styles.proBadge}>Teacher</span>
+                  {' '}Upgrade to Creator Teacher or Pro to generate STEM or academic courses.
+                </p>
+              )}
             </div>
 
             {/* ── Scope / Focus ── */}

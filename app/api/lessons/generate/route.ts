@@ -7,7 +7,7 @@ import { lessons } from '@/db/schema'
 import { getSession } from '@/session'
 import { resolveModel, modelById, canSelectModels, canUseRichIngest, canUsePexels, canUseStemGeneration } from '@/lib/models'
 import type { ContentType } from '@/lib/content-type'
-import { CONTENT_TYPES, isAcademicContentType } from '@/lib/content-type'
+import { CONTENT_TYPES, isAcademicContentType, STEM_LESSON_GEN_OVERRIDE } from '@/lib/content-type'
 import { getDefaultModel } from '@/lib/default-model'
 import { checkMonthlyCap, logUsage } from '@/lib/usage-cap'
 import type { PlanValue } from '@/plans'
@@ -151,6 +151,10 @@ export async function POST(req: NextRequest) {
 
     if (passiveLesson && canSelectModels(internalRole, productRole)) {
       systemPrompt += '\n\nIMPORTANT: Generate only informational content blocks (text, heading, narrative, step-navigator, hero, callout). Do not include any interactive or assessment blocks (quiz, flashcard, fill-in-the-blank, or similar). The lesson should be purely informational — no questions, no exercises.'
+    }
+
+    if (isAcademicContentType(contentType)) {
+      systemPrompt += STEM_LESSON_GEN_OVERRIDE
     }
 
     if (includeImages && canSelectModels(internalRole, productRole)) {

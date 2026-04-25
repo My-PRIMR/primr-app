@@ -1,6 +1,7 @@
 import {
   MODELS,
   canUseRichIngest,
+  canUseStemGeneration,
   canPublishAnotherLesson,
   FREE_PUBLISHED_LESSON_LIMIT,
   modelById,
@@ -159,5 +160,33 @@ describe('canPublishAnotherLesson', () => {
   it('bypasses the cap for internal staff and admin regardless of plan', () => {
     expect(canPublishAnotherLesson('free', 'staff', 999)).toBe(true)
     expect(canPublishAnotherLesson('free', 'admin', 999)).toBe(true)
+  })
+})
+
+describe('canUseStemGeneration', () => {
+  it('returns false for free plan with no role', () => {
+    expect(canUseStemGeneration('free', null)).toBe(false)
+  })
+
+  it('returns true for teacher plan', () => {
+    expect(canUseStemGeneration('teacher', null)).toBe(true)
+  })
+
+  it('returns true for pro plan', () => {
+    expect(canUseStemGeneration('pro', null)).toBe(true)
+  })
+
+  it('returns true for enterprise plan', () => {
+    expect(canUseStemGeneration('enterprise', null)).toBe(true)
+  })
+
+  it('returns true for any internalRole regardless of plan', () => {
+    expect(canUseStemGeneration('free', 'staff')).toBe(true)
+    expect(canUseStemGeneration('free', 'admin')).toBe(true)
+    expect(canUseStemGeneration(null, 'staff')).toBe(true)
+  })
+
+  it('returns false for null plan and null role', () => {
+    expect(canUseStemGeneration(null, null)).toBe(false)
   })
 })

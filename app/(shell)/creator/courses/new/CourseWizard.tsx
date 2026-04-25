@@ -602,8 +602,8 @@ export default function CourseWizard({ internalRole, productRole, plan }: Course
               </select>
               {!canStemGen && (
                 <p className={styles.proNote}>
-                  <span className={styles.proBadge}>Teacher</span>
-                  {' '}Upgrade to Creator Teacher or Pro to generate STEM or academic courses.
+                  <span className={styles.proBadge}>Pro</span>
+                  {' '}Available on Creator Pro and above, or with an approved Teacher account.
                 </p>
               )}
             </div>

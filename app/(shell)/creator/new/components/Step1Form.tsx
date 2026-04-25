@@ -316,8 +316,8 @@ export default function Step1Form({
       </label>
       {!canStemGen && (
         <p className={styles.proNote}>
-          <span className={styles.proBadge}>Teacher</span>
-          {' '}Upgrade to Creator Teacher or Pro to generate STEM or academic lessons with enhanced accuracy.
+          <span className={styles.proBadge}>Pro</span>
+          {' '}Available on Creator Pro and above, or with an approved Teacher account.
         </p>
       )}
 

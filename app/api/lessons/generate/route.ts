@@ -5,7 +5,9 @@ import { extractJSON } from '@/lib/extract-json'
 import { db } from '@/db'
 import { lessons } from '@/db/schema'
 import { getSession } from '@/session'
-import { resolveModel, modelById, canSelectModels, canUseRichIngest, canUsePexels } from '@/lib/models'
+import { resolveModel, modelById, canSelectModels, canUseRichIngest, canUsePexels, canUseStemGeneration } from '@/lib/models'
+import type { ContentType } from '@/lib/content-type'
+import { CONTENT_TYPES, isAcademicContentType } from '@/lib/content-type'
 import { getDefaultModel } from '@/lib/default-model'
 import { checkMonthlyCap, logUsage } from '@/lib/usage-cap'
 import type { PlanValue } from '@/plans'
@@ -72,6 +74,10 @@ export async function POST(req: NextRequest) {
   const passiveLesson: boolean | undefined = body.passiveLesson
   const includeImages: boolean | undefined = body.includeImages
   const documentAssets: DocumentAsset[] | undefined = body.documentAssets
+  const contentTypeRaw: string | undefined = body.contentType
+  const contentType: ContentType = (contentTypeRaw && CONTENT_TYPES.includes(contentTypeRaw as ContentType))
+    ? (contentTypeRaw as ContentType)
+    : 'general'
 
   if (!outline && !topic?.trim() && !documentText?.trim()) {
     return NextResponse.json({ error: 'A topic or source document is required.' }, { status: 400 })
@@ -83,6 +89,10 @@ export async function POST(req: NextRequest) {
 
   if (documentAssets?.length && !canUseRichIngest(plan, internalRole)) {
     return NextResponse.json({ error: 'Document asset ingestion requires Creator Pro or higher.' }, { status: 403 })
+  }
+
+  if (isAcademicContentType(contentType) && !canUseStemGeneration(plan, internalRole)) {
+    return NextResponse.json({ error: 'Academic content types require Creator Teacher plan or higher.' }, { status: 403 })
   }
 
   let resolvedModel = modelById(await getDefaultModel())!
@@ -129,6 +139,7 @@ export async function POST(req: NextRequest) {
       model: resolvedModel.id,
       passiveLesson: passiveLesson && canSelectModels(internalRole, productRole),
       includeImages: includeImages && canUsePexels(plan, internalRole),
+      contentType,
       userId,
       signal: req.signal,
     })

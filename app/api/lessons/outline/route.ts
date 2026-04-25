@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { getSession } from '@/session'
-import { resolveModel, modelById } from '@/lib/models'
+import { resolveModel, modelById, canUseStemGeneration } from '@/lib/models'
 import { getDefaultModel } from '@/lib/default-model'
 import { OUTLINE_SYSTEM_PROMPT_TEMPLATE } from '@/lib/prompts/outline-system'
+import type { ContentType } from '@/lib/content-type'
+import { CONTENT_TYPES, isAcademicContentType, STEM_OUTLINE_OVERRIDE } from '@/lib/content-type'
 
 const client = new Anthropic()
 
@@ -30,7 +32,10 @@ function buildOutlineSystemPrompt(blockRange: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  const { title, topic, audience, level, scope, documentText, model } = await req.json()
+  const { title, topic, audience, level, scope, documentText, model, contentType: contentTypeRaw } = await req.json()
+  const contentType: ContentType = (contentTypeRaw && CONTENT_TYPES.includes(contentTypeRaw as ContentType))
+    ? (contentTypeRaw as ContentType)
+    : 'general'
 
   if (!title?.trim() || (!topic?.trim() && !documentText?.trim())) {
     return NextResponse.json({ error: 'title and either topic or a document are required' }, { status: 400 })
@@ -40,6 +45,11 @@ export async function POST(req: NextRequest) {
   const internalRole = session?.user?.internalRole ?? null
   const productRole = session?.user?.productRole ?? null
   const plan = session?.user?.plan ?? null
+
+  if (isAcademicContentType(contentType) && !canUseStemGeneration(plan, internalRole)) {
+    return NextResponse.json({ error: 'Academic content types require Creator Teacher plan or higher.' }, { status: 403 })
+  }
+
   let resolvedModel = modelById(await getDefaultModel())!
   if (model) {
     const m = resolveModel(model, internalRole, productRole, plan)
@@ -48,7 +58,10 @@ export async function POST(req: NextRequest) {
   }
 
   const blockRange = blockCountRange(documentText)
-  const systemPrompt = buildOutlineSystemPrompt(blockRange)
+  let systemPrompt = buildOutlineSystemPrompt(blockRange)
+  if (isAcademicContentType(contentType)) {
+    systemPrompt += STEM_OUTLINE_OVERRIDE
+  }
 
   console.log(`[outline] title: "${title}", audience: "${audience}", level: "${level}", hasDoc: ${!!documentText}, blockRange: ${blockRange}`)
   console.log(`[outline] using model: ${resolvedModel.id}`)

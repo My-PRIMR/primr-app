@@ -16,6 +16,8 @@ import { OUTLINE_SYSTEM_PROMPT_TEMPLATE } from '@/lib/prompts/outline-system'
 import { resolvePromptTemplate } from '@/lib/prompt-resolver'
 import type { LessonOutline } from '@/types/outline'
 import { generateLessonFromOutline } from '@/lib/lesson-gen'
+import type { ContentType } from '@/lib/content-type'
+import { isAcademicContentType, STEM_OUTLINE_OVERRIDE } from '@/lib/content-type'
 
 // ── Cancellation registry ─────────────────────────────────────────────────────
 
@@ -53,6 +55,7 @@ async function generateOutline(params: {
   model?: string
   skipHero?: boolean
   passiveLesson?: boolean
+  contentType?: ContentType
   videoUrl?: string
   videoStartTime?: number
   videoEndTime?: number
@@ -68,6 +71,7 @@ async function generateOutline(params: {
     ? '\n\nIMPORTANT: Do NOT include a hero block. Start the lesson directly with a narrative or step-navigator block.'
     : ''
   const passiveOverride = params.passiveLesson ? PASSIVE_LESSON_OVERRIDE : ''
+  const stemOverride = params.contentType && isAcademicContentType(params.contentType) ? STEM_OUTLINE_OVERRIDE : ''
 
   const videoLine = params.videoUrl
     ? `Video URL: ${params.videoUrl}${params.videoStartTime != null ? ` | Start: ${params.videoStartTime}s` : ''}${params.videoEndTime != null ? ` | End: ${params.videoEndTime}s` : ''} — you may use a "media" block with this URL as the teaching portion of a learning unit\n`
@@ -81,7 +85,7 @@ async function generateOutline(params: {
   const { text: raw } = await generateText({
     model: resolveModelRef(modelId),
     maxOutputTokens: 2048,
-    system: buildSystemPrompt(OUTLINE_SYSTEM_PROMPT + heroOverride + passiveOverride, modelId),
+    system: buildSystemPrompt(OUTLINE_SYSTEM_PROMPT + heroOverride + passiveOverride + stemOverride, modelId),
     prompt: userContent,
     abortSignal: params.signal,
   })
@@ -97,6 +101,7 @@ async function generateLesson(params: {
   focus?: string
   model?: string
   passiveLesson?: boolean
+  contentType?: ContentType
   skipHero?: boolean
   includeImages?: boolean
   videoUrl?: string
@@ -110,6 +115,7 @@ async function generateLesson(params: {
     focus: params.focus,
     model: params.model,
     passiveLesson: params.passiveLesson,
+    contentType: params.contentType,
     skipHero: params.skipHero,
     includeImages: params.includeImages,
     videoUrl: params.videoUrl,
@@ -162,6 +168,7 @@ export interface LessonGenInput {
   videoUrl?: string
   videoStartTime?: number
   videoEndTime?: number
+  contentType?: ContentType
 }
 
 export async function runCourseGeneration(
@@ -173,6 +180,7 @@ export async function runCourseGeneration(
   creatorEmail?: string,
   skipHero?: boolean,
   includeImages?: boolean,
+  contentType?: ContentType,
 ): Promise<void> {
   console.log(`[course-gen] Starting generation for course ${courseId}, ${lessonInputs.length} lessons`)
 
@@ -228,6 +236,7 @@ export async function runCourseGeneration(
             model,
             skipHero,
             passiveLesson,
+            contentType,
             videoUrl: input.videoUrl,
             videoStartTime: input.videoStartTime,
             videoEndTime: input.videoEndTime,
@@ -241,6 +250,7 @@ export async function runCourseGeneration(
             focus: input.focus,
             model,
             passiveLesson,
+            contentType,
             skipHero,
             includeImages,
             videoUrl: input.videoUrl,
